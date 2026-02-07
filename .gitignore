@@ -1,0 +1,12 @@
+# Build output
+webapp/target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
