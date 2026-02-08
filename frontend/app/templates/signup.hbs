@@ -93,8 +93,9 @@
             <input type="text" class="form-control" value={{this.oName}} {{on "input" (fn this.updateField "oName")}} required>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold">Phone Number</label>
-            <input type="text" class="form-control" value={{this.oPhone}} {{on "input" (fn this.updateField "oPhone")}} required pattern="\d{10}" maxlength="10">
+            <label class="form-label fw-semibold">Aadhaar Number</label>
+            <input type="text" class="form-control" value={{this.oAadhaar}} {{on "input" (fn this.updateField "oAadhaar")}} required pattern="\d{12}" maxlength="12">
+            <small class="text-muted">12-digit Aadhaar number</small>
           </div>
           <button type="submit" class="btn btn-accent w-100" disabled={{this.isLoading}}>
             {{#if this.isLoading}}

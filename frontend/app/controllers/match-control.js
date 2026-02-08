@@ -11,10 +11,14 @@ export default class MatchControlController extends Controller {
   @tracked isLoading = false;
   @tracked statusMessage = null;
   @tracked statusType = 'success';
-  @tracked activeTab = 'players'; // players | bulls | interactions
+  @tracked activeTab = 'players'; // players | bulls | interactions | spot-prizes
   @tracked isSaving = false;
   @tracked timerRunning = false;
   @tracked timerDisplay = '0.0';
+  @tracked spotAwards = null;
+  @tracked newSpotPrizeId = '';
+  @tracked newSpotPlayerId = '';
+  @tracked newSpotBullId = '';
   _timerStart = null;
   _timerInterval = null;
 
@@ -45,6 +49,21 @@ export default class MatchControlController extends Controller {
     return (this.model?.matches || []).filter((m) => m.status === 'Scheduled').length;
   }
 
+  get completedMatchCount() {
+    return (this.model?.matches || []).filter((m) => m.status === 'Completed').length;
+  }
+
+  get matchSpotPrizes() {
+    if (!this.selectedMatchId) return [];
+    return (this.model?.spotPrizes || []).filter(
+      (p) => String(p.match_id) === String(this.selectedMatchId)
+    );
+  }
+
+  get spotPrizeTypes() {
+    return this.model?.spotPrizeTypes || [];
+  }
+
   showMessage(text, type = 'success') {
     this.statusMessage = text;
     this.statusType = type;
@@ -61,10 +80,12 @@ export default class MatchControlController extends Controller {
     this.selectedMatchId = event.target.value;
     if (!this.selectedMatchId) {
       this.scoringData = null;
+      this.spotAwards = null;
       return;
     }
     this.activeTab = 'players';
     await this.fetchScores();
+    this.fetchSpotAwards();
   }
 
   @action
@@ -72,6 +93,7 @@ export default class MatchControlController extends Controller {
     this.selectedMatchId = String(matchId);
     this.activeTab = 'players';
     await this.fetchScores();
+    this.fetchSpotAwards();
   }
 
   async fetchScores() {
@@ -232,6 +254,61 @@ export default class MatchControlController extends Controller {
       this.showMessage('Interaction recorded');
     } catch (e) {
       this.showMessage('Failed to record interaction', 'danger');
+    }
+  }
+
+  /* ═══════ SPOT PRIZE AWARDS ═══════ */
+
+  async fetchSpotAwards() {
+    if (!this.selectedMatchId) { this.spotAwards = null; return; }
+    try {
+      const base = this.auth.apiBase;
+      const resp = await fetch(
+        `${base}/public/matches/${this.selectedMatchId}/spot-prizes`
+      );
+      this.spotAwards = await resp.json();
+    } catch {
+      this.spotAwards = [];
+    }
+  }
+
+  @action updateSpotField(field, event) {
+    this[field] = event.target.value;
+  }
+
+  @action
+  async awardSpotPrize(event) {
+    event.preventDefault();
+    if (!this.newSpotPrizeId || !this.newSpotPlayerId) {
+      this.showMessage('Select a player and prize', 'danger');
+      return;
+    }
+    try {
+      const body = {
+        player_id: this.newSpotPlayerId,
+        spot_prize_id: this.newSpotPrizeId,
+      };
+      if (this.newSpotBullId) body.bull_id = this.newSpotBullId;
+      await this.auth.apiPost('/tables/spot_prize_award', body);
+      this.showMessage('Spot prize awarded!');
+      this.newSpotPrizeId = '';
+      this.newSpotPlayerId = '';
+      this.newSpotBullId = '';
+      await this.fetchSpotAwards();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to award spot prize', 'danger');
+    }
+  }
+
+  @action
+  async deleteSpotAward(awardId) {
+    if (!confirm('Remove this spot prize award?')) return;
+    try {
+      await this.auth.apiDelete(`/tables/spot_prize_award?spot_prize_award_id=${awardId}`);
+      this.showMessage('Award removed');
+      await this.fetchSpotAwards();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to remove award', 'danger');
     }
   }
 }

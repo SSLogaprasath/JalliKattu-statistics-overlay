@@ -1,7 +1,6 @@
-import Helper from '@ember/component/helper';
+import { helper } from '@ember/component/helper';
 
-export default class EqHelper extends Helper {
-  compute([a, b]) {
-    return a === b;
-  }
-}
+export default helper(function eq([a, b]) {
+  // eslint-disable-next-line eqeqeq
+  return a == b;
+});

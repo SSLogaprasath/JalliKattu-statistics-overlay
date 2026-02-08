@@ -121,6 +121,38 @@
         </div>
       </div>
     </div>
+
+    {{!-- Spot Prize Awards --}}
+    {{#if this.spotPrizes.length}}
+      <div class="mt-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-gift-fill text-warning"></i> Spot Prize Awards</h6>
+        <div class="row g-3">
+          {{#each this.spotPrizes as |sp|}}
+            <div class="col-md-4 col-lg-3">
+              <div class="card border-warning">
+                <div class="card-body py-2 px-3">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi bi-gift-fill text-warning"></i>
+                    <strong class="small">{{sp.prize_title}}</strong>
+                  </div>
+                  {{#if sp.prize_type}}
+                    <span class="badge bg-secondary mb-1" style="font-size:0.7rem">{{sp.prize_type}}</span>
+                  {{/if}}
+                  <div class="small">
+                    <i class="bi bi-person-fill"></i> <strong>{{sp.first_name}} {{sp.last_name}}</strong>
+                  </div>
+                  {{#if sp.sponsor_name}}
+                    <div class="small text-muted">
+                      <i class="bi bi-shop"></i> by <em>{{sp.sponsor_name}}</em>
+                    </div>
+                  {{/if}}
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    {{/if}}
   {{else}}
     <div class="empty-state">
       <i class="bi bi-hand-index d-block"></i>

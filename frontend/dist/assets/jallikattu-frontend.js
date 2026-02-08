@@ -280,7 +280,7 @@
     value: true
   });
   _exports.default = void 0;
-  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8, _descriptor9, _descriptor0;
+  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8, _descriptor9, _descriptor0, _descriptor1, _descriptor10, _descriptor11, _descriptor12;
   0; //eaimeta@70e063a35619d71f0,"@ember/controller",0,"@ember/service",0,"@glimmer/tracking",0,"@ember/object"eaimeta@70e063a35619d71f
   function _initializerDefineProperty(e, i, r, l) { r && Object.defineProperty(e, i, { enumerable: r.enumerable, configurable: r.configurable, writable: r.writable, value: r.initializer ? r.initializer.call(l) : void 0 }); }
   function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -298,10 +298,14 @@
       _initializerDefineProperty(this, "statusMessage", _descriptor5, this);
       _initializerDefineProperty(this, "statusType", _descriptor6, this);
       _initializerDefineProperty(this, "activeTab", _descriptor7, this);
-      // players | bulls | interactions
+      // players | bulls | interactions | spot-prizes
       _initializerDefineProperty(this, "isSaving", _descriptor8, this);
       _initializerDefineProperty(this, "timerRunning", _descriptor9, this);
       _initializerDefineProperty(this, "timerDisplay", _descriptor0, this);
+      _initializerDefineProperty(this, "spotAwards", _descriptor1, this);
+      _initializerDefineProperty(this, "newSpotPrizeId", _descriptor10, this);
+      _initializerDefineProperty(this, "newSpotPlayerId", _descriptor11, this);
+      _initializerDefineProperty(this, "newSpotBullId", _descriptor12, this);
       _defineProperty(this, "_timerStart", null);
       _defineProperty(this, "_timerInterval", null);
     }
@@ -323,6 +327,16 @@
     get scheduledMatchCount() {
       return (this.model?.matches || []).filter(m => m.status === 'Scheduled').length;
     }
+    get completedMatchCount() {
+      return (this.model?.matches || []).filter(m => m.status === 'Completed').length;
+    }
+    get matchSpotPrizes() {
+      if (!this.selectedMatchId) return [];
+      return (this.model?.spotPrizes || []).filter(p => String(p.match_id) === String(this.selectedMatchId));
+    }
+    get spotPrizeTypes() {
+      return this.model?.spotPrizeTypes || [];
+    }
     showMessage(text, type = 'success') {
       this.statusMessage = text;
       this.statusType = type;
@@ -335,15 +349,18 @@
       this.selectedMatchId = event.target.value;
       if (!this.selectedMatchId) {
         this.scoringData = null;
+        this.spotAwards = null;
         return;
       }
       this.activeTab = 'players';
       await this.fetchScores();
+      this.fetchSpotAwards();
     }
     async selectMatchDirect(matchId) {
       this.selectedMatchId = String(matchId);
       this.activeTab = 'players';
       await this.fetchScores();
+      this.fetchSpotAwards();
     }
     async fetchScores() {
       if (!this.selectedMatchId) return;
@@ -483,6 +500,57 @@
         this.showMessage('Failed to record interaction', 'danger');
       }
     }
+
+    /* ═══════ SPOT PRIZE AWARDS ═══════ */
+
+    async fetchSpotAwards() {
+      if (!this.selectedMatchId) {
+        this.spotAwards = null;
+        return;
+      }
+      try {
+        const base = this.auth.apiBase;
+        const resp = await fetch(`${base}/public/matches/${this.selectedMatchId}/spot-prizes`);
+        this.spotAwards = await resp.json();
+      } catch {
+        this.spotAwards = [];
+      }
+    }
+    updateSpotField(field, event) {
+      this[field] = event.target.value;
+    }
+    async awardSpotPrize(event) {
+      event.preventDefault();
+      if (!this.newSpotPrizeId || !this.newSpotPlayerId) {
+        this.showMessage('Select a player and prize', 'danger');
+        return;
+      }
+      try {
+        const body = {
+          player_id: this.newSpotPlayerId,
+          spot_prize_id: this.newSpotPrizeId
+        };
+        if (this.newSpotBullId) body.bull_id = this.newSpotBullId;
+        await this.auth.apiPost('/tables/spot_prize_award', body);
+        this.showMessage('Spot prize awarded!');
+        this.newSpotPrizeId = '';
+        this.newSpotPlayerId = '';
+        this.newSpotBullId = '';
+        await this.fetchSpotAwards();
+      } catch (e) {
+        this.showMessage(e.message || 'Failed to award spot prize', 'danger');
+      }
+    }
+    async deleteSpotAward(awardId) {
+      if (!confirm('Remove this spot prize award?')) return;
+      try {
+        await this.auth.apiDelete(`/tables/spot_prize_award?spot_prize_award_id=${awardId}`);
+        this.showMessage('Award removed');
+        await this.fetchSpotAwards();
+      } catch (e) {
+        this.showMessage(e.message || 'Failed to remove award', 'danger');
+      }
+    }
   }, _descriptor = _applyDecoratedDescriptor(_class.prototype, "auth", [_service.service], {
     configurable: true,
     enumerable: true,
@@ -551,7 +619,35 @@
     initializer: function () {
       return '0.0';
     }
-  }), _applyDecoratedDescriptor(_class.prototype, "switchTab", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "switchTab"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "loadMatch", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "loadMatch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "selectMatchDirect", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "selectMatchDirect"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateMatchStatus", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateMatchStatus"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "saveAllScores", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "saveAllScores"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "stopTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "stopTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "resetTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "resetTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addInteraction", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addInteraction"), _class.prototype), _class);
+  }), _descriptor1 = _applyDecoratedDescriptor(_class.prototype, "spotAwards", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor10 = _applyDecoratedDescriptor(_class.prototype, "newSpotPrizeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor11 = _applyDecoratedDescriptor(_class.prototype, "newSpotPlayerId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor12 = _applyDecoratedDescriptor(_class.prototype, "newSpotBullId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _applyDecoratedDescriptor(_class.prototype, "switchTab", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "switchTab"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "loadMatch", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "loadMatch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "selectMatchDirect", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "selectMatchDirect"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateMatchStatus", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateMatchStatus"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "saveAllScores", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "saveAllScores"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "stopTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "stopTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "resetTimer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "resetTimer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addInteraction", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addInteraction"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateSpotField", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateSpotField"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "awardSpotPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "awardSpotPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteSpotAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "deleteSpotAward"), _class.prototype), _class);
 });
 ;define("jallikattu-frontend/controllers/my-bulls", ["exports", "@ember/controller", "@glimmer/tracking", "@ember/object", "@ember/service"], function (_exports, _controller, _tracking, _object, _service) {
   "use strict";
@@ -560,7 +656,7 @@
     value: true
   });
   _exports.default = void 0;
-  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4;
+  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8, _descriptor9, _descriptor0, _descriptor1;
   0; //eaimeta@70e063a35619d71f0,"@ember/controller",0,"@glimmer/tracking",0,"@ember/object",0,"@ember/service"eaimeta@70e063a35619d71f
   function _initializerDefineProperty(e, i, r, l) { r && Object.defineProperty(e, i, { enumerable: r.enumerable, configurable: r.configurable, writable: r.writable, value: r.initializer ? r.initializer.call(l) : void 0 }); }
   function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -572,12 +668,55 @@
     constructor(...args) {
       super(...args);
       _initializerDefineProperty(this, "auth", _descriptor, this);
-      _initializerDefineProperty(this, "message", _descriptor2, this);
-      _initializerDefineProperty(this, "messageType", _descriptor3, this);
-      _initializerDefineProperty(this, "registeringKey", _descriptor4, this);
+      _initializerDefineProperty(this, "router", _descriptor2, this);
+      _initializerDefineProperty(this, "message", _descriptor3, this);
+      _initializerDefineProperty(this, "messageType", _descriptor4, this);
+      _initializerDefineProperty(this, "registeringKey", _descriptor5, this);
+      // "bullId-matchId" while registering
+      // Add-bull form state
+      _initializerDefineProperty(this, "showAddForm", _descriptor6, this);
+      _initializerDefineProperty(this, "newBullName", _descriptor7, this);
+      _initializerDefineProperty(this, "newBullAge", _descriptor8, this);
+      _initializerDefineProperty(this, "newBreedId", _descriptor9, this);
+      _initializerDefineProperty(this, "newFitnessCert", _descriptor0, this);
+      _initializerDefineProperty(this, "isAddingBull", _descriptor1, this);
     }
-    // "bullId-matchId" while registering
-
+    toggleAddForm() {
+      this.showAddForm = !this.showAddForm;
+      this.newBullName = '';
+      this.newBullAge = '';
+      this.newBreedId = '';
+      this.newFitnessCert = '';
+    }
+    updateField(field, event) {
+      this[field] = event.target.value;
+    }
+    async addBull(event) {
+      event.preventDefault();
+      this.message = null;
+      this.isAddingBull = true;
+      try {
+        const result = await this.auth.apiPost('/owner/bulls', {
+          bull_name: this.newBullName.trim(),
+          age: this.newBullAge,
+          breed_id: this.newBreedId,
+          fitness_certificate: this.newFitnessCert.trim()
+        });
+        this.message = result.message || 'Bull added successfully!';
+        this.messageType = 'success';
+        this.showAddForm = false;
+        this.newBullName = '';
+        this.newBullAge = '';
+        this.newBreedId = '';
+        this.newFitnessCert = '';
+        this.router.refresh();
+      } catch (e) {
+        this.message = e.message || 'Failed to add bull';
+        this.messageType = 'danger';
+      } finally {
+        this.isAddingBull = false;
+      }
+    }
     dismissMessage() {
       this.message = null;
     }
@@ -604,28 +743,75 @@
     enumerable: true,
     writable: true,
     initializer: null
-  }), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, "message", [_tracking.tracked], {
+  }), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, "router", [_service.service], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: null
+  }), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, "message", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
     initializer: function () {
       return null;
     }
-  }), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, "messageType", [_tracking.tracked], {
+  }), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, "messageType", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
     initializer: function () {
       return null;
     }
-  }), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, "registeringKey", [_tracking.tracked], {
+  }), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, "registeringKey", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
     initializer: function () {
       return null;
     }
-  }), _applyDecoratedDescriptor(_class.prototype, "dismissMessage", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "dismissMessage"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "registerBullForMatch", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "registerBullForMatch"), _class.prototype), _class);
+  }), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, "showAddForm", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, "newBullName", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor8 = _applyDecoratedDescriptor(_class.prototype, "newBullAge", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor9 = _applyDecoratedDescriptor(_class.prototype, "newBreedId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor0 = _applyDecoratedDescriptor(_class.prototype, "newFitnessCert", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor1 = _applyDecoratedDescriptor(_class.prototype, "isAddingBull", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _applyDecoratedDescriptor(_class.prototype, "toggleAddForm", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "toggleAddForm"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateField", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateField"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addBull", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addBull"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "dismissMessage", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "dismissMessage"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "registerBullForMatch", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "registerBullForMatch"), _class.prototype), _class);
 });
 ;define("jallikattu-frontend/controllers/my-matches", ["exports", "@ember/controller", "@glimmer/tracking", "@ember/object", "@ember/service"], function (_exports, _controller, _tracking, _object, _service) {
   "use strict";
@@ -1118,7 +1304,7 @@
     value: true
   });
   _exports.default = void 0;
-  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5;
+  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
   0; //eaimeta@70e063a35619d71f0,"@ember/controller",0,"@glimmer/tracking",0,"@ember/object",0,"@ember/service"eaimeta@70e063a35619d71f
   function _initializerDefineProperty(e, i, r, l) { r && Object.defineProperty(e, i, { enumerable: r.enumerable, configurable: r.configurable, writable: r.writable, value: r.initializer ? r.initializer.call(l) : void 0 }); }
   function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
@@ -1132,8 +1318,9 @@
       _initializerDefineProperty(this, "auth", _descriptor, this);
       _initializerDefineProperty(this, "selectedMatchId", _descriptor2, this);
       _initializerDefineProperty(this, "scores", _descriptor3, this);
-      _initializerDefineProperty(this, "isLoading", _descriptor4, this);
-      _initializerDefineProperty(this, "autoRefresh", _descriptor5, this);
+      _initializerDefineProperty(this, "spotPrizes", _descriptor4, this);
+      _initializerDefineProperty(this, "isLoading", _descriptor5, this);
+      _initializerDefineProperty(this, "autoRefresh", _descriptor6, this);
       _defineProperty(this, "_timer", null);
     }
     get liveMatches() {
@@ -1158,10 +1345,12 @@
       this.isLoading = true;
       try {
         const base = this.auth.apiBase;
-        const resp = await fetch(`${base}/public/matches/${this.selectedMatchId}/scores`);
-        this.scores = await resp.json();
+        const [scoresResp, spotResp] = await Promise.all([fetch(`${base}/public/matches/${this.selectedMatchId}/scores`), fetch(`${base}/public/matches/${this.selectedMatchId}/spot-prizes`)]);
+        this.scores = await scoresResp.json();
+        this.spotPrizes = await spotResp.json();
       } catch {
         this.scores = null;
+        this.spotPrizes = null;
       }
       this.isLoading = false;
     }
@@ -1208,14 +1397,21 @@
     initializer: function () {
       return null;
     }
-  }), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, "isLoading", [_tracking.tracked], {
+  }), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, "spotPrizes", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, "isLoading", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
     initializer: function () {
       return false;
     }
-  }), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, "autoRefresh", [_tracking.tracked], {
+  }), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, "autoRefresh", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
@@ -1259,7 +1455,7 @@
       _initializerDefineProperty(this, "oUsername", _descriptor11, this);
       _initializerDefineProperty(this, "oPassword", _descriptor12, this);
       _initializerDefineProperty(this, "oName", _descriptor13, this);
-      _initializerDefineProperty(this, "oPhone", _descriptor14, this);
+      _initializerDefineProperty(this, "oAadhaar", _descriptor14, this);
     }
     setTab(tab) {
       this.activeTab = tab;
@@ -1317,14 +1513,14 @@
           body: JSON.stringify({
             username: this.oUsername,
             password: this.oPassword,
-            owner_name: this.oName,
-            phone: this.oPhone
+            name: this.oName,
+            aadhaar: this.oAadhaar
           })
         });
         const data = await resp.json();
         if (resp.ok) {
           this.success = 'Registration successful! You can now login with your credentials.';
-          this.oUsername = this.oPassword = this.oName = this.oPhone = '';
+          this.oUsername = this.oPassword = this.oName = this.oAadhaar = '';
         } else {
           this.error = data.error || 'Registration failed';
         }
@@ -1434,7 +1630,7 @@
     initializer: function () {
       return '';
     }
-  }), _descriptor14 = _applyDecoratedDescriptor(_class.prototype, "oPhone", [_tracking.tracked], {
+  }), _descriptor14 = _applyDecoratedDescriptor(_class.prototype, "oAadhaar", [_tracking.tracked], {
     configurable: true,
     enumerable: true,
     writable: true,
@@ -1442,6 +1638,604 @@
       return '';
     }
   }), _applyDecoratedDescriptor(_class.prototype, "setTab", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "setTab"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateField", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateField"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "registerPlayer", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "registerPlayer"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "registerOwner", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "registerOwner"), _class.prototype), _class);
+});
+;define("jallikattu-frontend/controllers/spot-prizes", ["exports", "@ember/controller", "@glimmer/tracking", "@ember/object", "@ember/service"], function (_exports, _controller, _tracking, _object, _service) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  var _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8, _descriptor9, _descriptor0, _descriptor1, _descriptor10, _descriptor11, _descriptor12, _descriptor13, _descriptor14, _descriptor15, _descriptor16, _descriptor17, _descriptor18, _descriptor19, _descriptor20, _descriptor21, _descriptor22, _descriptor23, _descriptor24, _descriptor25, _descriptor26, _descriptor27, _descriptor28;
+  0; //eaimeta@70e063a35619d71f0,"@ember/controller",0,"@glimmer/tracking",0,"@ember/object",0,"@ember/service"eaimeta@70e063a35619d71f
+  function _initializerDefineProperty(e, i, r, l) { r && Object.defineProperty(e, i, { enumerable: r.enumerable, configurable: r.configurable, writable: r.writable, value: r.initializer ? r.initializer.call(l) : void 0 }); }
+  function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+  function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+  function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+  function _applyDecoratedDescriptor(i, e, r, n, l) { var a = {}; return Object.keys(n).forEach(function (i) { a[i] = n[i]; }), a.enumerable = !!a.enumerable, a.configurable = !!a.configurable, ("value" in a || a.initializer) && (a.writable = !0), a = r.slice().reverse().reduce(function (r, n) { return n(i, e, r) || r; }, a), l && void 0 !== a.initializer && (a.value = a.initializer ? a.initializer.call(l) : void 0, a.initializer = void 0), void 0 === a.initializer ? (Object.defineProperty(i, e, a), null) : a; }
+  function _initializerWarningHelper(r, e) { throw Error("Decorating class property failed. Please ensure that transform-class-properties is enabled and runs after the decorators transform."); }
+  let SpotPrizesController = _exports.default = (_class = class SpotPrizesController extends _controller.default {
+    constructor(...args) {
+      super(...args);
+      _initializerDefineProperty(this, "auth", _descriptor, this);
+      _initializerDefineProperty(this, "router", _descriptor2, this);
+      /* ── Tab state ── */
+      _initializerDefineProperty(this, "activeTab", _descriptor3, this);
+      // 'types' | 'prizes' | 'awards'
+      /* ── Shared UI state ── */
+      _initializerDefineProperty(this, "error", _descriptor4, this);
+      _initializerDefineProperty(this, "success", _descriptor5, this);
+      _initializerDefineProperty(this, "isLoading", _descriptor6, this);
+      /* ── Spot Prize Type form ── */
+      _initializerDefineProperty(this, "isAddingType", _descriptor7, this);
+      _initializerDefineProperty(this, "newTypeName", _descriptor8, this);
+      _initializerDefineProperty(this, "editingTypeId", _descriptor9, this);
+      _initializerDefineProperty(this, "editTypeName", _descriptor0, this);
+      /* ── Spot Prize form ── */
+      _initializerDefineProperty(this, "isAddingPrize", _descriptor1, this);
+      _initializerDefineProperty(this, "newPrizeMatchId", _descriptor10, this);
+      _initializerDefineProperty(this, "newPrizeTypeId", _descriptor11, this);
+      _initializerDefineProperty(this, "newPrizeSponsor", _descriptor12, this);
+      _initializerDefineProperty(this, "newPrizeTitle", _descriptor13, this);
+      _initializerDefineProperty(this, "newPrizeQty", _descriptor14, this);
+      _initializerDefineProperty(this, "editingPrizeId", _descriptor15, this);
+      _initializerDefineProperty(this, "editPrizeMatchId", _descriptor16, this);
+      _initializerDefineProperty(this, "editPrizeTypeId", _descriptor17, this);
+      _initializerDefineProperty(this, "editPrizeSponsor", _descriptor18, this);
+      _initializerDefineProperty(this, "editPrizeTitle", _descriptor19, this);
+      _initializerDefineProperty(this, "editPrizeQty", _descriptor20, this);
+      /* ── Spot Prize Award form ── */
+      _initializerDefineProperty(this, "isAddingAward", _descriptor21, this);
+      _initializerDefineProperty(this, "newAwardPlayerId", _descriptor22, this);
+      _initializerDefineProperty(this, "newAwardPrizeId", _descriptor23, this);
+      _initializerDefineProperty(this, "newAwardBullId", _descriptor24, this);
+      _initializerDefineProperty(this, "editingAwardId", _descriptor25, this);
+      _initializerDefineProperty(this, "editAwardPlayerId", _descriptor26, this);
+      _initializerDefineProperty(this, "editAwardPrizeId", _descriptor27, this);
+      _initializerDefineProperty(this, "editAwardBullId", _descriptor28, this);
+    }
+    /* ── Helpers ── */
+    get types() {
+      return this.model?.types || [];
+    }
+    get prizes() {
+      return this.model?.prizes || [];
+    }
+    get awards() {
+      return this.model?.awards || [];
+    }
+    get matches() {
+      return this.model?.matches || [];
+    }
+    get players() {
+      return this.model?.players || [];
+    }
+    get bulls() {
+      return this.model?.bulls || [];
+    }
+    typeName(typeId) {
+      const t = this.types.find(x => String(x.spot_prize_type_id) === String(typeId));
+      return t ? t.spot_prize_type_name : '—';
+    }
+    matchLabel(matchId) {
+      const m = this.matches.find(x => String(x.match_id) === String(matchId));
+      return m ? `${m.match_name || 'Match'} #${m.match_id}` : `#${matchId}`;
+    }
+    prizeLabel(prizeId) {
+      const p = this.prizes.find(x => String(x.spot_prize_id) === String(prizeId));
+      return p ? `${p.prize_title || 'Prize'} #${p.spot_prize_id}` : `#${prizeId}`;
+    }
+    playerName(playerId) {
+      const p = this.players.find(x => String(x.player_id) === String(playerId));
+      return p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Player #${p.player_id}` : `#${playerId}`;
+    }
+    bullName(bullId) {
+      const b = this.bulls.find(x => String(x.bull_id) === String(bullId));
+      return b ? `${b.bull_name || 'Bull'} #${b.bull_id}` : `#${bullId}`;
+    }
+    clearMessages() {
+      this.error = null;
+      this.success = null;
+    }
+
+    /* ──────────────────── Tab ──────────────────── */
+    switchTab(tab) {
+      this.activeTab = tab;
+      this.clearMessages();
+      this.cancelAllEdits();
+    }
+    cancelAllEdits() {
+      this.isAddingType = false;
+      this.editingTypeId = null;
+      this.isAddingPrize = false;
+      this.editingPrizeId = null;
+      this.isAddingAward = false;
+      this.editingAwardId = null;
+    }
+    updateField(field, event) {
+      this[field] = event.target.value;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SPOT PRIZE TYPES
+       ═══════════════════════════════════════════════ */
+    startAddType() {
+      this.clearMessages();
+      this.isAddingType = true;
+      this.newTypeName = '';
+      this.editingTypeId = null;
+    }
+    cancelAddType() {
+      this.isAddingType = false;
+    }
+    startEditType(t) {
+      this.clearMessages();
+      this.editingTypeId = t.spot_prize_type_id;
+      this.editTypeName = t.spot_prize_type_name || '';
+      this.isAddingType = false;
+    }
+    cancelEditType() {
+      this.editingTypeId = null;
+    }
+    async addType(event) {
+      event.preventDefault();
+      if (!this.newTypeName.trim()) {
+        this.error = 'Type name is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiPost('/tables/spot_prize_type', {
+          spot_prize_type_name: this.newTypeName.trim()
+        });
+        this.success = 'Spot-prize type added';
+        this.isAddingType = false;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to add type';
+      }
+      this.isLoading = false;
+    }
+    async saveType(typeId, event) {
+      event.preventDefault();
+      if (!this.editTypeName.trim()) {
+        this.error = 'Type name is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiPut('/tables/spot_prize_type', {
+          pkValues: {
+            spot_prize_type_id: String(typeId)
+          },
+          values: {
+            spot_prize_type_name: this.editTypeName.trim()
+          }
+        });
+        this.success = 'Type updated';
+        this.editingTypeId = null;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to update type';
+      }
+      this.isLoading = false;
+    }
+    async deleteType(typeId) {
+      if (!confirm('Delete this spot-prize type? Prizes referencing it may be affected.')) return;
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiDelete(`/tables/spot_prize_type?spot_prize_type_id=${typeId}`);
+        this.success = 'Type deleted';
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to delete type';
+      }
+      this.isLoading = false;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SPOT PRIZES
+       ═══════════════════════════════════════════════ */
+    startAddPrize() {
+      this.clearMessages();
+      this.isAddingPrize = true;
+      this.newPrizeMatchId = '';
+      this.newPrizeTypeId = '';
+      this.newPrizeSponsor = '';
+      this.newPrizeTitle = '';
+      this.newPrizeQty = 1;
+      this.editingPrizeId = null;
+    }
+    cancelAddPrize() {
+      this.isAddingPrize = false;
+    }
+    startEditPrize(p) {
+      this.clearMessages();
+      this.editingPrizeId = p.spot_prize_id;
+      this.editPrizeMatchId = p.match_id ?? '';
+      this.editPrizeTypeId = p.spot_type_id ?? '';
+      this.editPrizeSponsor = p.sponsor_name || '';
+      this.editPrizeTitle = p.prize_title || '';
+      this.editPrizeQty = p.quantity ?? 1;
+      this.isAddingPrize = false;
+    }
+    cancelEditPrize() {
+      this.editingPrizeId = null;
+    }
+    async addPrize(event) {
+      event.preventDefault();
+      if (!this.newPrizeTitle.trim()) {
+        this.error = 'Prize title is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        const body = {
+          prize_title: this.newPrizeTitle.trim(),
+          sponsor_name: this.newPrizeSponsor.trim() || null,
+          quantity: this.newPrizeQty || 1
+        };
+        if (this.newPrizeMatchId) body.match_id = this.newPrizeMatchId;
+        if (this.newPrizeTypeId) body.spot_type_id = this.newPrizeTypeId;
+        await this.auth.apiPost('/tables/spot_prize', body);
+        this.success = 'Spot prize added';
+        this.isAddingPrize = false;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to add prize';
+      }
+      this.isLoading = false;
+    }
+    async savePrize(prizeId, event) {
+      event.preventDefault();
+      if (!this.editPrizeTitle.trim()) {
+        this.error = 'Prize title is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiPut('/tables/spot_prize', {
+          pkValues: {
+            spot_prize_id: String(prizeId)
+          },
+          values: {
+            match_id: this.editPrizeMatchId || null,
+            spot_type_id: this.editPrizeTypeId || null,
+            sponsor_name: this.editPrizeSponsor.trim() || null,
+            prize_title: this.editPrizeTitle.trim(),
+            quantity: this.editPrizeQty || 1
+          }
+        });
+        this.success = 'Prize updated';
+        this.editingPrizeId = null;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to update prize';
+      }
+      this.isLoading = false;
+    }
+    async deletePrize(prizeId) {
+      if (!confirm('Delete this spot prize? Awards referencing it will be affected.')) return;
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiDelete(`/tables/spot_prize?spot_prize_id=${prizeId}`);
+        this.success = 'Prize deleted';
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to delete prize';
+      }
+      this.isLoading = false;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SPOT PRIZE AWARDS
+       ═══════════════════════════════════════════════ */
+    startAddAward() {
+      this.clearMessages();
+      this.isAddingAward = true;
+      this.newAwardPlayerId = '';
+      this.newAwardPrizeId = '';
+      this.newAwardBullId = '';
+      this.editingAwardId = null;
+    }
+    cancelAddAward() {
+      this.isAddingAward = false;
+    }
+    startEditAward(a) {
+      this.clearMessages();
+      this.editingAwardId = a.spot_prize_award_id;
+      this.editAwardPlayerId = a.player_id ?? '';
+      this.editAwardPrizeId = a.spot_prize_id ?? '';
+      this.editAwardBullId = a.bull_id ?? '';
+      this.isAddingAward = false;
+    }
+    cancelEditAward() {
+      this.editingAwardId = null;
+    }
+    async addAward(event) {
+      event.preventDefault();
+      if (!this.newAwardPlayerId) {
+        this.error = 'Player is required';
+        return;
+      }
+      if (!this.newAwardPrizeId) {
+        this.error = 'Spot prize is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        const body = {
+          player_id: this.newAwardPlayerId,
+          spot_prize_id: this.newAwardPrizeId
+        };
+        if (this.newAwardBullId) body.bull_id = this.newAwardBullId;
+        await this.auth.apiPost('/tables/spot_prize_award', body);
+        this.success = 'Award given!';
+        this.isAddingAward = false;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to add award';
+      }
+      this.isLoading = false;
+    }
+    async saveAward(awardId, event) {
+      event.preventDefault();
+      if (!this.editAwardPlayerId) {
+        this.error = 'Player is required';
+        return;
+      }
+      if (!this.editAwardPrizeId) {
+        this.error = 'Spot prize is required';
+        return;
+      }
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiPut('/tables/spot_prize_award', {
+          pkValues: {
+            spot_prize_award_id: String(awardId)
+          },
+          values: {
+            player_id: this.editAwardPlayerId,
+            spot_prize_id: this.editAwardPrizeId,
+            bull_id: this.editAwardBullId || null
+          }
+        });
+        this.success = 'Award updated';
+        this.editingAwardId = null;
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to update award';
+      }
+      this.isLoading = false;
+    }
+    async deleteAward(awardId) {
+      if (!confirm('Delete this award?')) return;
+      this.isLoading = true;
+      this.clearMessages();
+      try {
+        await this.auth.apiDelete(`/tables/spot_prize_award?spot_prize_award_id=${awardId}`);
+        this.success = 'Award deleted';
+        this.router.refresh();
+      } catch (e) {
+        this.error = e.message || 'Failed to delete award';
+      }
+      this.isLoading = false;
+    }
+  }, _descriptor = _applyDecoratedDescriptor(_class.prototype, "auth", [_service.service], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: null
+  }), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, "router", [_service.service], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: null
+  }), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, "activeTab", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return 'prizes';
+    }
+  }), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, "error", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, "success", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, "isLoading", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, "isAddingType", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _descriptor8 = _applyDecoratedDescriptor(_class.prototype, "newTypeName", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor9 = _applyDecoratedDescriptor(_class.prototype, "editingTypeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor0 = _applyDecoratedDescriptor(_class.prototype, "editTypeName", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor1 = _applyDecoratedDescriptor(_class.prototype, "isAddingPrize", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _descriptor10 = _applyDecoratedDescriptor(_class.prototype, "newPrizeMatchId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor11 = _applyDecoratedDescriptor(_class.prototype, "newPrizeTypeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor12 = _applyDecoratedDescriptor(_class.prototype, "newPrizeSponsor", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor13 = _applyDecoratedDescriptor(_class.prototype, "newPrizeTitle", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor14 = _applyDecoratedDescriptor(_class.prototype, "newPrizeQty", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return 1;
+    }
+  }), _descriptor15 = _applyDecoratedDescriptor(_class.prototype, "editingPrizeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor16 = _applyDecoratedDescriptor(_class.prototype, "editPrizeMatchId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor17 = _applyDecoratedDescriptor(_class.prototype, "editPrizeTypeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor18 = _applyDecoratedDescriptor(_class.prototype, "editPrizeSponsor", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor19 = _applyDecoratedDescriptor(_class.prototype, "editPrizeTitle", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor20 = _applyDecoratedDescriptor(_class.prototype, "editPrizeQty", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return 1;
+    }
+  }), _descriptor21 = _applyDecoratedDescriptor(_class.prototype, "isAddingAward", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return false;
+    }
+  }), _descriptor22 = _applyDecoratedDescriptor(_class.prototype, "newAwardPlayerId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor23 = _applyDecoratedDescriptor(_class.prototype, "newAwardPrizeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor24 = _applyDecoratedDescriptor(_class.prototype, "newAwardBullId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor25 = _applyDecoratedDescriptor(_class.prototype, "editingAwardId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return null;
+    }
+  }), _descriptor26 = _applyDecoratedDescriptor(_class.prototype, "editAwardPlayerId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor27 = _applyDecoratedDescriptor(_class.prototype, "editAwardPrizeId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _descriptor28 = _applyDecoratedDescriptor(_class.prototype, "editAwardBullId", [_tracking.tracked], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: function () {
+      return '';
+    }
+  }), _applyDecoratedDescriptor(_class.prototype, "switchTab", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "switchTab"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "updateField", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "updateField"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startAddType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startAddType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelAddType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelAddType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startEditType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startEditType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelEditType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelEditType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "saveType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "saveType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteType", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "deleteType"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startAddPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startAddPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelAddPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelAddPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startEditPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startEditPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelEditPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelEditPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addPrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addPrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "savePrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "savePrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deletePrize", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "deletePrize"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startAddAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startAddAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelAddAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelAddAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "startEditAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "startEditAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "cancelEditAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "cancelEditAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "addAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "addAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "saveAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "saveAward"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteAward", [_object.action], Object.getOwnPropertyDescriptor(_class.prototype, "deleteAward"), _class.prototype), _class);
 });
 ;define("jallikattu-frontend/controllers/tables", ["exports", "@ember/controller", "@ember/service", "@glimmer/tracking", "@ember/object"], function (_exports, _controller, _service, _tracking, _object) {
   "use strict";
@@ -1917,12 +2711,10 @@
   });
   _exports.default = void 0;
   0; //eaimeta@70e063a35619d71f0,"@ember/component/helper"eaimeta@70e063a35619d71f
-  class EqHelper extends _helper.default {
-    compute([a, b]) {
-      return a === b;
-    }
-  }
-  _exports.default = EqHelper;
+  var _default = _exports.default = (0, _helper.helper)(function eq([a, b]) {
+    // eslint-disable-next-line eqeqeq
+    return a == b;
+  });
 });
 ;define("jallikattu-frontend/helpers/gt", ["exports", "@ember/component/helper"], function (_exports, _helper) {
   "use strict";
@@ -1948,6 +2740,28 @@
     if (!Array.isArray(array)) return false;
     return array.includes(value);
   });
+});
+;define("jallikattu-frontend/helpers/lookup-label", ["exports", "@ember/component/helper"], function (_exports, _helper) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  0; //eaimeta@70e063a35619d71f0,"@ember/component/helper"eaimeta@70e063a35619d71f
+  /**
+   * Look up a display label from an array of objects by matching a key.
+   * Usage: {{lookup-label collection key value displayKey fallback}}
+   * e.g.   {{lookup-label this.types "spot_prize_type_id" p.spot_type_id "spot_prize_type_name" "—"}}
+   */
+  class LookupLabelHelper extends _helper.default {
+    compute([collection, key, value, displayKey, fallback]) {
+      if (!collection || value == null) return fallback || '—';
+      const item = collection.find(x => String(x[key]) === String(value));
+      return item ? item[displayKey] || fallback || '—' : fallback || '—';
+    }
+  }
+  _exports.default = LookupLabelHelper;
 });
 ;define("jallikattu-frontend/helpers/mult", ["exports", "@ember/component/helper"], function (_exports, _helper) {
   "use strict";
@@ -1996,12 +2810,12 @@
   });
   _exports.default = void 0;
   0; //eaimeta@70e063a35619d71f0,"@ember/component/helper"eaimeta@70e063a35619d71f
-  class OrHelper extends _helper.default {
-    compute(params) {
-      return params.some(Boolean);
+  var _default = _exports.default = (0, _helper.helper)(function or(params) {
+    for (const p of params) {
+      if (p) return p;
     }
-  }
-  _exports.default = OrHelper;
+    return params[params.length - 1];
+  });
 });
 ;define("jallikattu-frontend/helpers/page-title", ["exports", "ember-page-title/helpers/page-title"], function (_exports, _pageTitle) {
   "use strict";
@@ -2120,6 +2934,7 @@
     // Scorer / Admin
     this.route('match-control');
     this.route('winners');
+    this.route('spot-prizes');
 
     // Registrar / Admin
     this.route('registration');
@@ -2497,16 +3312,30 @@
       }
     }
     async model() {
+      // Load matches first — must always succeed for the page to work
+      let matches = [];
       try {
-        const matches = await this.auth.apiGet('/matches');
-        return {
-          matches
-        };
+        matches = await this.auth.apiGet('/matches');
       } catch {
-        return {
-          matches: []
-        };
+        // matches stays empty
       }
+
+      // Load spot-prize reference data separately so a failure here
+      // does not blank the match dropdown
+      let spotPrizeTypes = [];
+      let spotPrizes = [];
+      try {
+        const [typesData, prizesData] = await Promise.all([this.auth.apiGet('/tables/spot_prize_type'), this.auth.apiGet('/tables/spot_prize')]);
+        spotPrizeTypes = typesData.rows || [];
+        spotPrizes = prizesData.rows || [];
+      } catch {
+        // spot-prize data stays empty — tab will just show "no prizes"
+      }
+      return {
+        matches,
+        spotPrizeTypes,
+        spotPrizes
+      };
     }
   }, _descriptor = _applyDecoratedDescriptor(_class.prototype, "auth", [_service.service], {
     configurable: true,
@@ -2543,17 +3372,19 @@
     async model(params) {
       const base = this.auth.apiBase;
       try {
-        const [scores, winners] = await Promise.all([fetch(`${base}/public/matches/${params.match_id}/scores`).then(r => r.json()), fetch(`${base}/public/matches/${params.match_id}/winners`).then(r => r.json())]);
+        const [scores, winners, spotPrizes] = await Promise.all([fetch(`${base}/public/matches/${params.match_id}/scores`).then(r => r.json()), fetch(`${base}/public/matches/${params.match_id}/winners`).then(r => r.json()), fetch(`${base}/public/matches/${params.match_id}/spot-prizes`).then(r => r.json())]);
         return {
           match_id: params.match_id,
           scores,
-          winners
+          winners,
+          spotPrizes
         };
       } catch {
         return {
           match_id: params.match_id,
           scores: {},
-          winners: {}
+          winners: {},
+          spotPrizes: []
         };
       }
     }
@@ -2999,6 +3830,70 @@
   0; //eaimeta@70e063a35619d71f0,"@ember/routing/route"eaimeta@70e063a35619d71f
   class SignupRoute extends _route.default {}
   _exports.default = SignupRoute;
+});
+;define("jallikattu-frontend/routes/spot-prizes", ["exports", "@ember/routing/route", "@ember/service"], function (_exports, _route, _service) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  var _class, _descriptor, _descriptor2;
+  0; //eaimeta@70e063a35619d71f0,"@ember/routing/route",0,"@ember/service"eaimeta@70e063a35619d71f
+  function _initializerDefineProperty(e, i, r, l) { r && Object.defineProperty(e, i, { enumerable: r.enumerable, configurable: r.configurable, writable: r.writable, value: r.initializer ? r.initializer.call(l) : void 0 }); }
+  function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+  function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+  function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+  function _applyDecoratedDescriptor(i, e, r, n, l) { var a = {}; return Object.keys(n).forEach(function (i) { a[i] = n[i]; }), a.enumerable = !!a.enumerable, a.configurable = !!a.configurable, ("value" in a || a.initializer) && (a.writable = !0), a = r.slice().reverse().reduce(function (r, n) { return n(i, e, r) || r; }, a), l && void 0 !== a.initializer && (a.value = a.initializer ? a.initializer.call(l) : void 0, a.initializer = void 0), void 0 === a.initializer ? (Object.defineProperty(i, e, a), null) : a; }
+  function _initializerWarningHelper(r, e) { throw Error("Decorating class property failed. Please ensure that transform-class-properties is enabled and runs after the decorators transform."); }
+  let SpotPrizesRoute = _exports.default = (_class = class SpotPrizesRoute extends _route.default {
+    constructor(...args) {
+      super(...args);
+      _initializerDefineProperty(this, "auth", _descriptor, this);
+      _initializerDefineProperty(this, "router", _descriptor2, this);
+    }
+    beforeModel() {
+      if (!this.auth.isAuthenticated) {
+        this.router.transitionTo('login');
+        return;
+      }
+      if (!this.auth.isAdmin) {
+        this.router.transitionTo('dashboard');
+      }
+    }
+    async model() {
+      try {
+        const [typesData, prizesData, awardsData, matchesData, playersData, bullsData] = await Promise.all([this.auth.apiGet('/tables/spot_prize_type'), this.auth.apiGet('/tables/spot_prize'), this.auth.apiGet('/tables/spot_prize_award'), this.auth.apiGet('/tables/match'), this.auth.apiGet('/tables/player'), this.auth.apiGet('/tables/bull_table')]);
+        return {
+          types: typesData.rows || [],
+          prizes: prizesData.rows || [],
+          awards: awardsData.rows || [],
+          matches: matchesData.rows || [],
+          players: playersData.rows || [],
+          bulls: bullsData.rows || []
+        };
+      } catch {
+        return {
+          types: [],
+          prizes: [],
+          awards: [],
+          matches: [],
+          players: [],
+          bulls: []
+        };
+      }
+    }
+  }, _descriptor = _applyDecoratedDescriptor(_class.prototype, "auth", [_service.service], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: null
+  }), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, "router", [_service.service], {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    initializer: null
+  }), _class);
 });
 ;define("jallikattu-frontend/routes/tables", ["exports", "@ember/routing/route", "@ember/service"], function (_exports, _route, _service) {
   "use strict";
@@ -4549,6 +5444,7 @@
                 {{/each}}
               </optgroup>
             {{/if}}
+            {{#if (gt this.completedMatchCount 0)}}
             <optgroup label="Completed">
               {{#each @model.matches as |m|}}
                 {{#if (eq m.status "Completed")}}
@@ -4558,6 +5454,7 @@
                 {{/if}}
               {{/each}}
             </optgroup>
+            {{/if}}
           </select>
         </div>
         {{#if this.selectedMatch}}
@@ -4593,6 +5490,12 @@
       <button class="tab-btn {{if (eq this.activeTab 'interactions') 'active'}}" type="button" {{on "click" (fn this.switchTab "interactions")}}>
         <i class="bi bi-arrow-left-right"></i> Interactions
         <span class="badge bg-info ms-1">{{this.scoringData.interactions.length}}</span>
+      </button>
+      <button class="tab-btn {{if (eq this.activeTab 'spot-prizes') 'active'}}" type="button" {{on "click" (fn this.switchTab "spot-prizes")}}>
+        <i class="bi bi-gift-fill"></i> Spot Prizes
+        {{#if this.spotAwards.length}}
+          <span class="badge bg-warning text-dark ms-1">{{this.spotAwards.length}}</span>
+        {{/if}}
       </button>
     </div>
   
@@ -4848,6 +5751,103 @@
       </div>
     {{/if}}
   
+    {{!-- ═══════ SPOT PRIZES TAB ═══════ --}}
+    {{#if (eq this.activeTab "spot-prizes")}}
+      {{!-- Award Form (Live only) --}}
+      {{#if this.isLive}}
+        <div class="card mb-3 border-warning">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-gift-fill text-warning"></i> Award Spot Prize</h6>
+            <form {{on "submit" this.awardSpotPrize}}>
+              <div class="row g-2">
+                <div class="col-md-3 col-6">
+                  <label class="form-label small fw-semibold">Spot Prize <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" required {{on "change" (fn this.updateSpotField "newSpotPrizeId")}}>
+                    <option value="">Select prize...</option>
+                    {{#each this.matchSpotPrizes as |sp|}}
+                      <option value={{sp.spot_prize_id}} selected={{eq (to-string sp.spot_prize_id) (to-string this.newSpotPrizeId)}}>
+                        {{sp.prize_title}}{{if sp.sponsor_name (concat " (" sp.sponsor_name ")") ""}}
+                      </option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3 col-6">
+                  <label class="form-label small fw-semibold">Player <span class="text-danger">*</span></label>
+                  <select class="form-select form-select-sm" required {{on "change" (fn this.updateSpotField "newSpotPlayerId")}}>
+                    <option value="">Select player...</option>
+                    {{#each this.scoringData.approvedPlayers as |p|}}
+                      <option value={{p.player_id}} selected={{eq (to-string p.player_id) (to-string this.newSpotPlayerId)}}>{{p.player_name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3 col-6">
+                  <label class="form-label small fw-semibold">Bull (optional)</label>
+                  <select class="form-select form-select-sm" {{on "change" (fn this.updateSpotField "newSpotBullId")}}>
+                    <option value="">None</option>
+                    {{#each this.scoringData.approvedBulls as |b|}}
+                      <option value={{b.bull_id}} selected={{eq (to-string b.bull_id) (to-string this.newSpotBullId)}}>{{b.bull_name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3 col-6 d-flex align-items-end">
+                  <button type="submit" class="btn btn-warning btn-sm w-100">
+                    <i class="bi bi-gift"></i> Award
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      {{/if}}
+  
+      {{!-- Awards Log --}}
+      <div class="card">
+        <div class="card-body table-responsive p-0">
+          <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Player</th>
+                <th>Prize</th>
+                <th>Type</th>
+                <th>Sponsor</th>
+                <th>Bull</th>
+                <th>Awarded</th>
+                {{#if this.isLive}}<th class="text-center" style="width:60px"></th>{{/if}}
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.spotAwards as |a|}}
+                <tr>
+                  <td class="fw-semibold">{{a.first_name}} {{a.last_name}}</td>
+                  <td>{{a.prize_title}}</td>
+                  <td>{{#if a.prize_type}}<span class="badge bg-secondary">{{a.prize_type}}</span>{{else}}—{{/if}}</td>
+                  <td>{{if a.sponsor_name a.sponsor_name "—"}}</td>
+                  <td>{{if a.bull_name a.bull_name "—"}}</td>
+                  <td class="text-muted small">{{if a.awarded_time a.awarded_time "—"}}</td>
+                  {{#if this.isLive}}
+                    <td class="text-center">
+                      <button class="btn btn-sm btn-outline-danger" title="Remove" {{on "click" (fn this.deleteSpotAward a.spot_prize_award_id)}}>
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </td>
+                  {{/if}}
+                </tr>
+              {{else}}
+                <tr>
+                  <td colspan="7">
+                    <div class="empty-state py-3">
+                      <i class="bi bi-gift"></i>
+                      <p>No spot prizes awarded yet</p>
+                    </div>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {{/if}}
+  
   {{else}}
     <div class="empty-state py-5">
       <i class="bi bi-sliders2" style="font-size:3rem;"></i>
@@ -4859,8 +5859,8 @@
   
   */
   {
-    "id": "Kj2DQZ4m",
-    "block": "[[[1,[28,[35,0],[\"Match Control\"],null]],[1,\"\\n\\n\"],[10,0],[14,0,\"section-header d-flex justify-content-between align-items-center flex-wrap gap-2\"],[12],[1,\"\\n  \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-sliders2\"],[12],[13],[1,\" Match Control Panel\"],[13],[1,\"\\n\"],[41,[30,0,[\"matchStatus\"]],[[[1,\"    \"],[10,0],[14,0,\"d-flex align-items-center gap-2\"],[12],[1,\"\\n      \"],[10,1],[15,0,[29,[\"status-badge \",[52,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Live\"],null],\"live\",[52,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Completed\"],null],\"completed\",\"scheduled\"]]]]],[12],[1,\"\\n        \"],[1,[30,0,[\"matchStatus\"]]],[1,\"\\n      \"],[13],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Scheduled\"],null],[[[1,\"        \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"updateMatchStatus\"]],\"Live\"],null]],null],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-play-circle-fill\"],[12],[13],[1,\" Go Live\\n        \"],[13],[1,\"\\n\"]],[]],null],[41,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Live\"],null],[[[1,\"        \"],[11,\"button\"],[24,0,\"btn btn-outline-danger btn-sm\"],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"updateMatchStatus\"]],\"Completed\"],null]],null],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-stop-circle-fill\"],[12],[13],[1,\" End Match\\n        \"],[13],[1,\"\\n\"]],[]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[13],[1,\"\\n\\n\"],[41,[30,0,[\"statusMessage\"]],[[[1,\"  \"],[10,0],[15,0,[29,[\"toast-notification \",[30,0,[\"statusType\"]]]]],[14,\"role\",\"alert\"],[12],[1,\"\\n    \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[28,[37,2],[[30,0,[\"statusType\"]],\"success\"],null],\"bi-check-circle-fill\",\"bi-exclamation-triangle-fill\"]]]],[12],[13],[1,\"\\n    \"],[1,[30,0,[\"statusMessage\"]]],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[10,0],[14,0,\"card mb-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"card-body py-3\"],[12],[1,\"\\n    \"],[10,0],[14,0,\"row align-items-center g-3\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"col-md-5\"],[12],[1,\"\\n        \"],[10,\"label\"],[14,0,\"form-label fw-semibold mb-1\"],[12],[1,\"Select Match\"],[13],[1,\"\\n        \"],[11,\"select\"],[24,0,\"form-select\"],[4,[38,3],[\"change\",[30,0,[\"loadMatch\"]]],null],[12],[1,\"\\n          \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"-- Choose a Match --\"],[13],[1,\"\\n\"],[41,[28,[37,5],[[30,0,[\"liveMatchCount\"]],0],null],[[[1,\"            \"],[10,\"optgroup\"],[14,\"label\",\" Live\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,2,[\"status\"]],\"Live\"],null],[[[1,\"                  \"],[10,\"option\"],[15,2,[30,2,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,2,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                    \"],[1,[30,2,[\"match_name\"]]],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],null]],[2]],null],[1,\"            \"],[13],[1,\"\\n\"]],[]],null],[41,[28,[37,5],[[30,0,[\"scheduledMatchCount\"]],0],null],[[[1,\"            \"],[10,\"optgroup\"],[14,\"label\",\" Scheduled\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,3,[\"status\"]],\"Scheduled\"],null],[[[1,\"                  \"],[10,\"option\"],[15,2,[30,3,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,3,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                    \"],[1,[30,3,[\"match_name\"]]],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],null]],[3]],null],[1,\"            \"],[13],[1,\"\\n\"]],[]],null],[1,\"          \"],[10,\"optgroup\"],[14,\"label\",\"Completed\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,4,[\"status\"]],\"Completed\"],null],[[[1,\"                \"],[10,\"option\"],[15,2,[30,4,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,4,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                  \"],[1,[30,4,[\"match_name\"]]],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],null]],[4]],null],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"],[41,[30,0,[\"selectedMatch\"]],[[[1,\"        \"],[10,0],[14,0,\"col-md-7\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"d-flex flex-wrap gap-3 text-muted small mt-md-4\"],[12],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt-fill text-danger\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"location\"]]],[13],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-calendar3 text-primary\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"match_date\"]]],[13],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-building text-secondary\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"organizer_name\"]]],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]],null],[1,\"    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"  \"],[10,0],[14,0,\"text-center py-5\"],[12],[1,\"\\n    \"],[10,0],[14,0,\"spinner-border text-primary\"],[14,5,\"width:3rem;height:3rem;\"],[14,\"role\",\"status\"],[12],[13],[1,\"\\n    \"],[10,2],[14,0,\"mt-2 text-muted\"],[12],[1,\"Loading match data...\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],[[[41,[30,0,[\"scoringData\"]],[[[1,\"\\n\"],[1,\"  \"],[10,0],[14,0,\"tab-nav mb-3\"],[12],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"players\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"players\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-person-arms-up\"],[12],[13],[1,\" Player Scores\\n      \"],[10,1],[14,0,\"badge bg-primary ms-1\"],[12],[1,[30,0,[\"scoringData\",\"playerScores\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"bulls\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"bulls\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Scores\\n      \"],[10,1],[14,0,\"badge bg-danger ms-1\"],[12],[1,[30,0,[\"scoringData\",\"bullScores\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"interactions\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"interactions\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-arrow-left-right\"],[12],[13],[1,\" Interactions\\n      \"],[10,1],[14,0,\"badge bg-info ms-1\"],[12],[1,[30,0,[\"scoringData\",\"interactions\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"players\"],null],[[[1,\"    \"],[10,0],[14,0,\"score-panel\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"score-panel-header d-flex justify-content-between align-items-center\"],[12],[1,\"\\n        \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-person-arms-up\"],[12],[13],[1,\" Player Score Entry\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"          \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[16,\"disabled\",[30,0,[\"isSaving\"]]],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"saveAllScores\"]]],null],[12],[1,\"\\n\"],[41,[30,0,[\"isSaving\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Saving...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-floppy-fill\"],[12],[13],[1,\" Save All Scores\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n\"]],[]],null],[1,\"      \"],[13],[1,\"\\n\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"playerScores\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"score-row\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"score-row-header\"],[12],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"strong\"],[12],[1,[30,5,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-secondary ms-2\"],[12],[1,[30,5,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted ms-2\"],[12],[1,\"Batch: \"],[1,[30,5,[\"batch_name\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"d-flex align-items-center gap-3\"],[12],[1,\"\\n              \"],[10,1],[14,0,\"fw-bold\"],[14,5,\"font-size:1.1rem; color:var(--accent);\"],[12],[1,\"\\n                Net: \"],[1,[30,5,[\"net_score\"]]],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"score-row-inputs\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Bulls Caught\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input success\"],[15,2,[30,5,[\"bull_caught\"]]],[14,\"min\",\"0\"],[15,1,[29,[\"p-bc-\",[30,5,[\"player_id\"]],\"-\",[30,5,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display success\"],[12],[1,[30,5,[\"bull_caught\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Penalties\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input danger\"],[15,2,[30,5,[\"penalties\"]]],[14,\"min\",\"0\"],[15,1,[29,[\"p-pen-\",[30,5,[\"player_id\"]],\"-\",[30,5,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display danger\"],[12],[1,[30,5,[\"penalties\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[5]],[[[1,\"        \"],[10,0],[14,0,\"empty-state py-4\"],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-person-x\"],[12],[13],[1,\"\\n          \"],[10,2],[12],[1,\"No approved players for this match\"],[13],[1,\"\\n          \"],[8,[39,9],[[24,0,\"btn btn-outline-primary btn-sm\"]],[[\"@route\"],[\"registration\"]],[[\"default\"],[[[[1,\"Register Players\"]],[]]]]],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]]],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"bulls\"],null],[[[1,\"    \"],[10,0],[14,0,\"score-panel\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"score-panel-header d-flex justify-content-between align-items-center\"],[12],[1,\"\\n        \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Score Entry\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"          \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[16,\"disabled\",[30,0,[\"isSaving\"]]],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"saveAllScores\"]]],null],[12],[1,\"\\n\"],[41,[30,0,[\"isSaving\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Saving...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-floppy-fill\"],[12],[13],[1,\" Save All Scores\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n\"]],[]],null],[1,\"      \"],[13],[1,\"\\n\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"bullScores\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"score-row\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"score-row-header\"],[12],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"strong\"],[12],[1,[30,6,[\"bull_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-secondary ms-2\"],[12],[1,[30,6,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted ms-2\"],[12],[1,\"Tamer: \"],[1,[30,6,[\"tamer_name\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,1],[14,0,\"text-muted small\"],[12],[1,\"Releases: \"],[10,\"strong\"],[12],[1,[30,6,[\"release_count\"]]],[13],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"score-row-inputs\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Aggression\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input\"],[15,2,[30,6,[\"aggression\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-agg-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display\"],[12],[1,[30,6,[\"aggression\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Play Area\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input\"],[15,2,[30,6,[\"play_area\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-pa-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display\"],[12],[1,[30,6,[\"play_area\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Difficulty\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input danger\"],[15,2,[30,6,[\"difficulty\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-diff-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display danger\"],[12],[1,[30,6,[\"difficulty\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[6]],[[[1,\"        \"],[10,0],[14,0,\"empty-state py-4\"],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-shield-x\"],[12],[13],[1,\"\\n          \"],[10,2],[12],[1,\"No approved bulls for this match\"],[13],[1,\"\\n          \"],[8,[39,9],[[24,0,\"btn btn-outline-primary btn-sm\"]],[[\"@route\"],[\"registration\"]],[[\"default\"],[[[[1,\"Register Bulls\"]],[]]]]],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]]],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"interactions\"],null],[[[41,[30,0,[\"isLive\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-3 border-info\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-plus-circle-fill text-info\"],[12],[13],[1,\" Record Interaction\"],[13],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"addInteraction\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-2\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Player\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"player_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedPlayers\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,7,[\"player_id\"]]],[12],[1,[30,7,[\"player_name\"]]],[13],[1,\"\\n\"]],[7]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Bull\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"bull_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedBulls\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,8,[\"bull_id\"]]],[12],[1,[30,8,[\"bull_name\"]]],[13],[1,\"\\n\"]],[8]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Round\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"round_type_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"roundTypes\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,9,[\"round_type_id\"]]],[12],[1,[30,9,[\"round_name\"]]],[13],[1,\"\\n\"]],[9]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Hold #\"],[13],[1,\"\\n                \"],[10,\"input\"],[14,3,\"hold_sequence\"],[14,0,\"form-control form-control-sm\"],[14,\"min\",\"1\"],[14,\"required\",\"\"],[14,4,\"number\"],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Duration (s)\"],[13],[1,\"\\n                \"],[10,0],[14,0,\"input-group input-group-sm\"],[12],[1,\"\\n                  \"],[10,\"input\"],[14,3,\"hold_duration\"],[14,0,\"form-control form-control-sm\"],[14,\"min\",\"0\"],[14,\"step\",\"0.1\"],[14,\"required\",\"\"],[14,4,\"number\"],[12],[13],[1,\"\\n\"],[41,[30,0,[\"timerRunning\"]],[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-danger btn-sm stopwatch-btn stopwatch-active\"],[24,\"title\",\"Release to stop\"],[24,4,\"button\"],[4,[38,3],[\"mouseup\",[30,0,[\"stopTimer\"]]],null],[4,[38,3],[\"mouseleave\",[30,0,[\"stopTimer\"]]],null],[4,[38,3],[\"touchend\",[30,0,[\"stopTimer\"]]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-stopwatch-fill\"],[12],[13],[1,\" \"],[1,[30,0,[\"timerDisplay\"]]],[1,\"s\\n                    \"],[13],[1,\"\\n\"]],[]],[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-outline-warning btn-sm stopwatch-btn\"],[24,\"title\",\"Hold to time\"],[24,4,\"button\"],[4,[38,3],[\"mousedown\",[30,0,[\"startTimer\"]]],null],[4,[38,3],[\"touchstart\",[30,0,[\"startTimer\"]]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-stopwatch\"],[12],[13],[1,\"\\n\"],[41,[28,[37,10],[[30,0,[\"timerDisplay\"]],\"0.0\"],null],[[[1,\"                        \"],[1,[30,0,[\"timerDisplay\"]]],[1,\"s\\n\"]],[]],null],[1,\"                    \"],[13],[1,\"\\n\"]],[]]],[1,\"                \"],[13],[1,\"\\n\"],[41,[28,[37,10],[[30,0,[\"timerDisplay\"]],\"0.0\"],null],[[[1,\"                  \"],[11,\"button\"],[24,0,\"btn btn-link btn-sm text-muted p-0 mt-1\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"resetTimer\"]]],null],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-arrow-counterclockwise\"],[12],[13],[1,\" reset\\n                  \"],[13],[1,\"\\n\"]],[]],null],[1,\"              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-1 col-6 d-flex align-items-end\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-info btn-sm text-white w-100\"],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-plus-lg\"],[12],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body table-responsive p-0\"],[12],[1,\"\\n        \"],[10,\"table\"],[14,0,\"table table-hover table-sm align-middle mb-0\"],[12],[1,\"\\n          \"],[10,\"thead\"],[14,0,\"table-light\"],[12],[1,\"\\n            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Player\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Bull\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Round\"],[13],[1,\"\\n              \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Sequence\"],[13],[1,\"\\n              \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Duration\"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"interactions\"]]],null]],null],null,[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,10,[\"player_name\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[1,[30,10,[\"bull_name\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[10,1],[14,0,\"badge bg-secondary\"],[12],[1,[30,10,[\"round_name\"]]],[13],[13],[1,\"\\n                \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,10,[\"hold_sequence\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"badge bg-primary\"],[12],[1,[30,10,[\"hold_duration\"]]],[1,\"s\"],[13],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[10]],[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,\"colspan\",\"5\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"empty-state py-3\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-arrow-left-right\"],[12],[13],[1,\"\\n                    \"],[10,2],[12],[1,\"No interactions recorded yet\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"]],[]],[[[1,\"  \"],[10,0],[14,0,\"empty-state py-5\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-sliders2\"],[14,5,\"font-size:3rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h5\"],[14,0,\"mt-3\"],[12],[1,\"Select a Match to Begin Scoring\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Choose a match from the dropdown above.\"],[10,\"br\"],[12],[13],[1,\"\\n      Only \"],[10,\"strong\"],[12],[1,\"Live\"],[13],[1,\" matches can be edited. Set a \"],[10,\"strong\"],[12],[1,\"Scheduled\"],[13],[1,\" match to Live to start.\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]]]],[]]]],[\"@model\",\"m\",\"m\",\"m\",\"p\",\"b\",\"p\",\"b\",\"r\",\"i\"],false,[\"page-title\",\"if\",\"eq\",\"on\",\"fn\",\"gt\",\"each\",\"-track-array\",\"to-string\",\"link-to\",\"not-eq\"]]",
+    "id": "hS6wYdrP",
+    "block": "[[[1,[28,[35,0],[\"Match Control\"],null]],[1,\"\\n\\n\"],[10,0],[14,0,\"section-header d-flex justify-content-between align-items-center flex-wrap gap-2\"],[12],[1,\"\\n  \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-sliders2\"],[12],[13],[1,\" Match Control Panel\"],[13],[1,\"\\n\"],[41,[30,0,[\"matchStatus\"]],[[[1,\"    \"],[10,0],[14,0,\"d-flex align-items-center gap-2\"],[12],[1,\"\\n      \"],[10,1],[15,0,[29,[\"status-badge \",[52,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Live\"],null],\"live\",[52,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Completed\"],null],\"completed\",\"scheduled\"]]]]],[12],[1,\"\\n        \"],[1,[30,0,[\"matchStatus\"]]],[1,\"\\n      \"],[13],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Scheduled\"],null],[[[1,\"        \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"updateMatchStatus\"]],\"Live\"],null]],null],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-play-circle-fill\"],[12],[13],[1,\" Go Live\\n        \"],[13],[1,\"\\n\"]],[]],null],[41,[28,[37,2],[[30,0,[\"matchStatus\"]],\"Live\"],null],[[[1,\"        \"],[11,\"button\"],[24,0,\"btn btn-outline-danger btn-sm\"],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"updateMatchStatus\"]],\"Completed\"],null]],null],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-stop-circle-fill\"],[12],[13],[1,\" End Match\\n        \"],[13],[1,\"\\n\"]],[]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[13],[1,\"\\n\\n\"],[41,[30,0,[\"statusMessage\"]],[[[1,\"  \"],[10,0],[15,0,[29,[\"toast-notification \",[30,0,[\"statusType\"]]]]],[14,\"role\",\"alert\"],[12],[1,\"\\n    \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[28,[37,2],[[30,0,[\"statusType\"]],\"success\"],null],\"bi-check-circle-fill\",\"bi-exclamation-triangle-fill\"]]]],[12],[13],[1,\"\\n    \"],[1,[30,0,[\"statusMessage\"]]],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[10,0],[14,0,\"card mb-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"card-body py-3\"],[12],[1,\"\\n    \"],[10,0],[14,0,\"row align-items-center g-3\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"col-md-5\"],[12],[1,\"\\n        \"],[10,\"label\"],[14,0,\"form-label fw-semibold mb-1\"],[12],[1,\"Select Match\"],[13],[1,\"\\n        \"],[11,\"select\"],[24,0,\"form-select\"],[4,[38,3],[\"change\",[30,0,[\"loadMatch\"]]],null],[12],[1,\"\\n          \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"-- Choose a Match --\"],[13],[1,\"\\n\"],[41,[28,[37,5],[[30,0,[\"liveMatchCount\"]],0],null],[[[1,\"            \"],[10,\"optgroup\"],[14,\"label\",\" Live\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,2,[\"status\"]],\"Live\"],null],[[[1,\"                  \"],[10,\"option\"],[15,2,[30,2,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,2,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                    \"],[1,[30,2,[\"match_name\"]]],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],null]],[2]],null],[1,\"            \"],[13],[1,\"\\n\"]],[]],null],[41,[28,[37,5],[[30,0,[\"scheduledMatchCount\"]],0],null],[[[1,\"            \"],[10,\"optgroup\"],[14,\"label\",\" Scheduled\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,3,[\"status\"]],\"Scheduled\"],null],[[[1,\"                  \"],[10,\"option\"],[15,2,[30,3,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,3,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                    \"],[1,[30,3,[\"match_name\"]]],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],null]],[3]],null],[1,\"            \"],[13],[1,\"\\n\"]],[]],null],[41,[28,[37,5],[[30,0,[\"completedMatchCount\"]],0],null],[[[1,\"          \"],[10,\"optgroup\"],[14,\"label\",\"Completed\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[41,[28,[37,2],[[30,4,[\"status\"]],\"Completed\"],null],[[[1,\"                \"],[10,\"option\"],[15,2,[30,4,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,4,[\"match_id\"]]],null],[28,[37,8],[[30,0,[\"selectedMatchId\"]]],null]],null]],[12],[1,\"\\n                  \"],[1,[30,4,[\"match_name\"]]],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],null]],[4]],null],[1,\"          \"],[13],[1,\"\\n\"]],[]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"],[41,[30,0,[\"selectedMatch\"]],[[[1,\"        \"],[10,0],[14,0,\"col-md-7\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"d-flex flex-wrap gap-3 text-muted small mt-md-4\"],[12],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt-fill text-danger\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"location\"]]],[13],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-calendar3 text-primary\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"match_date\"]]],[13],[1,\"\\n            \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-building text-secondary\"],[12],[13],[1,\" \"],[1,[30,0,[\"selectedMatch\",\"organizer_name\"]]],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]],null],[1,\"    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"  \"],[10,0],[14,0,\"text-center py-5\"],[12],[1,\"\\n    \"],[10,0],[14,0,\"spinner-border text-primary\"],[14,5,\"width:3rem;height:3rem;\"],[14,\"role\",\"status\"],[12],[13],[1,\"\\n    \"],[10,2],[14,0,\"mt-2 text-muted\"],[12],[1,\"Loading match data...\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],[[[41,[30,0,[\"scoringData\"]],[[[1,\"\\n\"],[1,\"  \"],[10,0],[14,0,\"tab-nav mb-3\"],[12],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"players\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"players\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-person-arms-up\"],[12],[13],[1,\" Player Scores\\n      \"],[10,1],[14,0,\"badge bg-primary ms-1\"],[12],[1,[30,0,[\"scoringData\",\"playerScores\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"bulls\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"bulls\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Scores\\n      \"],[10,1],[14,0,\"badge bg-danger ms-1\"],[12],[1,[30,0,[\"scoringData\",\"bullScores\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"interactions\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"interactions\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-arrow-left-right\"],[12],[13],[1,\" Interactions\\n      \"],[10,1],[14,0,\"badge bg-info ms-1\"],[12],[1,[30,0,[\"scoringData\",\"interactions\",\"length\"]]],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[11,\"button\"],[16,0,[29,[\"tab-btn \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"spot-prizes\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"spot-prizes\"],null]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-gift-fill\"],[12],[13],[1,\" Spot Prizes\\n\"],[41,[30,0,[\"spotAwards\",\"length\"]],[[[1,\"        \"],[10,1],[14,0,\"badge bg-warning text-dark ms-1\"],[12],[1,[30,0,[\"spotAwards\",\"length\"]]],[13],[1,\"\\n\"]],[]],null],[1,\"    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"players\"],null],[[[1,\"    \"],[10,0],[14,0,\"score-panel\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"score-panel-header d-flex justify-content-between align-items-center\"],[12],[1,\"\\n        \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-person-arms-up\"],[12],[13],[1,\" Player Score Entry\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"          \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[16,\"disabled\",[30,0,[\"isSaving\"]]],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"saveAllScores\"]]],null],[12],[1,\"\\n\"],[41,[30,0,[\"isSaving\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Saving...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-floppy-fill\"],[12],[13],[1,\" Save All Scores\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n\"]],[]],null],[1,\"      \"],[13],[1,\"\\n\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"playerScores\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"score-row\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"score-row-header\"],[12],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"strong\"],[12],[1,[30,5,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-secondary ms-2\"],[12],[1,[30,5,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted ms-2\"],[12],[1,\"Batch: \"],[1,[30,5,[\"batch_name\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"d-flex align-items-center gap-3\"],[12],[1,\"\\n              \"],[10,1],[14,0,\"fw-bold\"],[14,5,\"font-size:1.1rem; color:var(--accent);\"],[12],[1,\"\\n                Net: \"],[1,[30,5,[\"net_score\"]]],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"score-row-inputs\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Bulls Caught\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input success\"],[15,2,[30,5,[\"bull_caught\"]]],[14,\"min\",\"0\"],[15,1,[29,[\"p-bc-\",[30,5,[\"player_id\"]],\"-\",[30,5,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display success\"],[12],[1,[30,5,[\"bull_caught\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Penalties\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input danger\"],[15,2,[30,5,[\"penalties\"]]],[14,\"min\",\"0\"],[15,1,[29,[\"p-pen-\",[30,5,[\"player_id\"]],\"-\",[30,5,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display danger\"],[12],[1,[30,5,[\"penalties\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[5]],[[[1,\"        \"],[10,0],[14,0,\"empty-state py-4\"],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-person-x\"],[12],[13],[1,\"\\n          \"],[10,2],[12],[1,\"No approved players for this match\"],[13],[1,\"\\n          \"],[8,[39,9],[[24,0,\"btn btn-outline-primary btn-sm\"]],[[\"@route\"],[\"registration\"]],[[\"default\"],[[[[1,\"Register Players\"]],[]]]]],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]]],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"bulls\"],null],[[[1,\"    \"],[10,0],[14,0,\"score-panel\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"score-panel-header d-flex justify-content-between align-items-center\"],[12],[1,\"\\n        \"],[10,1],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Score Entry\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"          \"],[11,\"button\"],[24,0,\"btn btn-success btn-sm\"],[16,\"disabled\",[30,0,[\"isSaving\"]]],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"saveAllScores\"]]],null],[12],[1,\"\\n\"],[41,[30,0,[\"isSaving\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Saving...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-floppy-fill\"],[12],[13],[1,\" Save All Scores\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n\"]],[]],null],[1,\"      \"],[13],[1,\"\\n\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"bullScores\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"score-row\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"score-row-header\"],[12],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"strong\"],[12],[1,[30,6,[\"bull_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-secondary ms-2\"],[12],[1,[30,6,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted ms-2\"],[12],[1,\"Tamer: \"],[1,[30,6,[\"tamer_name\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,1],[14,0,\"text-muted small\"],[12],[1,\"Releases: \"],[10,\"strong\"],[12],[1,[30,6,[\"release_count\"]]],[13],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"score-row-inputs\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Aggression\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input\"],[15,2,[30,6,[\"aggression\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-agg-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display\"],[12],[1,[30,6,[\"aggression\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Play Area\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input\"],[15,2,[30,6,[\"play_area\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-pa-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display\"],[12],[1,[30,6,[\"play_area\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"score-input-group\"],[12],[1,\"\\n              \"],[10,\"label\"],[12],[1,\"Difficulty\"],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                \"],[10,\"input\"],[14,0,\"score-input danger\"],[15,2,[30,6,[\"difficulty\"]]],[14,\"min\",\"0\"],[14,\"max\",\"10\"],[15,1,[29,[\"b-diff-\",[30,6,[\"bull_id\"]],\"-\",[30,6,[\"round_type_id\"]]]]],[14,4,\"number\"],[12],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"score-display danger\"],[12],[1,[30,6,[\"difficulty\"]]],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[6]],[[[1,\"        \"],[10,0],[14,0,\"empty-state py-4\"],[12],[1,\"\\n          \"],[10,\"i\"],[14,0,\"bi bi-shield-x\"],[12],[13],[1,\"\\n          \"],[10,2],[12],[1,\"No approved bulls for this match\"],[13],[1,\"\\n          \"],[8,[39,9],[[24,0,\"btn btn-outline-primary btn-sm\"]],[[\"@route\"],[\"registration\"]],[[\"default\"],[[[[1,\"Register Bulls\"]],[]]]]],[1,\"\\n        \"],[13],[1,\"\\n\"]],[]]],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"interactions\"],null],[[[41,[30,0,[\"isLive\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-3 border-info\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-plus-circle-fill text-info\"],[12],[13],[1,\" Record Interaction\"],[13],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"addInteraction\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-2\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Player\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"player_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedPlayers\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,7,[\"player_id\"]]],[12],[1,[30,7,[\"player_name\"]]],[13],[1,\"\\n\"]],[7]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Bull\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"bull_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedBulls\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,8,[\"bull_id\"]]],[12],[1,[30,8,[\"bull_name\"]]],[13],[1,\"\\n\"]],[8]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Round\"],[13],[1,\"\\n                \"],[10,\"select\"],[14,3,\"round_type_id\"],[14,0,\"form-select form-select-sm\"],[14,\"required\",\"\"],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"roundTypes\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,9,[\"round_type_id\"]]],[12],[1,[30,9,[\"round_name\"]]],[13],[1,\"\\n\"]],[9]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Hold #\"],[13],[1,\"\\n                \"],[10,\"input\"],[14,3,\"hold_sequence\"],[14,0,\"form-control form-control-sm\"],[14,\"min\",\"1\"],[14,\"required\",\"\"],[14,4,\"number\"],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Duration (s)\"],[13],[1,\"\\n                \"],[10,0],[14,0,\"input-group input-group-sm\"],[12],[1,\"\\n                  \"],[10,\"input\"],[14,3,\"hold_duration\"],[14,0,\"form-control form-control-sm\"],[14,\"min\",\"0\"],[14,\"step\",\"0.1\"],[14,\"required\",\"\"],[14,4,\"number\"],[12],[13],[1,\"\\n\"],[41,[30,0,[\"timerRunning\"]],[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-danger btn-sm stopwatch-btn stopwatch-active\"],[24,\"title\",\"Release to stop\"],[24,4,\"button\"],[4,[38,3],[\"mouseup\",[30,0,[\"stopTimer\"]]],null],[4,[38,3],[\"mouseleave\",[30,0,[\"stopTimer\"]]],null],[4,[38,3],[\"touchend\",[30,0,[\"stopTimer\"]]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-stopwatch-fill\"],[12],[13],[1,\" \"],[1,[30,0,[\"timerDisplay\"]]],[1,\"s\\n                    \"],[13],[1,\"\\n\"]],[]],[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-outline-warning btn-sm stopwatch-btn\"],[24,\"title\",\"Hold to time\"],[24,4,\"button\"],[4,[38,3],[\"mousedown\",[30,0,[\"startTimer\"]]],null],[4,[38,3],[\"touchstart\",[30,0,[\"startTimer\"]]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-stopwatch\"],[12],[13],[1,\"\\n\"],[41,[28,[37,10],[[30,0,[\"timerDisplay\"]],\"0.0\"],null],[[[1,\"                        \"],[1,[30,0,[\"timerDisplay\"]]],[1,\"s\\n\"]],[]],null],[1,\"                    \"],[13],[1,\"\\n\"]],[]]],[1,\"                \"],[13],[1,\"\\n\"],[41,[28,[37,10],[[30,0,[\"timerDisplay\"]],\"0.0\"],null],[[[1,\"                  \"],[11,\"button\"],[24,0,\"btn btn-link btn-sm text-muted p-0 mt-1\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"resetTimer\"]]],null],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-arrow-counterclockwise\"],[12],[13],[1,\" reset\\n                  \"],[13],[1,\"\\n\"]],[]],null],[1,\"              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-1 col-6 d-flex align-items-end\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-info btn-sm text-white w-100\"],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-plus-lg\"],[12],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body table-responsive p-0\"],[12],[1,\"\\n        \"],[10,\"table\"],[14,0,\"table table-hover table-sm align-middle mb-0\"],[12],[1,\"\\n          \"],[10,\"thead\"],[14,0,\"table-light\"],[12],[1,\"\\n            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Player\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Bull\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Round\"],[13],[1,\"\\n              \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Sequence\"],[13],[1,\"\\n              \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Duration\"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"interactions\"]]],null]],null],null,[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,10,[\"player_name\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[1,[30,10,[\"bull_name\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[10,1],[14,0,\"badge bg-secondary\"],[12],[1,[30,10,[\"round_name\"]]],[13],[13],[1,\"\\n                \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,10,[\"hold_sequence\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"badge bg-primary\"],[12],[1,[30,10,[\"hold_duration\"]]],[1,\"s\"],[13],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[10]],[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,\"colspan\",\"5\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"empty-state py-3\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-arrow-left-right\"],[12],[13],[1,\"\\n                    \"],[10,2],[12],[1,\"No interactions recorded yet\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"spot-prizes\"],null],[[[41,[30,0,[\"isLive\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-3 border-warning\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[12],[13],[1,\" Award Spot Prize\"],[13],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"awardSpotPrize\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-2\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Spot Prize \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateSpotField\"]],\"newSpotPrizeId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select prize...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"matchSpotPrizes\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,11,[\"spot_prize_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,11,[\"spot_prize_id\"]]],null],[28,[37,8],[[30,0,[\"newSpotPrizeId\"]]],null]],null]],[12],[1,\"\\n                      \"],[1,[30,11,[\"prize_title\"]]],[1,[52,[30,11,[\"sponsor_name\"]],[28,[37,11],[\" (\",[30,11,[\"sponsor_name\"]],\")\"],null],\"\"]],[1,\"\\n                    \"],[13],[1,\"\\n\"]],[11]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Player \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateSpotField\"]],\"newSpotPlayerId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"Select player...\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedPlayers\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,12,[\"player_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,12,[\"player_id\"]]],null],[28,[37,8],[[30,0,[\"newSpotPlayerId\"]]],null]],null]],[12],[1,[30,12,[\"player_name\"]]],[13],[1,\"\\n\"]],[12]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label small fw-semibold\"],[12],[1,\"Bull (optional)\"],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateSpotField\"]],\"newSpotBullId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"None\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"scoringData\",\"approvedBulls\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,13,[\"bull_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,8],[[30,13,[\"bull_id\"]]],null],[28,[37,8],[[30,0,[\"newSpotBullId\"]]],null]],null]],[12],[1,[30,13,[\"bull_name\"]]],[13],[1,\"\\n\"]],[13]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 col-6 d-flex align-items-end\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-warning btn-sm w-100\"],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-gift\"],[12],[13],[1,\" Award\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body table-responsive p-0\"],[12],[1,\"\\n        \"],[10,\"table\"],[14,0,\"table table-hover table-sm align-middle mb-0\"],[12],[1,\"\\n          \"],[10,\"thead\"],[14,0,\"table-light\"],[12],[1,\"\\n            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Player\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Prize\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Type\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Sponsor\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Bull\"],[13],[1,\"\\n              \"],[10,\"th\"],[12],[1,\"Awarded\"],[13],[1,\"\\n              \"],[41,[30,0,[\"isLive\"]],[[[10,\"th\"],[14,0,\"text-center\"],[14,5,\"width:60px\"],[12],[13]],[]],null],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"spotAwards\"]]],null]],null],null,[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,14,[\"first_name\"]]],[1,\" \"],[1,[30,14,[\"last_name\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[1,[30,14,[\"prize_title\"]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[41,[30,14,[\"prize_type\"]],[[[10,1],[14,0,\"badge bg-secondary\"],[12],[1,[30,14,[\"prize_type\"]]],[13]],[]],[[[1,\"—\"]],[]]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[1,[52,[30,14,[\"sponsor_name\"]],[30,14,[\"sponsor_name\"]],\"—\"]],[13],[1,\"\\n                \"],[10,\"td\"],[12],[1,[52,[30,14,[\"bull_name\"]],[30,14,[\"bull_name\"]],\"—\"]],[13],[1,\"\\n                \"],[10,\"td\"],[14,0,\"text-muted small\"],[12],[1,[52,[30,14,[\"awarded_time\"]],[30,14,[\"awarded_time\"]],\"—\"]],[13],[1,\"\\n\"],[41,[30,0,[\"isLive\"]],[[[1,\"                  \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                    \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-danger\"],[24,\"title\",\"Remove\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"deleteSpotAward\"]],[30,14,[\"spot_prize_award_id\"]]],null]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-x-lg\"],[12],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],null],[1,\"              \"],[13],[1,\"\\n\"]],[14]],[[[1,\"              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"td\"],[14,\"colspan\",\"7\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"empty-state py-3\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-gift\"],[12],[13],[1,\"\\n                    \"],[10,2],[12],[1,\"No spot prizes awarded yet\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"]],[]],[[[1,\"  \"],[10,0],[14,0,\"empty-state py-5\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-sliders2\"],[14,5,\"font-size:3rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h5\"],[14,0,\"mt-3\"],[12],[1,\"Select a Match to Begin Scoring\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Choose a match from the dropdown above.\"],[10,\"br\"],[12],[13],[1,\"\\n      Only \"],[10,\"strong\"],[12],[1,\"Live\"],[13],[1,\" matches can be edited. Set a \"],[10,\"strong\"],[12],[1,\"Scheduled\"],[13],[1,\" match to Live to start.\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]]]],[]]]],[\"@model\",\"m\",\"m\",\"m\",\"p\",\"b\",\"p\",\"b\",\"r\",\"i\",\"sp\",\"p\",\"b\",\"a\"],false,[\"page-title\",\"if\",\"eq\",\"on\",\"fn\",\"gt\",\"each\",\"-track-array\",\"to-string\",\"link-to\",\"not-eq\",\"concat\"]]",
     "moduleName": "jallikattu-frontend/templates/match-control.hbs",
     "isStrictMode": false
   });
@@ -4946,6 +5946,42 @@
       </div>
     {{/if}}
   
+    {{!-- Spot Prize Awards --}}
+    {{#if this.model.spotPrizes.length}}
+      <h6 class="fw-bold mb-3"><i class="bi bi-gift-fill text-warning"></i> Spot Prize Awards</h6>
+      <div class="row g-3 mb-4">
+        {{#each this.model.spotPrizes as |sp|}}
+          <div class="col-md-4 col-lg-3">
+            <div class="card border-warning">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="bi bi-gift-fill text-warning" style="font-size:1.3rem"></i>
+                  <strong>{{sp.prize_title}}</strong>
+                </div>
+                {{#if sp.prize_type}}
+                  <span class="badge bg-secondary mb-1">{{sp.prize_type}}</span>
+                {{/if}}
+                <div class="small">
+                  <i class="bi bi-person-fill"></i>
+                  <strong>{{sp.first_name}} {{sp.last_name}}</strong>
+                </div>
+                {{#if sp.bull_name}}
+                  <div class="small text-muted">
+                    <i class="bi bi-shield-fill"></i> Bull: {{sp.bull_name}}
+                  </div>
+                {{/if}}
+                {{#if sp.sponsor_name}}
+                  <div class="small text-muted">
+                    <i class="bi bi-shop"></i> Sponsored by <em>{{sp.sponsor_name}}</em>
+                  </div>
+                {{/if}}
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+  
     {{!-- Player Scores --}}
     {{#if this.model.scores.topPlayers.length}}
       <h6 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Player Scores</h6>
@@ -4981,8 +6017,8 @@
   
   */
   {
-    "id": "UeqPqXcY",
-    "block": "[[[1,[28,[35,0],[[28,[37,1],[\"Match #\",[30,0,[\"model\",\"match_id\"]]],null]],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n    \"],[8,[39,2],[[24,0,\"text-decoration-none text-muted\"]],[[\"@route\"],[\"matches\"]],[[\"default\"],[[[[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-arrow-left\"],[12],[13],[1,\" Back to Matches\\n    \"]],[]]]]],[1,\"\\n  \"],[13],[1,\"\\n\\n  \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n    \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-trophy\"],[12],[13],[1,\" Match #\"],[1,[30,0,[\"model\",\"match_id\"]]],[1,\" — Results\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"model\",\"winners\",\"overallWinner\",\"length\"]],[[[1,\"    \"],[10,0],[14,0,\"card mb-4\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[10,\"h6\"],[14,0,\"fw-bold text-warning\"],[12],[10,\"i\"],[14,0,\"bi bi-award-fill\"],[12],[13],[1,\" Overall Winner\"],[13],[1,\"\\n\"],[44,[[28,[37,5],[[30,0,[\"model\",\"winners\",\"overallWinner\"]],0],null]],[[[1,\"          \"],[10,0],[14,0,\"d-flex align-items-center gap-3 mt-2\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"profile-avatar\"],[14,5,\"width:50px;height:50px;font-size:1.2rem;\"],[12],[1,\"\\n              \"],[10,\"i\"],[14,0,\"bi bi-trophy-fill\"],[12],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"h5\"],[14,0,\"mb-0 fw-bold\"],[12],[1,[30,1,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"text-muted\"],[12],[1,\"Net Score: \"],[10,\"strong\"],[12],[1,[30,1,[\"net_score\"]]],[13],[1,\" (\"],[1,[30,1,[\"total_bulls_caught\"]]],[1,\" caught)\"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n\"]],[1]]],[1,\"      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"winners\",\"roundWinners\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-flag-fill\"],[12],[13],[1,\" Round Winners\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"winners\",\"roundWinners\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"col-md-4\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,2,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"h6\"],[14,0,\"fw-bold mt-1\"],[12],[1,[30,2,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-success\"],[12],[1,\"Caught: \"],[1,[30,2,[\"bull_caught\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[2]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"winners\",\"bestBullPerRound\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Top Bulls\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"table-container mb-4\"],[12],[1,\"\\n      \"],[10,\"table\"],[14,0,\"table table-sm\"],[12],[1,\"\\n        \"],[10,\"thead\"],[12],[1,\"\\n          \"],[10,\"tr\"],[12],[10,\"th\"],[12],[1,\"Bull\"],[13],[10,\"th\"],[12],[1,\"Round\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Difficulty\"],[13],[13],[1,\"\\n        \"],[13],[1,\"\\n        \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"winners\",\"bestBullPerRound\"]]],null]],null],null,[[[1,\"            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,3,[\"bull_name\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[12],[1,[30,3,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center fw-bold\"],[12],[1,[30,3,[\"difficulty\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n\"]],[3]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"scores\",\"topPlayers\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\" Player Scores\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"table-container mb-4\"],[12],[1,\"\\n      \"],[10,\"table\"],[14,0,\"table table-sm\"],[12],[1,\"\\n        \"],[10,\"thead\"],[12],[1,\"\\n          \"],[10,\"tr\"],[12],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Player\"],[13],[10,\"th\"],[12],[1,\"Batch\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Caught\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Penalties\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Net\"],[13],[13],[1,\"\\n        \"],[13],[1,\"\\n        \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"scores\",\"topPlayers\"]]],null]],null],null,[[[1,\"            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"td\"],[12],[1,\"\\n                \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,8],[[30,5],0],null],\"gold\",[52,[28,[37,8],[[30,5],1],null],\"silver\",[52,[28,[37,8],[[30,5],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                  \"],[1,[28,[35,9],[[30,5],1],null]],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,\"td\"],[12],[1,\"\\n                \"],[8,[39,2],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"player-profile\",[30,4,[\"player_id\"]]]],[[\"default\"],[[[[1,\"\\n                  \"],[1,[30,4,[\"player_name\"]]],[1,\"\\n                \"]],[]]]]],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,\"td\"],[12],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,4,[\"batch_name\"]]],[13],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"total_caught\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center text-danger\"],[12],[1,[30,4,[\"total_penalties\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"score-net\"],[12],[1,[30,4,[\"net_score\"]]],[13],[13],[1,\"\\n            \"],[13],[1,\"\\n\"]],[4,5]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[13],[1,\"\\n\"]],[\"w\",\"rw\",\"b\",\"p\",\"index\"],false,[\"page-title\",\"concat\",\"link-to\",\"if\",\"let\",\"get\",\"each\",\"-track-array\",\"eq\",\"add\"]]",
+    "id": "vmsr84Pp",
+    "block": "[[[1,[28,[35,0],[[28,[37,1],[\"Match #\",[30,0,[\"model\",\"match_id\"]]],null]],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n    \"],[8,[39,2],[[24,0,\"text-decoration-none text-muted\"]],[[\"@route\"],[\"matches\"]],[[\"default\"],[[[[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-arrow-left\"],[12],[13],[1,\" Back to Matches\\n    \"]],[]]]]],[1,\"\\n  \"],[13],[1,\"\\n\\n  \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n    \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-trophy\"],[12],[13],[1,\" Match #\"],[1,[30,0,[\"model\",\"match_id\"]]],[1,\" — Results\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"model\",\"winners\",\"overallWinner\",\"length\"]],[[[1,\"    \"],[10,0],[14,0,\"card mb-4\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[10,\"h6\"],[14,0,\"fw-bold text-warning\"],[12],[10,\"i\"],[14,0,\"bi bi-award-fill\"],[12],[13],[1,\" Overall Winner\"],[13],[1,\"\\n\"],[44,[[28,[37,5],[[30,0,[\"model\",\"winners\",\"overallWinner\"]],0],null]],[[[1,\"          \"],[10,0],[14,0,\"d-flex align-items-center gap-3 mt-2\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"profile-avatar\"],[14,5,\"width:50px;height:50px;font-size:1.2rem;\"],[12],[1,\"\\n              \"],[10,\"i\"],[14,0,\"bi bi-trophy-fill\"],[12],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[12],[1,\"\\n              \"],[10,\"h5\"],[14,0,\"mb-0 fw-bold\"],[12],[1,[30,1,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"text-muted\"],[12],[1,\"Net Score: \"],[10,\"strong\"],[12],[1,[30,1,[\"net_score\"]]],[13],[1,\" (\"],[1,[30,1,[\"total_bulls_caught\"]]],[1,\" caught)\"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n\"]],[1]]],[1,\"      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"winners\",\"roundWinners\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-flag-fill\"],[12],[13],[1,\" Round Winners\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"winners\",\"roundWinners\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"col-md-4\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n              \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,2,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"h6\"],[14,0,\"fw-bold mt-1\"],[12],[1,[30,2,[\"player_name\"]]],[13],[1,\"\\n              \"],[10,1],[14,0,\"badge bg-success\"],[12],[1,\"Caught: \"],[1,[30,2,[\"bull_caught\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[2]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"winners\",\"bestBullPerRound\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Top Bulls\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"table-container mb-4\"],[12],[1,\"\\n      \"],[10,\"table\"],[14,0,\"table table-sm\"],[12],[1,\"\\n        \"],[10,\"thead\"],[12],[1,\"\\n          \"],[10,\"tr\"],[12],[10,\"th\"],[12],[1,\"Bull\"],[13],[10,\"th\"],[12],[1,\"Round\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Difficulty\"],[13],[13],[1,\"\\n        \"],[13],[1,\"\\n        \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"winners\",\"bestBullPerRound\"]]],null]],null],null,[[[1,\"            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,3,[\"bull_name\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[12],[1,[30,3,[\"round_name\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center fw-bold\"],[12],[1,[30,3,[\"difficulty\"]]],[13],[1,\"\\n            \"],[13],[1,\"\\n\"]],[3]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"spotPrizes\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[12],[13],[1,\" Spot Prize Awards\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"spotPrizes\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"col-md-4 col-lg-3\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card border-warning\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"card-body py-2 px-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"d-flex align-items-center gap-2 mb-1\"],[12],[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[14,5,\"font-size:1.3rem\"],[12],[13],[1,\"\\n                \"],[10,\"strong\"],[12],[1,[30,4,[\"prize_title\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n\"],[41,[30,4,[\"prize_type\"]],[[[1,\"                \"],[10,1],[14,0,\"badge bg-secondary mb-1\"],[12],[1,[30,4,[\"prize_type\"]]],[13],[1,\"\\n\"]],[]],null],[1,\"              \"],[10,0],[14,0,\"small\"],[12],[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\"\\n                \"],[10,\"strong\"],[12],[1,[30,4,[\"first_name\"]]],[1,\" \"],[1,[30,4,[\"last_name\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n\"],[41,[30,4,[\"bull_name\"]],[[[1,\"                \"],[10,0],[14,0,\"small text-muted\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull: \"],[1,[30,4,[\"bull_name\"]]],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],null],[41,[30,4,[\"sponsor_name\"]],[[[1,\"                \"],[10,0],[14,0,\"small text-muted\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-shop\"],[12],[13],[1,\" Sponsored by \"],[10,\"em\"],[12],[1,[30,4,[\"sponsor_name\"]]],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],null],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[4]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"model\",\"scores\",\"topPlayers\",\"length\"]],[[[1,\"    \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\" Player Scores\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"table-container mb-4\"],[12],[1,\"\\n      \"],[10,\"table\"],[14,0,\"table table-sm\"],[12],[1,\"\\n        \"],[10,\"thead\"],[12],[1,\"\\n          \"],[10,\"tr\"],[12],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Player\"],[13],[10,\"th\"],[12],[1,\"Batch\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Caught\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Penalties\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Net\"],[13],[13],[1,\"\\n        \"],[13],[1,\"\\n        \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"model\",\"scores\",\"topPlayers\"]]],null]],null],null,[[[1,\"            \"],[10,\"tr\"],[12],[1,\"\\n              \"],[10,\"td\"],[12],[1,\"\\n                \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,8],[[30,6],0],null],\"gold\",[52,[28,[37,8],[[30,6],1],null],\"silver\",[52,[28,[37,8],[[30,6],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                  \"],[1,[28,[35,9],[[30,6],1],null]],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,\"td\"],[12],[1,\"\\n                \"],[8,[39,2],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"player-profile\",[30,5,[\"player_id\"]]]],[[\"default\"],[[[[1,\"\\n                  \"],[1,[30,5,[\"player_name\"]]],[1,\"\\n                \"]],[]]]]],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,\"td\"],[12],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,5,[\"batch_name\"]]],[13],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,5,[\"total_caught\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center text-danger\"],[12],[1,[30,5,[\"total_penalties\"]]],[13],[1,\"\\n              \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"score-net\"],[12],[1,[30,5,[\"net_score\"]]],[13],[13],[1,\"\\n            \"],[13],[1,\"\\n\"]],[5,6]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[13],[1,\"\\n\"]],[\"w\",\"rw\",\"b\",\"sp\",\"p\",\"index\"],false,[\"page-title\",\"concat\",\"link-to\",\"if\",\"let\",\"get\",\"each\",\"-track-array\",\"eq\",\"add\"]]",
     "moduleName": "jallikattu-frontend/templates/match-detail.hbs",
     "isStrictMode": false
   });
@@ -5053,8 +6089,13 @@
   /*
     {{page-title "My Bulls"}}
   
-  <div class="section-header">
+  <div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <h5><i class="bi bi-shield-fill"></i> My Bulls</h5>
+    {{#unless this.showAddForm}}
+      <button class="btn btn-accent" type="button" {{on "click" this.toggleAddForm}}>
+        <i class="bi bi-plus-circle"></i> Add Bull
+      </button>
+    {{/unless}}
   </div>
   
   {{!-- Status message --}}
@@ -5063,6 +6104,49 @@
       <i class="bi {{if (eq this.messageType 'success') 'bi-check-circle-fill' (if (eq this.messageType 'danger') 'bi-exclamation-triangle-fill' 'bi-info-circle-fill')}}"></i>
       {{this.message}}
       <button type="button" class="btn-close" {{on "click" this.dismissMessage}}></button>
+    </div>
+  {{/if}}
+  
+  {{!-- Add Bull Form --}}
+  {{#if this.showAddForm}}
+    <div class="card mb-4 border-accent">
+      <div class="card-header bg-accent text-white fw-semibold">
+        <i class="bi bi-plus-circle"></i> Register New Bull
+      </div>
+      <div class="card-body">
+        <form {{on "submit" this.addBull}}>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Bull Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" value={{this.newBullName}} {{on "input" (fn this.updateField "newBullName")}} required placeholder="e.g. Kaalai Veeran">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Age (years) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" value={{this.newBullAge}} {{on "input" (fn this.updateField "newBullAge")}} required min="3" max="15" placeholder="3–15">
+              <small class="text-muted">Min 3 years per regulations</small>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Breed <span class="text-danger">*</span></label>
+              <select class="form-select" {{on "change" (fn this.updateField "newBreedId")}} required>
+                <option value="">-- Select Breed --</option>
+                {{#each @model.breeds as |b|}}
+                  <option value={{b.bull_breed_id}} selected={{eq (to-string b.bull_breed_id) (to-string this.newBreedId)}}>{{b.bull_breed_name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Fitness Certificate No. <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" value={{this.newFitnessCert}} {{on "input" (fn this.updateField "newFitnessCert")}} required placeholder="Veterinary certificate reference">
+            </div>
+            <div class="col-md-6 d-flex align-items-end gap-2">
+              <button type="submit" class="btn btn-success" disabled={{this.isAddingBull}}>
+                {{#if this.isAddingBull}}<span class="spinner-border spinner-border-sm"></span> Saving...{{else}}<i class="bi bi-check-lg"></i> Register Bull{{/if}}
+              </button>
+              <button type="button" class="btn btn-outline-secondary" {{on "click" this.toggleAddForm}}>Cancel</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   {{/if}}
   
@@ -5173,13 +6257,18 @@
       <i class="bi bi-shield-x" style="font-size:3rem;"></i>
       <h5 class="mt-3">No Bulls Registered</h5>
       <p class="text-muted">You haven't registered any bulls yet</p>
+      {{#unless this.showAddForm}}
+        <button class="btn btn-accent" type="button" {{on "click" this.toggleAddForm}}>
+          <i class="bi bi-plus-circle"></i> Add Your First Bull
+        </button>
+      {{/unless}}
     </div>
   {{/if}}
   
   */
   {
-    "id": "dvO+M3kU",
-    "block": "[[[1,[28,[35,0],[\"My Bulls\"],null]],[1,\"\\n\\n\"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n  \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" My Bulls\"],[13],[1,\"\\n\"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"message\"]],[[[1,\"  \"],[10,0],[15,0,[29,[\"alert alert-\",[30,0,[\"messageType\"]],\" alert-dismissible fade show\"]]],[14,\"role\",\"alert\"],[12],[1,\"\\n    \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[28,[37,2],[[30,0,[\"messageType\"]],\"success\"],null],\"bi-check-circle-fill\",[52,[28,[37,2],[[30,0,[\"messageType\"]],\"danger\"],null],\"bi-exclamation-triangle-fill\",\"bi-info-circle-fill\"]]]]],[12],[13],[1,\"\\n    \"],[1,[30,0,[\"message\"]]],[1,\"\\n    \"],[11,\"button\"],[24,0,\"btn-close\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"dismissMessage\"]]],null],[12],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,1,[\"bulls\",\"length\"]],[[[1,\"  \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,5],[[28,[37,5],[[30,1,[\"bulls\"]]],null]],null],null,[[[1,\"      \"],[10,0],[14,0,\"col-md-6 col-lg-4\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card h-100\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"d-flex align-items-center gap-3 mb-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"rounded-circle bg-danger text-white d-flex align-items-center justify-content-center\"],[14,5,\"width:48px;height:48px;font-size:1.3rem;\"],[12],[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[12],[1,\"\\n                \"],[10,\"h6\"],[14,0,\"fw-bold mb-0\"],[12],[1,[30,2,[\"bull_name\"]]],[13],[1,\"\\n                \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Age: \"],[1,[30,2,[\"age\"]]],[1,\" • Breed: \"],[1,[30,2,[\"breed\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"d-flex flex-wrap gap-2 mb-2\"],[12],[1,\"\\n\"],[41,[30,2,[\"fitness_certificate\"]],[[[1,\"                \"],[10,1],[14,0,\"badge bg-success\"],[12],[10,\"i\"],[14,0,\"bi bi-check-circle\"],[12],[13],[1,\" Fitness Certified\"],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,1],[14,0,\"badge bg-warning text-dark\"],[12],[10,\"i\"],[14,0,\"bi bi-exclamation-triangle\"],[12],[13],[1,\" No Certificate\"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n\"],[41,[30,2,[\"stats\"]],[[[1,\"              \"],[10,0],[14,0,\"row g-2 mt-2\"],[12],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-primary\"],[12],[1,[30,2,[\"stats\",\"total_matches\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Matches\"],[13],[1,\"\\n                \"],[13],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-danger\"],[12],[1,[30,2,[\"stats\",\"avg_aggression\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Avg Aggr.\"],[13],[1,\"\\n                \"],[13],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-warning\"],[12],[1,[30,2,[\"stats\",\"avg_difficulty\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Avg Diff.\"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],null],[1,\"            \"],[10,0],[14,0,\"mt-3\"],[12],[1,\"\\n              \"],[8,[39,6],[[24,0,\"btn btn-outline-primary btn-sm w-100\"]],[[\"@route\",\"@model\"],[\"bull-profile\",[30,2,[\"bull_id\"]]]],[[\"default\"],[[[[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-eye\"],[12],[13],[1,\" View Full Profile\\n              \"]],[]]]]],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[2]],null],[1,\"  \"],[13],[1,\"\\n\\n\"],[41,[30,1,[\"matches\",\"length\"]],[[[1,\"    \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n      \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-flag-fill\"],[12],[13],[1,\" Register Bull for Match\"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted mb-3\"],[12],[1,\"Available scheduled matches\"],[13],[1,\"\\n\\n    \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n\"],[42,[28,[37,5],[[28,[37,5],[[30,1,[\"matches\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"col-md-6\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card h-100\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"d-flex justify-content-between align-items-start mb-2\"],[12],[1,\"\\n                \"],[10,\"h6\"],[14,0,\"fw-bold mb-0\"],[12],[1,[30,3,[\"match_name\"]]],[13],[1,\"\\n                \"],[10,1],[14,0,\"status-badge scheduled\"],[12],[1,[30,3,[\"status\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"text-muted small mb-2\"],[12],[1,\"\\n                \"],[10,0],[12],[10,\"i\"],[14,0,\"bi bi-calendar3\"],[12],[13],[1,\" \"],[1,[30,3,[\"match_date\"]]],[13],[1,\"\\n                \"],[10,0],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt-fill\"],[12],[13],[1,\" \"],[1,[30,3,[\"location\"]]],[41,[30,3,[\"area\"]],[[[1,\", \"],[1,[30,3,[\"area\"]]]],[]],null],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"d-flex gap-2 flex-wrap mb-3\"],[12],[1,\"\\n                \"],[10,1],[14,0,\"badge bg-secondary\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-people-fill\"],[12],[13],[1,\" \"],[1,[30,3,[\"capacity\",\"registeredPlayers\"]]],[1,\"/\"],[1,[30,3,[\"player_limit\"]]],[1,\" players\\n                \"],[13],[1,\"\\n                \"],[10,1],[15,0,[29,[\"badge \",[52,[28,[37,2],[[30,3,[\"capacity\",\"bullSlotsRemaining\"]],0],null],\"bg-danger\",\"bg-secondary\"]]]],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" \"],[1,[30,3,[\"capacity\",\"registeredBulls\"]]],[1,\"/\"],[1,[30,3,[\"bull_limit\"]]],[1,\" bulls\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\\n\"],[41,[28,[37,2],[[30,3,[\"capacity\",\"bullSlotsRemaining\"]],0],null],[[[1,\"                \"],[10,0],[14,0,\"text-center\"],[12],[1,\"\\n                  \"],[10,1],[14,0,\"badge bg-danger\"],[12],[10,\"i\"],[14,0,\"bi bi-x-circle\"],[12],[13],[1,\" Bull Slots Full\"],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"d-flex flex-wrap gap-2\"],[12],[1,\"\\n\"],[42,[28,[37,5],[[28,[37,5],[[30,1,[\"bulls\"]]],null]],null],null,[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-outline-danger btn-sm\"],[16,\"disabled\",[52,[30,0,[\"registeringKey\"]],true,false]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,7],[[30,0,[\"registerBullForMatch\"]],[30,4,[\"bull_id\"]],[30,3,[\"match_id\"]]],null]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-shield-plus\"],[12],[13],[1,\" \"],[1,[30,4,[\"bull_name\"]]],[1,\"\\n                    \"],[13],[1,\"\\n\"]],[4]],null],[1,\"                \"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[3]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null]],[]],[[[1,\"  \"],[10,0],[14,0,\"empty-state py-5\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-shield-x\"],[14,5,\"font-size:3rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h5\"],[14,0,\"mt-3\"],[12],[1,\"No Bulls Registered\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"You haven't registered any bulls yet\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]]]],[\"@model\",\"bull\",\"match\",\"bull\"],false,[\"page-title\",\"if\",\"eq\",\"on\",\"each\",\"-track-array\",\"link-to\",\"fn\"]]",
+    "id": "o1z5R1g8",
+    "block": "[[[1,[28,[35,0],[\"My Bulls\"],null]],[1,\"\\n\\n\"],[10,0],[14,0,\"section-header d-flex justify-content-between align-items-center flex-wrap gap-2\"],[12],[1,\"\\n  \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" My Bulls\"],[13],[1,\"\\n\"],[41,[51,[30,0,[\"showAddForm\"]]],[[[1,\"    \"],[11,\"button\"],[24,0,\"btn btn-accent\"],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"toggleAddForm\"]]],null],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Add Bull\\n    \"],[13],[1,\"\\n\"]],[]],null],[13],[1,\"\\n\\n\"],[41,[30,0,[\"message\"]],[[[1,\"  \"],[10,0],[15,0,[29,[\"alert alert-\",[30,0,[\"messageType\"]],\" alert-dismissible fade show\"]]],[14,\"role\",\"alert\"],[12],[1,\"\\n    \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[28,[37,4],[[30,0,[\"messageType\"]],\"success\"],null],\"bi-check-circle-fill\",[52,[28,[37,4],[[30,0,[\"messageType\"]],\"danger\"],null],\"bi-exclamation-triangle-fill\",\"bi-info-circle-fill\"]]]]],[12],[13],[1,\"\\n    \"],[1,[30,0,[\"message\"]]],[1,\"\\n    \"],[11,\"button\"],[24,0,\"btn-close\"],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"dismissMessage\"]]],null],[12],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"showAddForm\"]],[[[1,\"  \"],[10,0],[14,0,\"card mb-4 border-accent\"],[12],[1,\"\\n    \"],[10,0],[14,0,\"card-header bg-accent text-white fw-semibold\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Register New Bull\\n    \"],[13],[1,\"\\n    \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n      \"],[11,\"form\"],[4,[38,2],[\"submit\",[30,0,[\"addBull\"]]],null],[12],[1,\"\\n        \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"col-md-6\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Bull Name \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newBullName\"]]],[24,\"required\",\"\"],[24,\"placeholder\",\"e.g. Kaalai Veeran\"],[24,4,\"text\"],[4,[38,2],[\"input\",[28,[37,5],[[30,0,[\"updateField\"]],\"newBullName\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Age (years) \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newBullAge\"]]],[24,\"required\",\"\"],[24,\"min\",\"3\"],[24,\"max\",\"15\"],[24,\"placeholder\",\"3–15\"],[24,4,\"number\"],[4,[38,2],[\"input\",[28,[37,5],[[30,0,[\"updateField\"]],\"newBullAge\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Min 3 years per regulations\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Breed \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n            \"],[11,\"select\"],[24,0,\"form-select\"],[24,\"required\",\"\"],[4,[38,2],[\"change\",[28,[37,5],[[30,0,[\"updateField\"]],\"newBreedId\"],null]],null],[12],[1,\"\\n              \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"-- Select Breed --\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"breeds\"]]],null]],null],null,[[[1,\"                \"],[10,\"option\"],[15,2,[30,2,[\"bull_breed_id\"]]],[15,\"selected\",[28,[37,4],[[28,[37,8],[[30,2,[\"bull_breed_id\"]]],null],[28,[37,8],[[30,0,[\"newBreedId\"]]],null]],null]],[12],[1,[30,2,[\"bull_breed_name\"]]],[13],[1,\"\\n\"]],[2]],null],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"col-md-6\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Fitness Certificate No. \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newFitnessCert\"]]],[24,\"required\",\"\"],[24,\"placeholder\",\"Veterinary certificate reference\"],[24,4,\"text\"],[4,[38,2],[\"input\",[28,[37,5],[[30,0,[\"updateField\"]],\"newFitnessCert\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"col-md-6 d-flex align-items-end gap-2\"],[12],[1,\"\\n            \"],[10,\"button\"],[14,0,\"btn btn-success\"],[15,\"disabled\",[30,0,[\"isAddingBull\"]]],[14,4,\"submit\"],[12],[1,\"\\n              \"],[41,[30,0,[\"isAddingBull\"]],[[[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Saving...\"]],[]],[[[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[1,\" Register Bull\"]],[]]],[1,\"\\n            \"],[13],[1,\"\\n            \"],[11,\"button\"],[24,0,\"btn btn-outline-secondary\"],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"toggleAddForm\"]]],null],[12],[1,\"Cancel\"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,1,[\"bulls\",\"length\"]],[[[1,\"  \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"bulls\"]]],null]],null],null,[[[1,\"      \"],[10,0],[14,0,\"col-md-6 col-lg-4\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card h-100\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"d-flex align-items-center gap-3 mb-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"rounded-circle bg-danger text-white d-flex align-items-center justify-content-center\"],[14,5,\"width:48px;height:48px;font-size:1.3rem;\"],[12],[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[12],[1,\"\\n                \"],[10,\"h6\"],[14,0,\"fw-bold mb-0\"],[12],[1,[30,3,[\"bull_name\"]]],[13],[1,\"\\n                \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Age: \"],[1,[30,3,[\"age\"]]],[1,\" • Breed: \"],[1,[30,3,[\"breed\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,0],[14,0,\"d-flex flex-wrap gap-2 mb-2\"],[12],[1,\"\\n\"],[41,[30,3,[\"fitness_certificate\"]],[[[1,\"                \"],[10,1],[14,0,\"badge bg-success\"],[12],[10,\"i\"],[14,0,\"bi bi-check-circle\"],[12],[13],[1,\" Fitness Certified\"],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,1],[14,0,\"badge bg-warning text-dark\"],[12],[10,\"i\"],[14,0,\"bi bi-exclamation-triangle\"],[12],[13],[1,\" No Certificate\"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n\"],[41,[30,3,[\"stats\"]],[[[1,\"              \"],[10,0],[14,0,\"row g-2 mt-2\"],[12],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-primary\"],[12],[1,[30,3,[\"stats\",\"total_matches\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Matches\"],[13],[1,\"\\n                \"],[13],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-danger\"],[12],[1,[30,3,[\"stats\",\"avg_aggression\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Avg Aggr.\"],[13],[1,\"\\n                \"],[13],[1,\"\\n                \"],[10,0],[14,0,\"col-4 text-center\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"fw-bold text-warning\"],[12],[1,[30,3,[\"stats\",\"avg_difficulty\"]]],[13],[1,\"\\n                  \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Avg Diff.\"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],null],[1,\"            \"],[10,0],[14,0,\"mt-3\"],[12],[1,\"\\n              \"],[8,[39,9],[[24,0,\"btn btn-outline-primary btn-sm w-100\"]],[[\"@route\",\"@model\"],[\"bull-profile\",[30,3,[\"bull_id\"]]]],[[\"default\"],[[[[1,\"\\n                \"],[10,\"i\"],[14,0,\"bi bi-eye\"],[12],[13],[1,\" View Full Profile\\n              \"]],[]]]]],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[3]],null],[1,\"  \"],[13],[1,\"\\n\\n\"],[41,[30,1,[\"matches\",\"length\"]],[[[1,\"    \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n      \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-flag-fill\"],[12],[13],[1,\" Register Bull for Match\"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted mb-3\"],[12],[1,\"Available scheduled matches\"],[13],[1,\"\\n\\n    \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"matches\"]]],null]],null],null,[[[1,\"        \"],[10,0],[14,0,\"col-md-6\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card h-100\"],[12],[1,\"\\n            \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"d-flex justify-content-between align-items-start mb-2\"],[12],[1,\"\\n                \"],[10,\"h6\"],[14,0,\"fw-bold mb-0\"],[12],[1,[30,4,[\"match_name\"]]],[13],[1,\"\\n                \"],[10,1],[14,0,\"status-badge scheduled\"],[12],[1,[30,4,[\"status\"]]],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"text-muted small mb-2\"],[12],[1,\"\\n                \"],[10,0],[12],[10,\"i\"],[14,0,\"bi bi-calendar3\"],[12],[13],[1,\" \"],[1,[30,4,[\"match_date\"]]],[13],[1,\"\\n                \"],[10,0],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt-fill\"],[12],[13],[1,\" \"],[1,[30,4,[\"location\"]]],[41,[30,4,[\"area\"]],[[[1,\", \"],[1,[30,4,[\"area\"]]]],[]],null],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"d-flex gap-2 flex-wrap mb-3\"],[12],[1,\"\\n                \"],[10,1],[14,0,\"badge bg-secondary\"],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-people-fill\"],[12],[13],[1,\" \"],[1,[30,4,[\"capacity\",\"registeredPlayers\"]]],[1,\"/\"],[1,[30,4,[\"player_limit\"]]],[1,\" players\\n                \"],[13],[1,\"\\n                \"],[10,1],[15,0,[29,[\"badge \",[52,[28,[37,4],[[30,4,[\"capacity\",\"bullSlotsRemaining\"]],0],null],\"bg-danger\",\"bg-secondary\"]]]],[12],[1,\"\\n                  \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" \"],[1,[30,4,[\"capacity\",\"registeredBulls\"]]],[1,\"/\"],[1,[30,4,[\"bull_limit\"]]],[1,\" bulls\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\\n\"],[41,[28,[37,4],[[30,4,[\"capacity\",\"bullSlotsRemaining\"]],0],null],[[[1,\"                \"],[10,0],[14,0,\"text-center\"],[12],[1,\"\\n                  \"],[10,1],[14,0,\"badge bg-danger\"],[12],[10,\"i\"],[14,0,\"bi bi-x-circle\"],[12],[13],[1,\" Bull Slots Full\"],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]],[[[1,\"                \"],[10,0],[14,0,\"d-flex flex-wrap gap-2\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,1,[\"bulls\"]]],null]],null],null,[[[1,\"                    \"],[11,\"button\"],[24,0,\"btn btn-outline-danger btn-sm\"],[16,\"disabled\",[52,[30,0,[\"registeringKey\"]],true,false]],[24,4,\"button\"],[4,[38,2],[\"click\",[28,[37,5],[[30,0,[\"registerBullForMatch\"]],[30,5,[\"bull_id\"]],[30,4,[\"match_id\"]]],null]],null],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-shield-plus\"],[12],[13],[1,\" \"],[1,[30,5,[\"bull_name\"]]],[1,\"\\n                    \"],[13],[1,\"\\n\"]],[5]],null],[1,\"                \"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n\"]],[4]],null],[1,\"    \"],[13],[1,\"\\n\"]],[]],null]],[]],[[[1,\"  \"],[10,0],[14,0,\"empty-state py-5\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-shield-x\"],[14,5,\"font-size:3rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h5\"],[14,0,\"mt-3\"],[12],[1,\"No Bulls Registered\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"You haven't registered any bulls yet\"],[13],[1,\"\\n\"],[41,[51,[30,0,[\"showAddForm\"]]],[[[1,\"      \"],[11,\"button\"],[24,0,\"btn btn-accent\"],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"toggleAddForm\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Add Your First Bull\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"  \"],[13],[1,\"\\n\"]],[]]]],[\"@model\",\"b\",\"bull\",\"match\",\"bull\"],false,[\"page-title\",\"unless\",\"on\",\"if\",\"eq\",\"fn\",\"each\",\"-track-array\",\"to-string\",\"link-to\"]]",
     "moduleName": "jallikattu-frontend/templates/my-bulls.hbs",
     "isStrictMode": false
   });
@@ -6401,6 +7490,38 @@
           </div>
         </div>
       </div>
+  
+      {{!-- Spot Prize Awards --}}
+      {{#if this.spotPrizes.length}}
+        <div class="mt-4">
+          <h6 class="fw-bold mb-3"><i class="bi bi-gift-fill text-warning"></i> Spot Prize Awards</h6>
+          <div class="row g-3">
+            {{#each this.spotPrizes as |sp|}}
+              <div class="col-md-4 col-lg-3">
+                <div class="card border-warning">
+                  <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <i class="bi bi-gift-fill text-warning"></i>
+                      <strong class="small">{{sp.prize_title}}</strong>
+                    </div>
+                    {{#if sp.prize_type}}
+                      <span class="badge bg-secondary mb-1" style="font-size:0.7rem">{{sp.prize_type}}</span>
+                    {{/if}}
+                    <div class="small">
+                      <i class="bi bi-person-fill"></i> <strong>{{sp.first_name}} {{sp.last_name}}</strong>
+                    </div>
+                    {{#if sp.sponsor_name}}
+                      <div class="small text-muted">
+                        <i class="bi bi-shop"></i> by <em>{{sp.sponsor_name}}</em>
+                      </div>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
     {{else}}
       <div class="empty-state">
         <i class="bi bi-hand-index d-block"></i>
@@ -6412,8 +7533,8 @@
   
   */
   {
-    "id": "rbkT9dgh",
-    "block": "[[[1,[28,[35,0],[\"Live Scoreboard\"],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n    \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-broadcast text-danger\"],[12],[13],[1,\" Live Scoreboard\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"d-flex align-items-center gap-2\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"btn btn-sm \",[52,[30,0,[\"autoRefresh\"]],\"btn-success\",\"btn-outline-secondary\"]]]],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"toggleAutoRefresh\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[30,0,[\"autoRefresh\"]],\"bi-pause-circle\",\"bi-play-circle\"]]]],[12],[13],[1,\"\\n        \"],[1,[52,[30,0,[\"autoRefresh\"]],\"Auto-refresh ON\",\"Auto-refresh OFF\"]],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[1,\"  \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"allMatches\"]]],null]],null],null,[[[1,\"      \"],[10,0],[14,0,\"col-md-4 col-lg-3\"],[12],[1,\"\\n        \"],[11,0],[16,0,[29,[\"match-card cursor-pointer \",[52,[28,[37,5],[[30,0,[\"selectedMatchId\"]],[30,1,[\"match_id\"]]],null],\"border-danger\"]]]],[24,\"role\",\"button\"],[4,[38,2],[\"click\",[28,[37,6],[[30,0,[\"selectMatch\"]],[30,1,[\"match_id\"]]],null]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"d-flex justify-content-between align-items-start mb-1\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-0 small\"],[12],[1,\"Match #\"],[1,[30,1,[\"match_id\"]]],[13],[1,\"\\n            \"],[10,1],[15,0,[29,[\"status-badge \",[30,1,[\"status\"]]]]],[12],[1,[30,1,[\"status\"]]],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"match-venue\"],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt\"],[12],[13],[1,\" \"],[1,[30,1,[\"location\"]]],[13],[1,\"\\n          \"],[10,0],[14,0,\"match-date\"],[12],[10,\"i\"],[14,0,\"bi bi-calendar3\"],[12],[13],[1,\" \"],[1,[30,1,[\"match_date\"]]],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[1]],null],[1,\"  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"    \"],[10,0],[14,0,\"loading-spinner\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"spinner-border text-danger\"],[14,\"role\",\"status\"],[12],[1,\"\\n        \"],[10,1],[14,0,\"visually-hidden\"],[12],[1,\"Loading...\"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],[[[41,[30,0,[\"scores\"]],[[[1,\"    \"],[10,0],[14,0,\"row g-4\"],[12],[1,\"\\n\"],[1,\"      \"],[10,0],[14,0,\"col-lg-6\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-person-fill text-primary\"],[12],[13],[1,\" Player Leaderboard\"],[13],[1,\"\\n\"],[41,[30,0,[\"topPlayers\",\"length\"]],[[[1,\"              \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n                \"],[10,\"table\"],[14,0,\"table table-sm mb-0\"],[12],[1,\"\\n                  \"],[10,\"thead\"],[12],[1,\"\\n                    \"],[10,\"tr\"],[12],[1,\"\\n                      \"],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Player\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Caught\"],[13],[1,\"\\n                      \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Penalties\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Net\"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                  \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"topPlayers\"]]],null]],null],null,[[[1,\"                      \"],[10,\"tr\"],[12],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,5],[[30,3],0],null],\"gold\",[52,[28,[37,5],[[30,3],1],null],\"silver\",[52,[28,[37,5],[[30,3],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                            \"],[1,[28,[35,7],[[30,3],1],null]],[1,\"\\n                          \"],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[8,[39,8],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"player-profile\",[30,2,[\"player_id\"]]]],[[\"default\"],[[[[1,\"\\n                            \"],[1,[30,2,[\"player_name\"]]],[1,\"\\n                          \"]],[]]]]],[1,\"\\n                          \"],[10,\"br\"],[12],[13],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,2,[\"batch_name\"]]],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,2,[\"total_caught\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center text-danger\"],[12],[1,[30,2,[\"total_penalties\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"score-net\"],[12],[1,[30,2,[\"net_score\"]]],[13],[13],[1,\"\\n                      \"],[13],[1,\"\\n\"]],[2,3]],null],[1,\"                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],[[[1,\"              \"],[10,0],[14,0,\"empty-state\"],[12],[10,\"i\"],[14,0,\"bi bi-inbox d-block\"],[12],[13],[1,\"No player scores yet\"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\\n\"],[1,\"      \"],[10,0],[14,0,\"col-lg-6\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill text-success\"],[12],[13],[1,\" Bull Leaderboard\"],[13],[1,\"\\n\"],[41,[30,0,[\"topBulls\",\"length\"]],[[[1,\"              \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n                \"],[10,\"table\"],[14,0,\"table table-sm mb-0\"],[12],[1,\"\\n                  \"],[10,\"thead\"],[12],[1,\"\\n                    \"],[10,\"tr\"],[12],[1,\"\\n                      \"],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Bull\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Aggression\"],[13],[1,\"\\n                      \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Difficulty\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Releases\"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                  \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"topBulls\"]]],null]],null],null,[[[1,\"                      \"],[10,\"tr\"],[12],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,5],[[30,5],0],null],\"gold\",[52,[28,[37,5],[[30,5],1],null],\"silver\",[52,[28,[37,5],[[30,5],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                            \"],[1,[28,[35,7],[[30,5],1],null]],[1,\"\\n                          \"],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[8,[39,8],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"bull-profile\",[30,4,[\"bull_id\"]]]],[[\"default\"],[[[[1,\"\\n                            \"],[1,[30,4,[\"bull_name\"]]],[1,\"\\n                          \"]],[]]]]],[1,\"\\n                          \"],[10,\"br\"],[12],[13],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,4,[\"owner_name\"]]],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"avg_aggression\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"avg_difficulty\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"total_releases\"]]],[13],[1,\"\\n                      \"],[13],[1,\"\\n\"]],[4,5]],null],[1,\"                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],[[[1,\"              \"],[10,0],[14,0,\"empty-state\"],[12],[10,\"i\"],[14,0,\"bi bi-inbox d-block\"],[12],[13],[1,\"No bull scores yet\"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],[[[1,\"    \"],[10,0],[14,0,\"empty-state\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-hand-index d-block\"],[12],[13],[1,\"\\n      \"],[10,\"h6\"],[12],[1,\"Select a match above to view scores\"],[13],[1,\"\\n      \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Pick any match to see the live scoreboard\"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"]],[]]]],[]]],[13],[1,\"\\n\"]],[\"match\",\"p\",\"index\",\"b\",\"index\"],false,[\"page-title\",\"if\",\"on\",\"each\",\"-track-array\",\"eq\",\"fn\",\"add\",\"link-to\"]]",
+    "id": "e1Lwo9J3",
+    "block": "[[[1,[28,[35,0],[\"Live Scoreboard\"],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"section-header\"],[12],[1,\"\\n    \"],[10,\"h5\"],[12],[10,\"i\"],[14,0,\"bi bi-broadcast text-danger\"],[12],[13],[1,\" Live Scoreboard\"],[13],[1,\"\\n    \"],[10,0],[14,0,\"d-flex align-items-center gap-2\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"btn btn-sm \",[52,[30,0,[\"autoRefresh\"]],\"btn-success\",\"btn-outline-secondary\"]]]],[24,4,\"button\"],[4,[38,2],[\"click\",[30,0,[\"toggleAutoRefresh\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[15,0,[29,[\"bi \",[52,[30,0,[\"autoRefresh\"]],\"bi-pause-circle\",\"bi-play-circle\"]]]],[12],[13],[1,\"\\n        \"],[1,[52,[30,0,[\"autoRefresh\"]],\"Auto-refresh ON\",\"Auto-refresh OFF\"]],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[1,\"  \"],[10,0],[14,0,\"row g-3 mb-4\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"allMatches\"]]],null]],null],null,[[[1,\"      \"],[10,0],[14,0,\"col-md-4 col-lg-3\"],[12],[1,\"\\n        \"],[11,0],[16,0,[29,[\"match-card cursor-pointer \",[52,[28,[37,5],[[30,0,[\"selectedMatchId\"]],[30,1,[\"match_id\"]]],null],\"border-danger\"]]]],[24,\"role\",\"button\"],[4,[38,2],[\"click\",[28,[37,6],[[30,0,[\"selectMatch\"]],[30,1,[\"match_id\"]]],null]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"d-flex justify-content-between align-items-start mb-1\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-0 small\"],[12],[1,\"Match #\"],[1,[30,1,[\"match_id\"]]],[13],[1,\"\\n            \"],[10,1],[15,0,[29,[\"status-badge \",[30,1,[\"status\"]]]]],[12],[1,[30,1,[\"status\"]]],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"match-venue\"],[12],[10,\"i\"],[14,0,\"bi bi-geo-alt\"],[12],[13],[1,\" \"],[1,[30,1,[\"location\"]]],[13],[1,\"\\n          \"],[10,0],[14,0,\"match-date\"],[12],[10,\"i\"],[14,0,\"bi bi-calendar3\"],[12],[13],[1,\" \"],[1,[30,1,[\"match_date\"]]],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[1]],null],[1,\"  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"    \"],[10,0],[14,0,\"loading-spinner\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"spinner-border text-danger\"],[14,\"role\",\"status\"],[12],[1,\"\\n        \"],[10,1],[14,0,\"visually-hidden\"],[12],[1,\"Loading...\"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],[[[41,[30,0,[\"scores\"]],[[[1,\"    \"],[10,0],[14,0,\"row g-4\"],[12],[1,\"\\n\"],[1,\"      \"],[10,0],[14,0,\"col-lg-6\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-person-fill text-primary\"],[12],[13],[1,\" Player Leaderboard\"],[13],[1,\"\\n\"],[41,[30,0,[\"topPlayers\",\"length\"]],[[[1,\"              \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n                \"],[10,\"table\"],[14,0,\"table table-sm mb-0\"],[12],[1,\"\\n                  \"],[10,\"thead\"],[12],[1,\"\\n                    \"],[10,\"tr\"],[12],[1,\"\\n                      \"],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Player\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Caught\"],[13],[1,\"\\n                      \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Penalties\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Net\"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                  \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"topPlayers\"]]],null]],null],null,[[[1,\"                      \"],[10,\"tr\"],[12],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,5],[[30,3],0],null],\"gold\",[52,[28,[37,5],[[30,3],1],null],\"silver\",[52,[28,[37,5],[[30,3],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                            \"],[1,[28,[35,7],[[30,3],1],null]],[1,\"\\n                          \"],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[8,[39,8],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"player-profile\",[30,2,[\"player_id\"]]]],[[\"default\"],[[[[1,\"\\n                            \"],[1,[30,2,[\"player_name\"]]],[1,\"\\n                          \"]],[]]]]],[1,\"\\n                          \"],[10,\"br\"],[12],[13],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,2,[\"batch_name\"]]],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,2,[\"total_caught\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center text-danger\"],[12],[1,[30,2,[\"total_penalties\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[10,1],[14,0,\"score-net\"],[12],[1,[30,2,[\"net_score\"]]],[13],[13],[1,\"\\n                      \"],[13],[1,\"\\n\"]],[2,3]],null],[1,\"                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],[[[1,\"              \"],[10,0],[14,0,\"empty-state\"],[12],[10,\"i\"],[14,0,\"bi bi-inbox d-block\"],[12],[13],[1,\"No player scores yet\"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\\n\"],[1,\"      \"],[10,0],[14,0,\"col-lg-6\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n          \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n            \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-shield-fill text-success\"],[12],[13],[1,\" Bull Leaderboard\"],[13],[1,\"\\n\"],[41,[30,0,[\"topBulls\",\"length\"]],[[[1,\"              \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n                \"],[10,\"table\"],[14,0,\"table table-sm mb-0\"],[12],[1,\"\\n                  \"],[10,\"thead\"],[12],[1,\"\\n                    \"],[10,\"tr\"],[12],[1,\"\\n                      \"],[10,\"th\"],[12],[1,\"#\"],[13],[10,\"th\"],[12],[1,\"Bull\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Aggression\"],[13],[1,\"\\n                      \"],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Difficulty\"],[13],[10,\"th\"],[14,0,\"text-center\"],[12],[1,\"Releases\"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                  \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"topBulls\"]]],null]],null],null,[[[1,\"                      \"],[10,\"tr\"],[12],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[10,1],[15,0,[29,[\"leaderboard-rank \",[52,[28,[37,5],[[30,5],0],null],\"gold\",[52,[28,[37,5],[[30,5],1],null],\"silver\",[52,[28,[37,5],[[30,5],2],null],\"bronze\",\"default\"]]]]]],[12],[1,\"\\n                            \"],[1,[28,[35,7],[[30,5],1],null]],[1,\"\\n                          \"],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[12],[1,\"\\n                          \"],[8,[39,8],[[24,0,\"fw-semibold text-decoration-none\"]],[[\"@route\",\"@model\"],[\"bull-profile\",[30,4,[\"bull_id\"]]]],[[\"default\"],[[[[1,\"\\n                            \"],[1,[30,4,[\"bull_name\"]]],[1,\"\\n                          \"]],[]]]]],[1,\"\\n                          \"],[10,\"br\"],[12],[13],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,[30,4,[\"owner_name\"]]],[13],[1,\"\\n                        \"],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"avg_aggression\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"avg_difficulty\"]]],[13],[1,\"\\n                        \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,[30,4,[\"total_releases\"]]],[13],[1,\"\\n                      \"],[13],[1,\"\\n\"]],[4,5]],null],[1,\"                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n\"]],[]],[[[1,\"              \"],[10,0],[14,0,\"empty-state\"],[12],[10,\"i\"],[14,0,\"bi bi-inbox d-block\"],[12],[13],[1,\"No bull scores yet\"],[13],[1,\"\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"spotPrizes\",\"length\"]],[[[1,\"      \"],[10,0],[14,0,\"mt-4\"],[12],[1,\"\\n        \"],[10,\"h6\"],[14,0,\"fw-bold mb-3\"],[12],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[12],[13],[1,\" Spot Prize Awards\"],[13],[1,\"\\n        \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n\"],[42,[28,[37,4],[[28,[37,4],[[30,0,[\"spotPrizes\"]]],null]],null],null,[[[1,\"            \"],[10,0],[14,0,\"col-md-4 col-lg-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"card border-warning\"],[12],[1,\"\\n                \"],[10,0],[14,0,\"card-body py-2 px-3\"],[12],[1,\"\\n                  \"],[10,0],[14,0,\"d-flex align-items-center gap-2 mb-1\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[12],[13],[1,\"\\n                    \"],[10,\"strong\"],[14,0,\"small\"],[12],[1,[30,6,[\"prize_title\"]]],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"],[41,[30,6,[\"prize_type\"]],[[[1,\"                    \"],[10,1],[14,0,\"badge bg-secondary mb-1\"],[14,5,\"font-size:0.7rem\"],[12],[1,[30,6,[\"prize_type\"]]],[13],[1,\"\\n\"]],[]],null],[1,\"                  \"],[10,0],[14,0,\"small\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\" \"],[10,\"strong\"],[12],[1,[30,6,[\"first_name\"]]],[1,\" \"],[1,[30,6,[\"last_name\"]]],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"],[41,[30,6,[\"sponsor_name\"]],[[[1,\"                    \"],[10,0],[14,0,\"small text-muted\"],[12],[1,\"\\n                      \"],[10,\"i\"],[14,0,\"bi bi-shop\"],[12],[13],[1,\" by \"],[10,\"em\"],[12],[1,[30,6,[\"sponsor_name\"]]],[13],[1,\"\\n                    \"],[13],[1,\"\\n\"]],[]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n\"]],[6]],null],[1,\"        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null]],[]],[[[1,\"    \"],[10,0],[14,0,\"empty-state\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-hand-index d-block\"],[12],[13],[1,\"\\n      \"],[10,\"h6\"],[12],[1,\"Select a match above to view scores\"],[13],[1,\"\\n      \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Pick any match to see the live scoreboard\"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"]],[]]]],[]]],[13],[1,\"\\n\"]],[\"match\",\"p\",\"index\",\"b\",\"index\",\"sp\"],false,[\"page-title\",\"if\",\"on\",\"each\",\"-track-array\",\"eq\",\"fn\",\"add\",\"link-to\"]]",
     "moduleName": "jallikattu-frontend/templates/scoreboard.hbs",
     "isStrictMode": false
   });
@@ -6523,8 +7644,9 @@
               <input type="text" class="form-control" value={{this.oName}} {{on "input" (fn this.updateField "oName")}} required>
             </div>
             <div class="mb-3">
-              <label class="form-label fw-semibold">Phone Number</label>
-              <input type="text" class="form-control" value={{this.oPhone}} {{on "input" (fn this.updateField "oPhone")}} required pattern="\d{10}" maxlength="10">
+              <label class="form-label fw-semibold">Aadhaar Number</label>
+              <input type="text" class="form-control" value={{this.oAadhaar}} {{on "input" (fn this.updateField "oAadhaar")}} required pattern="\d{12}" maxlength="12">
+              <small class="text-muted">12-digit Aadhaar number</small>
             </div>
             <button type="submit" class="btn btn-accent w-100" disabled={{this.isLoading}}>
               {{#if this.isLoading}}
@@ -6546,9 +7668,434 @@
   
   */
   {
-    "id": "lzB9YiHm",
-    "block": "[[[1,[28,[35,0],[\"Register\"],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-5\"],[14,5,\"max-width: 600px;\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"text-center mb-4\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-trophy-fill text-accent\"],[14,5,\"font-size:2.5rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h3\"],[14,0,\"fw-bold mt-2\"],[12],[1,\"Join Jallikattu\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Register as a player or bull owner\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[1,\"  \"],[10,\"ul\"],[14,0,\"nav nav-tabs mb-4 justify-content-center\"],[12],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"player\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"setTab\"]],\"player\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\" Player\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"owner\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"setTab\"]],\"owner\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Owner\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"error\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-danger\"],[12],[10,\"i\"],[14,0,\"bi bi-exclamation-triangle\"],[12],[13],[1,\" \"],[1,[30,0,[\"error\"]]],[13],[1,\"\\n\"]],[]],null],[41,[30,0,[\"success\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-success\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-check-circle\"],[12],[13],[1,\" \"],[1,[30,0,[\"success\"]]],[1,\"\\n      \"],[10,0],[14,0,\"mt-2\"],[12],[8,[39,5],[[24,0,\"btn btn-sm btn-success\"]],[[\"@route\"],[\"login\"]],[[\"default\"],[[[[1,\"Go to Login\"]],[]]]]],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"player\"],null],[[[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"registerPlayer\"]]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Username\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pUsername\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"3\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pUsername\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Password\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pPassword\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"6\"],[24,4,\"password\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pPassword\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Minimum 6 characters\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Full Name\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pName\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pName\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Date of Birth\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pDOB\"]]],[24,\"required\",\"\"],[24,4,\"date\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pDOB\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Phone Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pPhone\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{10}\"],[24,\"maxlength\",\"10\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pPhone\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"10-digit phone number\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Aadhaar Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pAadhaar\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{12}\"],[24,\"maxlength\",\"12\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pAadhaar\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"12-digit Aadhaar number\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"button\"],[14,0,\"btn btn-accent w-100\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Registering...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-person-plus\"],[12],[13],[1,\" Register as Player\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"owner\"],null],[[[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"registerOwner\"]]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Username\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oUsername\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"3\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oUsername\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Password\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oPassword\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"6\"],[24,4,\"password\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oPassword\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Minimum 6 characters\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Owner Name\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oName\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oName\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Phone Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oPhone\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{10}\"],[24,\"maxlength\",\"10\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oPhone\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"button\"],[14,0,\"btn btn-accent w-100\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Registering...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-shield-plus\"],[12],[13],[1,\" Register as Bull Owner\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n  \"],[10,0],[14,0,\"text-center mt-3\"],[12],[1,\"\\n    \"],[10,1],[14,0,\"text-muted\"],[12],[1,\"Already have an account?\"],[13],[1,\"\\n    \"],[8,[39,5],[[24,0,\"text-accent fw-semibold\"]],[[\"@route\"],[\"login\"]],[[\"default\"],[[[[1,\"Login\"]],[]]]]],[1,\"\\n  \"],[13],[1,\"\\n\"],[13],[1,\"\\n\"]],[],false,[\"page-title\",\"if\",\"eq\",\"on\",\"fn\",\"link-to\"]]",
+    "id": "U2tS/Orw",
+    "block": "[[[1,[28,[35,0],[\"Register\"],null]],[1,\"\\n\"],[10,0],[14,0,\"container py-5\"],[14,5,\"max-width: 600px;\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"text-center mb-4\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-trophy-fill text-accent\"],[14,5,\"font-size:2.5rem;\"],[12],[13],[1,\"\\n    \"],[10,\"h3\"],[14,0,\"fw-bold mt-2\"],[12],[1,\"Join Jallikattu\"],[13],[1,\"\\n    \"],[10,2],[14,0,\"text-muted\"],[12],[1,\"Register as a player or bull owner\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[1,\"  \"],[10,\"ul\"],[14,0,\"nav nav-tabs mb-4 justify-content-center\"],[12],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"player\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"setTab\"]],\"player\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-person-fill\"],[12],[13],[1,\" Player\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"owner\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"setTab\"]],\"owner\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-shield-fill\"],[12],[13],[1,\" Bull Owner\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"error\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-danger\"],[12],[10,\"i\"],[14,0,\"bi bi-exclamation-triangle\"],[12],[13],[1,\" \"],[1,[30,0,[\"error\"]]],[13],[1,\"\\n\"]],[]],null],[41,[30,0,[\"success\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-success\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-check-circle\"],[12],[13],[1,\" \"],[1,[30,0,[\"success\"]]],[1,\"\\n      \"],[10,0],[14,0,\"mt-2\"],[12],[8,[39,5],[[24,0,\"btn btn-sm btn-success\"]],[[\"@route\"],[\"login\"]],[[\"default\"],[[[[1,\"Go to Login\"]],[]]]]],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"player\"],null],[[[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"registerPlayer\"]]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Username\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pUsername\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"3\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pUsername\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Password\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pPassword\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"6\"],[24,4,\"password\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pPassword\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Minimum 6 characters\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Full Name\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pName\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pName\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Date of Birth\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pDOB\"]]],[24,\"required\",\"\"],[24,4,\"date\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pDOB\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Phone Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pPhone\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{10}\"],[24,\"maxlength\",\"10\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pPhone\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"10-digit phone number\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Aadhaar Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"pAadhaar\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{12}\"],[24,\"maxlength\",\"12\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"pAadhaar\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"12-digit Aadhaar number\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"button\"],[14,0,\"btn btn-accent w-100\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Registering...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-person-plus\"],[12],[13],[1,\" Register as Player\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"owner\"],null],[[[1,\"    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n        \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"registerOwner\"]]],null],[12],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Username\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oUsername\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"3\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oUsername\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Password\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oPassword\"]]],[24,\"required\",\"\"],[24,\"minlength\",\"6\"],[24,4,\"password\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oPassword\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"Minimum 6 characters\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Owner Name\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oName\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oName\"],null]],null],[12],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,0],[14,0,\"mb-3\"],[12],[1,\"\\n            \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Aadhaar Number\"],[13],[1,\"\\n            \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"oAadhaar\"]]],[24,\"required\",\"\"],[24,\"pattern\",\"\\\\d{12}\"],[24,\"maxlength\",\"12\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"oAadhaar\"],null]],null],[12],[13],[1,\"\\n            \"],[10,\"small\"],[14,0,\"text-muted\"],[12],[1,\"12-digit Aadhaar number\"],[13],[1,\"\\n          \"],[13],[1,\"\\n          \"],[10,\"button\"],[14,0,\"btn btn-accent w-100\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n\"],[41,[30,0,[\"isLoading\"]],[[[1,\"              \"],[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13],[1,\" Registering...\\n\"]],[]],[[[1,\"              \"],[10,\"i\"],[14,0,\"bi bi-shield-plus\"],[12],[13],[1,\" Register as Bull Owner\\n\"]],[]]],[1,\"          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n  \"],[10,0],[14,0,\"text-center mt-3\"],[12],[1,\"\\n    \"],[10,1],[14,0,\"text-muted\"],[12],[1,\"Already have an account?\"],[13],[1,\"\\n    \"],[8,[39,5],[[24,0,\"text-accent fw-semibold\"]],[[\"@route\"],[\"login\"]],[[\"default\"],[[[[1,\"Login\"]],[]]]]],[1,\"\\n  \"],[13],[1,\"\\n\"],[13],[1,\"\\n\"]],[],false,[\"page-title\",\"if\",\"eq\",\"on\",\"fn\",\"link-to\"]]",
     "moduleName": "jallikattu-frontend/templates/signup.hbs",
+    "isStrictMode": false
+  });
+});
+;define("jallikattu-frontend/templates/spot-prizes", ["exports", "@ember/template-factory"], function (_exports, _templateFactory) {
+  "use strict";
+
+  Object.defineProperty(_exports, "__esModule", {
+    value: true
+  });
+  _exports.default = void 0;
+  0; //eaimeta@70e063a35619d71f0,"@ember/template-factory"eaimeta@70e063a35619d71f
+  var _default = _exports.default = (0, _templateFactory.createTemplateFactory)(
+  /*
+    {{page-title "Spot Prize Management"}}
+  
+  <div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="fw-bold"><i class="bi bi-gift-fill text-warning"></i> Spot Prize Management</h2>
+    </div>
+  
+    {{!-- Alerts --}}
+    {{#if this.error}}
+      <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill"></i> {{this.error}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {{/if}}
+    {{#if this.success}}
+      <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill"></i> {{this.success}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {{/if}}
+  
+    {{!-- Tabs --}}
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <button class="nav-link {{if (eq this.activeTab 'prizes') 'active'}}" type="button" {{on "click" (fn this.switchTab "prizes")}}>
+          <i class="bi bi-gift"></i> Spot Prizes
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link {{if (eq this.activeTab 'types') 'active'}}" type="button" {{on "click" (fn this.switchTab "types")}}>
+          <i class="bi bi-tags"></i> Prize Types
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link {{if (eq this.activeTab 'awards') 'active'}}" type="button" {{on "click" (fn this.switchTab "awards")}}>
+          <i class="bi bi-award"></i> Awards
+        </button>
+      </li>
+    </ul>
+  
+    {{!-- ═══════════════════════════════════════════
+         TAB: SPOT PRIZES
+         ═══════════════════════════════════════════ --}}
+    {{#if (eq this.activeTab "prizes")}}
+  
+      {{#unless this.isAddingPrize}}
+        <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddPrize}}>
+          <i class="bi bi-plus-circle"></i> Add Spot Prize
+        </button>
+      {{/unless}}
+  
+      {{#if this.isAddingPrize}}
+        <div class="card mb-4 border-accent">
+          <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> New Spot Prize</div>
+          <div class="card-body">
+            <form {{on "submit" this.addPrize}}>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Prize Title <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" value={{this.newPrizeTitle}} {{on "input" (fn this.updateField "newPrizeTitle")}} required placeholder="e.g. Best Tackle">
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-semibold">Type</label>
+                  <select class="form-select" {{on "change" (fn this.updateField "newPrizeTypeId")}}>
+                    <option value="">— Select —</option>
+                    {{#each this.types as |t|}}
+                      <option value={{t.spot_prize_type_id}}>{{t.spot_prize_type_name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-semibold">Match</label>
+                  <select class="form-select" {{on "change" (fn this.updateField "newPrizeMatchId")}}>
+                    <option value="">— Select —</option>
+                    {{#each this.matches as |m|}}
+                      <option value={{m.match_id}}>{{if m.match_name m.match_name (concat "Match #" m.match_id)}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label fw-semibold">Sponsor</label>
+                  <input type="text" class="form-control" value={{this.newPrizeSponsor}} {{on "input" (fn this.updateField "newPrizeSponsor")}} placeholder="Sponsor name">
+                </div>
+                <div class="col-md-1">
+                  <label class="form-label fw-semibold">Qty</label>
+                  <input type="number" class="form-control" min="1" value={{this.newPrizeQty}} {{on "input" (fn this.updateField "newPrizeQty")}}>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                  <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                    {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Save{{/if}}
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddPrize}}>Cancel</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      {{/if}}
+  
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th style="width:50px">ID</th>
+                  <th>Prize Title</th>
+                  <th>Type</th>
+                  <th>Match</th>
+                  <th>Sponsor</th>
+                  <th style="width:60px">Qty</th>
+                  <th>Created</th>
+                  <th style="width:120px" class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each this.prizes as |p|}}
+                  {{#if (eq this.editingPrizeId p.spot_prize_id)}}
+                    <tr class="table-warning">
+                      <td class="align-middle fw-semibold">{{p.spot_prize_id}}</td>
+                      <td>
+                        <form id="edit-prize-{{p.spot_prize_id}}" {{on "submit" (fn this.savePrize p.spot_prize_id)}}>
+                          <input type="text" class="form-control form-control-sm" value={{this.editPrizeTitle}} {{on "input" (fn this.updateField "editPrizeTitle")}} required>
+                        </form>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" form="edit-prize-{{p.spot_prize_id}}" {{on "change" (fn this.updateField "editPrizeTypeId")}}>
+                          <option value="">—</option>
+                          {{#each this.types as |t|}}
+                            <option value={{t.spot_prize_type_id}} selected={{eq (to-string t.spot_prize_type_id) (to-string this.editPrizeTypeId)}}>{{t.spot_prize_type_name}}</option>
+                          {{/each}}
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" form="edit-prize-{{p.spot_prize_id}}" {{on "change" (fn this.updateField "editPrizeMatchId")}}>
+                          <option value="">—</option>
+                          {{#each this.matches as |m|}}
+                            <option value={{m.match_id}} selected={{eq (to-string m.match_id) (to-string this.editPrizeMatchId)}}>{{if m.match_name m.match_name (concat "Match #" m.match_id)}}</option>
+                          {{/each}}
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm" value={{this.editPrizeSponsor}} {{on "input" (fn this.updateField "editPrizeSponsor")}} form="edit-prize-{{p.spot_prize_id}}">
+                      </td>
+                      <td>
+                        <input type="number" class="form-control form-control-sm" min="1" value={{this.editPrizeQty}} {{on "input" (fn this.updateField "editPrizeQty")}} form="edit-prize-{{p.spot_prize_id}}">
+                      </td>
+                      <td></td>
+                      <td class="text-center">
+                        <button type="submit" form="edit-prize-{{p.spot_prize_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditPrize}}><i class="bi bi-x-lg"></i></button>
+                      </td>
+                    </tr>
+                  {{else}}
+                    <tr>
+                      <td class="fw-semibold">{{p.spot_prize_id}}</td>
+                      <td>{{if p.prize_title p.prize_title "—"}}</td>
+                      <td>{{lookup-label this.types "spot_prize_type_id" p.spot_type_id "spot_prize_type_name" "—"}}</td>
+                      <td>{{lookup-label this.matches "match_id" p.match_id "match_name" (concat "Match #" p.match_id)}}</td>
+                      <td>{{if p.sponsor_name p.sponsor_name "—"}}</td>
+                      <td>{{if p.quantity p.quantity "—"}}</td>
+                      <td class="text-muted small">{{if p.created_time p.created_time "—"}}</td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditPrize p)}}><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deletePrize p.spot_prize_id)}}><i class="bi bi-trash-fill"></i></button>
+                      </td>
+                    </tr>
+                  {{/if}}
+                {{else}}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                      <i class="bi bi-gift" style="font-size:2rem"></i>
+                      <p class="mt-2 mb-0">No spot prizes yet. Click <strong>Add Spot Prize</strong> to get started.</p>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  
+    {{!-- ═══════════════════════════════════════════
+         TAB: PRIZE TYPES
+         ═══════════════════════════════════════════ --}}
+    {{#if (eq this.activeTab "types")}}
+  
+      {{#unless this.isAddingType}}
+        <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddType}}>
+          <i class="bi bi-plus-circle"></i> Add Type
+        </button>
+      {{/unless}}
+  
+      {{#if this.isAddingType}}
+        <div class="card mb-4 border-accent">
+          <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> New Prize Type</div>
+          <div class="card-body">
+            <form {{on "submit" this.addType}}>
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label class="form-label fw-semibold">Type Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" value={{this.newTypeName}} {{on "input" (fn this.updateField "newTypeName")}} required placeholder="e.g. Best Performance, Longest Hold, First Tamer">
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                  <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                    {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Save{{/if}}
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddType}}>Cancel</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      {{/if}}
+  
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th style="width:60px">ID</th>
+                  <th>Type Name</th>
+                  <th style="width:150px" class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each this.types as |t|}}
+                  {{#if (eq this.editingTypeId t.spot_prize_type_id)}}
+                    <tr class="table-warning">
+                      <td class="align-middle fw-semibold">{{t.spot_prize_type_id}}</td>
+                      <td>
+                        <form id="edit-type-{{t.spot_prize_type_id}}" {{on "submit" (fn this.saveType t.spot_prize_type_id)}}>
+                          <input type="text" class="form-control form-control-sm" value={{this.editTypeName}} {{on "input" (fn this.updateField "editTypeName")}} required>
+                        </form>
+                      </td>
+                      <td class="text-center">
+                        <button type="submit" form="edit-type-{{t.spot_prize_type_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditType}}><i class="bi bi-x-lg"></i></button>
+                      </td>
+                    </tr>
+                  {{else}}
+                    <tr>
+                      <td class="fw-semibold">{{t.spot_prize_type_id}}</td>
+                      <td>{{t.spot_prize_type_name}}</td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditType t)}}><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deleteType t.spot_prize_type_id)}}><i class="bi bi-trash-fill"></i></button>
+                      </td>
+                    </tr>
+                  {{/if}}
+                {{else}}
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                      <i class="bi bi-tags" style="font-size:2rem"></i>
+                      <p class="mt-2 mb-0">No prize types yet. Click <strong>Add Type</strong> to create categories like "Best Tackle", "Longest Hold".</p>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  
+    {{!-- ═══════════════════════════════════════════
+         TAB: AWARDS
+         ═══════════════════════════════════════════ --}}
+    {{#if (eq this.activeTab "awards")}}
+  
+      {{#unless this.isAddingAward}}
+        <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddAward}}>
+          <i class="bi bi-plus-circle"></i> Give Award
+        </button>
+      {{/unless}}
+  
+      {{#if this.isAddingAward}}
+        <div class="card mb-4 border-accent">
+          <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> Give Spot Prize Award</div>
+          <div class="card-body">
+            <form {{on "submit" this.addAward}}>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Player <span class="text-danger">*</span></label>
+                  <select class="form-select" {{on "change" (fn this.updateField "newAwardPlayerId")}} required>
+                    <option value="">— Select Player —</option>
+                    {{#each this.players as |pl|}}
+                      <option value={{pl.player_id}}>{{pl.first_name}} {{pl.last_name}} (#{{pl.player_id}})</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Spot Prize <span class="text-danger">*</span></label>
+                  <select class="form-select" {{on "change" (fn this.updateField "newAwardPrizeId")}} required>
+                    <option value="">— Select Prize —</option>
+                    {{#each this.prizes as |sp|}}
+                      <option value={{sp.spot_prize_id}}>{{sp.prize_title}} (#{{sp.spot_prize_id}})</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold">Bull (optional)</label>
+                  <select class="form-select" {{on "change" (fn this.updateField "newAwardBullId")}}>
+                    <option value="">— None —</option>
+                    {{#each this.bulls as |b|}}
+                      <option value={{b.bull_id}}>{{if b.bull_name b.bull_name (concat "Bull #" b.bull_id)}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                  <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                    {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Award{{/if}}
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddAward}}>Cancel</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      {{/if}}
+  
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th style="width:50px">ID</th>
+                  <th>Player</th>
+                  <th>Spot Prize</th>
+                  <th>Bull</th>
+                  <th>Awarded</th>
+                  <th style="width:120px" class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each this.awards as |a|}}
+                  {{#if (eq this.editingAwardId a.spot_prize_award_id)}}
+                    <tr class="table-warning">
+                      <td class="align-middle fw-semibold">{{a.spot_prize_award_id}}</td>
+                      <td>
+                        <form id="edit-award-{{a.spot_prize_award_id}}" {{on "submit" (fn this.saveAward a.spot_prize_award_id)}}>
+                          <select class="form-select form-select-sm" {{on "change" (fn this.updateField "editAwardPlayerId")}} required>
+                            <option value="">—</option>
+                            {{#each this.players as |pl|}}
+                              <option value={{pl.player_id}} selected={{eq (to-string pl.player_id) (to-string this.editAwardPlayerId)}}>{{pl.first_name}} {{pl.last_name}}</option>
+                            {{/each}}
+                          </select>
+                        </form>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" form="edit-award-{{a.spot_prize_award_id}}" {{on "change" (fn this.updateField "editAwardPrizeId")}} required>
+                          <option value="">—</option>
+                          {{#each this.prizes as |sp|}}
+                            <option value={{sp.spot_prize_id}} selected={{eq (to-string sp.spot_prize_id) (to-string this.editAwardPrizeId)}}>{{sp.prize_title}}</option>
+                          {{/each}}
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm" form="edit-award-{{a.spot_prize_award_id}}" {{on "change" (fn this.updateField "editAwardBullId")}}>
+                          <option value="">— None —</option>
+                          {{#each this.bulls as |b|}}
+                            <option value={{b.bull_id}} selected={{eq (to-string b.bull_id) (to-string this.editAwardBullId)}}>{{if b.bull_name b.bull_name (concat "Bull #" b.bull_id)}}</option>
+                          {{/each}}
+                        </select>
+                      </td>
+                      <td></td>
+                      <td class="text-center">
+                        <button type="submit" form="edit-award-{{a.spot_prize_award_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditAward}}><i class="bi bi-x-lg"></i></button>
+                      </td>
+                    </tr>
+                  {{else}}
+                    <tr>
+                      <td class="fw-semibold">{{a.spot_prize_award_id}}</td>
+                      <td>{{lookup-label this.players "player_id" a.player_id "first_name" (concat "Player #" a.player_id)}}</td>
+                      <td>{{lookup-label this.prizes "spot_prize_id" a.spot_prize_id "prize_title" (concat "Prize #" a.spot_prize_id)}}</td>
+                      <td>{{if a.bull_id (lookup-label this.bulls "bull_id" a.bull_id "bull_name" (concat "Bull #" a.bull_id)) "—"}}</td>
+                      <td class="text-muted small">{{if a.awarded_time a.awarded_time "—"}}</td>
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditAward a)}}><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deleteAward a.spot_prize_award_id)}}><i class="bi bi-trash-fill"></i></button>
+                      </td>
+                    </tr>
+                  {{/if}}
+                {{else}}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                      <i class="bi bi-award" style="font-size:2rem"></i>
+                      <p class="mt-2 mb-0">No awards given yet. Click <strong>Give Award</strong> to award a spot prize to a player.</p>
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  
+    <div class="text-muted small mt-3">
+      <i class="bi bi-info-circle"></i> Spot prizes are special one-off awards given during a match by sponsors. Create <strong>Types</strong> first, then define <strong>Spot Prizes</strong>, and finally give <strong>Awards</strong> to players.
+    </div>
+  </div>
+  
+  */
+  {
+    "id": "NB6iV8pl",
+    "block": "[[[1,[28,[35,0],[\"Spot Prize Management\"],null]],[1,\"\\n\\n\"],[10,0],[14,0,\"container-fluid py-4\"],[12],[1,\"\\n  \"],[10,0],[14,0,\"d-flex justify-content-between align-items-center mb-4\"],[12],[1,\"\\n    \"],[10,\"h2\"],[14,0,\"fw-bold\"],[12],[10,\"i\"],[14,0,\"bi bi-gift-fill text-warning\"],[12],[13],[1,\" Spot Prize Management\"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[30,0,[\"error\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-danger alert-dismissible fade show\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-exclamation-triangle-fill\"],[12],[13],[1,\" \"],[1,[30,0,[\"error\"]]],[1,\"\\n      \"],[10,\"button\"],[14,0,\"btn-close\"],[14,\"data-bs-dismiss\",\"alert\"],[14,4,\"button\"],[12],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[41,[30,0,[\"success\"]],[[[1,\"    \"],[10,0],[14,0,\"alert alert-success alert-dismissible fade show\"],[12],[1,\"\\n      \"],[10,\"i\"],[14,0,\"bi bi-check-circle-fill\"],[12],[13],[1,\" \"],[1,[30,0,[\"success\"]]],[1,\"\\n      \"],[10,\"button\"],[14,0,\"btn-close\"],[14,\"data-bs-dismiss\",\"alert\"],[14,4,\"button\"],[12],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[1,\"  \"],[10,\"ul\"],[14,0,\"nav nav-tabs mb-3\"],[12],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"prizes\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"prizes\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-gift\"],[12],[13],[1,\" Spot Prizes\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"types\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"types\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-tags\"],[12],[13],[1,\" Prize Types\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n    \"],[10,\"li\"],[14,0,\"nav-item\"],[12],[1,\"\\n      \"],[11,\"button\"],[16,0,[29,[\"nav-link \",[52,[28,[37,2],[[30,0,[\"activeTab\"]],\"awards\"],null],\"active\"]]]],[24,4,\"button\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"switchTab\"]],\"awards\"],null]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-award\"],[12],[13],[1,\" Awards\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n  \"],[13],[1,\"\\n\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"prizes\"],null],[[[1,\"\\n\"],[41,[51,[30,0,[\"isAddingPrize\"]]],[[[1,\"      \"],[11,\"button\"],[24,0,\"btn btn-accent mb-3\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"startAddPrize\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Add Spot Prize\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"isAddingPrize\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-4 border-accent\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-header bg-accent text-white fw-semibold\"],[12],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" New Spot Prize\"],[13],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"addPrize\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Prize Title \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newPrizeTitle\"]]],[24,\"required\",\"\"],[24,\"placeholder\",\"e.g. Best Tackle\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"newPrizeTitle\"],null]],null],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Type\"],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"newPrizeTypeId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— Select —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"types\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,1,[\"spot_prize_type_id\"]]],[12],[1,[30,1,[\"spot_prize_type_name\"]]],[13],[1,\"\\n\"]],[1]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Match\"],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"newPrizeMatchId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— Select —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"matches\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,2,[\"match_id\"]]],[12],[1,[52,[30,2,[\"match_name\"]],[30,2,[\"match_name\"]],[28,[37,8],[\"Match #\",[30,2,[\"match_id\"]]],null]]],[13],[1,\"\\n\"]],[2]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Sponsor\"],[13],[1,\"\\n                \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newPrizeSponsor\"]]],[24,\"placeholder\",\"Sponsor name\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"newPrizeSponsor\"],null]],null],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-1\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Qty\"],[13],[1,\"\\n                \"],[11,\"input\"],[24,0,\"form-control\"],[24,\"min\",\"1\"],[16,2,[30,0,[\"newPrizeQty\"]]],[24,4,\"number\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"newPrizeQty\"],null]],null],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-2 d-flex align-items-end gap-2\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-success\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[41,[30,0,[\"isLoading\"]],[[[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13]],[]],[[[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[1,\" Save\"]],[]]],[1,\"\\n                \"],[13],[1,\"\\n                \"],[11,\"button\"],[24,0,\"btn btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelAddPrize\"]]],null],[12],[1,\"Cancel\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body p-0\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n          \"],[10,\"table\"],[14,0,\"table table-hover table-striped mb-0\"],[12],[1,\"\\n            \"],[10,\"thead\"],[14,0,\"table-dark\"],[12],[1,\"\\n              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:50px\"],[12],[1,\"ID\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Prize Title\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Type\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Match\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Sponsor\"],[13],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:60px\"],[12],[1,\"Qty\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Created\"],[13],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:120px\"],[14,0,\"text-center\"],[12],[1,\"Actions\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"prizes\"]]],null]],null],null,[[[41,[28,[37,2],[[30,0,[\"editingPrizeId\"]],[30,3,[\"spot_prize_id\"]]],null],[[[1,\"                  \"],[10,\"tr\"],[14,0,\"table-warning\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"align-middle fw-semibold\"],[12],[1,[30,3,[\"spot_prize_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"form\"],[16,1,[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[4,[38,3],[\"submit\",[28,[37,4],[[30,0,[\"savePrize\"]],[30,3,[\"spot_prize_id\"]]],null]],null],[12],[1,\"\\n                        \"],[11,\"input\"],[24,0,\"form-control form-control-sm\"],[16,2,[30,0,[\"editPrizeTitle\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"editPrizeTitle\"],null]],null],[12],[13],[1,\"\\n                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[16,\"form\",[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"editPrizeTypeId\"],null]],null],[12],[1,\"\\n                        \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"—\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"types\"]]],null]],null],null,[[[1,\"                          \"],[10,\"option\"],[15,2,[30,4,[\"spot_prize_type_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,9],[[30,4,[\"spot_prize_type_id\"]]],null],[28,[37,9],[[30,0,[\"editPrizeTypeId\"]]],null]],null]],[12],[1,[30,4,[\"spot_prize_type_name\"]]],[13],[1,\"\\n\"]],[4]],null],[1,\"                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[16,\"form\",[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"editPrizeMatchId\"],null]],null],[12],[1,\"\\n                        \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"—\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"matches\"]]],null]],null],null,[[[1,\"                          \"],[10,\"option\"],[15,2,[30,5,[\"match_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,9],[[30,5,[\"match_id\"]]],null],[28,[37,9],[[30,0,[\"editPrizeMatchId\"]]],null]],null]],[12],[1,[52,[30,5,[\"match_name\"]],[30,5,[\"match_name\"]],[28,[37,8],[\"Match #\",[30,5,[\"match_id\"]]],null]]],[13],[1,\"\\n\"]],[5]],null],[1,\"                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"input\"],[24,0,\"form-control form-control-sm\"],[16,2,[30,0,[\"editPrizeSponsor\"]]],[16,\"form\",[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"editPrizeSponsor\"],null]],null],[12],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"input\"],[24,0,\"form-control form-control-sm\"],[24,\"min\",\"1\"],[16,2,[30,0,[\"editPrizeQty\"]]],[16,\"form\",[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[24,4,\"number\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"editPrizeQty\"],null]],null],[12],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[10,\"button\"],[15,\"form\",[29,[\"edit-prize-\",[30,3,[\"spot_prize_id\"]]]]],[14,0,\"btn btn-sm btn-success me-1\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelEditPrize\"]]],null],[12],[10,\"i\"],[14,0,\"bi bi-x-lg\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],[[[1,\"                  \"],[10,\"tr\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,3,[\"spot_prize_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[52,[30,3,[\"prize_title\"]],[30,3,[\"prize_title\"]],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[28,[35,10],[[30,0,[\"types\"]],\"spot_prize_type_id\",[30,3,[\"spot_type_id\"]],\"spot_prize_type_name\",\"—\"],null]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[28,[35,10],[[30,0,[\"matches\"]],\"match_id\",[30,3,[\"match_id\"]],\"match_name\",[28,[37,8],[\"Match #\",[30,3,[\"match_id\"]]],null]],null]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[52,[30,3,[\"sponsor_name\"]],[30,3,[\"sponsor_name\"]],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[52,[30,3,[\"quantity\"]],[30,3,[\"quantity\"]],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-muted small\"],[12],[1,[52,[30,3,[\"created_time\"]],[30,3,[\"created_time\"]],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-primary me-1\"],[24,\"title\",\"Edit\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"startEditPrize\"]],[30,3]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-pencil-fill\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-danger\"],[24,\"title\",\"Delete\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"deletePrize\"]],[30,3,[\"spot_prize_id\"]]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-trash-fill\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]]]],[3]],[[[1,\"                \"],[10,\"tr\"],[12],[1,\"\\n                  \"],[10,\"td\"],[14,\"colspan\",\"8\"],[14,0,\"text-center text-muted py-4\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-gift\"],[14,5,\"font-size:2rem\"],[12],[13],[1,\"\\n                    \"],[10,2],[14,0,\"mt-2 mb-0\"],[12],[1,\"No spot prizes yet. Click \"],[10,\"strong\"],[12],[1,\"Add Spot Prize\"],[13],[1,\" to get started.\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"types\"],null],[[[1,\"\\n\"],[41,[51,[30,0,[\"isAddingType\"]]],[[[1,\"      \"],[11,\"button\"],[24,0,\"btn btn-accent mb-3\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"startAddType\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Add Type\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"isAddingType\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-4 border-accent\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-header bg-accent text-white fw-semibold\"],[12],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" New Prize Type\"],[13],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"addType\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-8\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Type Name \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"input\"],[24,0,\"form-control\"],[16,2,[30,0,[\"newTypeName\"]]],[24,\"required\",\"\"],[24,\"placeholder\",\"e.g. Best Performance, Longest Hold, First Tamer\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"newTypeName\"],null]],null],[12],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-4 d-flex align-items-end gap-2\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-success\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[41,[30,0,[\"isLoading\"]],[[[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13]],[]],[[[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[1,\" Save\"]],[]]],[1,\"\\n                \"],[13],[1,\"\\n                \"],[11,\"button\"],[24,0,\"btn btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelAddType\"]]],null],[12],[1,\"Cancel\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body p-0\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n          \"],[10,\"table\"],[14,0,\"table table-hover table-striped mb-0\"],[12],[1,\"\\n            \"],[10,\"thead\"],[14,0,\"table-dark\"],[12],[1,\"\\n              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:60px\"],[12],[1,\"ID\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Type Name\"],[13],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:150px\"],[14,0,\"text-center\"],[12],[1,\"Actions\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"types\"]]],null]],null],null,[[[41,[28,[37,2],[[30,0,[\"editingTypeId\"]],[30,6,[\"spot_prize_type_id\"]]],null],[[[1,\"                  \"],[10,\"tr\"],[14,0,\"table-warning\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"align-middle fw-semibold\"],[12],[1,[30,6,[\"spot_prize_type_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"form\"],[16,1,[29,[\"edit-type-\",[30,6,[\"spot_prize_type_id\"]]]]],[4,[38,3],[\"submit\",[28,[37,4],[[30,0,[\"saveType\"]],[30,6,[\"spot_prize_type_id\"]]],null]],null],[12],[1,\"\\n                        \"],[11,\"input\"],[24,0,\"form-control form-control-sm\"],[16,2,[30,0,[\"editTypeName\"]]],[24,\"required\",\"\"],[24,4,\"text\"],[4,[38,3],[\"input\",[28,[37,4],[[30,0,[\"updateField\"]],\"editTypeName\"],null]],null],[12],[13],[1,\"\\n                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[10,\"button\"],[15,\"form\",[29,[\"edit-type-\",[30,6,[\"spot_prize_type_id\"]]]]],[14,0,\"btn btn-sm btn-success me-1\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelEditType\"]]],null],[12],[10,\"i\"],[14,0,\"bi bi-x-lg\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],[[[1,\"                  \"],[10,\"tr\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,6,[\"spot_prize_type_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[30,6,[\"spot_prize_type_name\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-primary me-1\"],[24,\"title\",\"Edit\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"startEditType\"]],[30,6]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-pencil-fill\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-danger\"],[24,\"title\",\"Delete\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"deleteType\"]],[30,6,[\"spot_prize_type_id\"]]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-trash-fill\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]]]],[6]],[[[1,\"                \"],[10,\"tr\"],[12],[1,\"\\n                  \"],[10,\"td\"],[14,\"colspan\",\"3\"],[14,0,\"text-center text-muted py-4\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-tags\"],[14,5,\"font-size:2rem\"],[12],[13],[1,\"\\n                    \"],[10,2],[14,0,\"mt-2 mb-0\"],[12],[1,\"No prize types yet. Click \"],[10,\"strong\"],[12],[1,\"Add Type\"],[13],[1,\" to create categories like \\\"Best Tackle\\\", \\\"Longest Hold\\\".\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[28,[37,2],[[30,0,[\"activeTab\"]],\"awards\"],null],[[[1,\"\\n\"],[41,[51,[30,0,[\"isAddingAward\"]]],[[[1,\"      \"],[11,\"button\"],[24,0,\"btn btn-accent mb-3\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"startAddAward\"]]],null],[12],[1,\"\\n        \"],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Give Award\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n\"],[41,[30,0,[\"isAddingAward\"]],[[[1,\"      \"],[10,0],[14,0,\"card mb-4 border-accent\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"card-header bg-accent text-white fw-semibold\"],[12],[10,\"i\"],[14,0,\"bi bi-plus-circle\"],[12],[13],[1,\" Give Spot Prize Award\"],[13],[1,\"\\n        \"],[10,0],[14,0,\"card-body\"],[12],[1,\"\\n          \"],[11,\"form\"],[4,[38,3],[\"submit\",[30,0,[\"addAward\"]]],null],[12],[1,\"\\n            \"],[10,0],[14,0,\"row g-3\"],[12],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Player \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select\"],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"newAwardPlayerId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— Select Player —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"players\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,7,[\"player_id\"]]],[12],[1,[30,7,[\"first_name\"]]],[1,\" \"],[1,[30,7,[\"last_name\"]]],[1,\" (#\"],[1,[30,7,[\"player_id\"]]],[1,\")\"],[13],[1,\"\\n\"]],[7]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Spot Prize \"],[10,1],[14,0,\"text-danger\"],[12],[1,\"*\"],[13],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select\"],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"newAwardPrizeId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— Select Prize —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"prizes\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,8,[\"spot_prize_id\"]]],[12],[1,[30,8,[\"prize_title\"]]],[1,\" (#\"],[1,[30,8,[\"spot_prize_id\"]]],[1,\")\"],[13],[1,\"\\n\"]],[8]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3\"],[12],[1,\"\\n                \"],[10,\"label\"],[14,0,\"form-label fw-semibold\"],[12],[1,\"Bull (optional)\"],[13],[1,\"\\n                \"],[11,\"select\"],[24,0,\"form-select\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"newAwardBullId\"],null]],null],[12],[1,\"\\n                  \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— None —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"bulls\"]]],null]],null],null,[[[1,\"                    \"],[10,\"option\"],[15,2,[30,9,[\"bull_id\"]]],[12],[1,[52,[30,9,[\"bull_name\"]],[30,9,[\"bull_name\"]],[28,[37,8],[\"Bull #\",[30,9,[\"bull_id\"]]],null]]],[13],[1,\"\\n\"]],[9]],null],[1,\"                \"],[13],[1,\"\\n              \"],[13],[1,\"\\n              \"],[10,0],[14,0,\"col-md-3 d-flex align-items-end gap-2\"],[12],[1,\"\\n                \"],[10,\"button\"],[14,0,\"btn btn-success\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[1,\"\\n                  \"],[41,[30,0,[\"isLoading\"]],[[[10,1],[14,0,\"spinner-border spinner-border-sm\"],[12],[13]],[]],[[[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[1,\" Award\"]],[]]],[1,\"\\n                \"],[13],[1,\"\\n                \"],[11,\"button\"],[24,0,\"btn btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelAddAward\"]]],null],[12],[1,\"Cancel\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n    \"],[10,0],[14,0,\"card\"],[12],[1,\"\\n      \"],[10,0],[14,0,\"card-body p-0\"],[12],[1,\"\\n        \"],[10,0],[14,0,\"table-responsive\"],[12],[1,\"\\n          \"],[10,\"table\"],[14,0,\"table table-hover table-striped mb-0\"],[12],[1,\"\\n            \"],[10,\"thead\"],[14,0,\"table-dark\"],[12],[1,\"\\n              \"],[10,\"tr\"],[12],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:50px\"],[12],[1,\"ID\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Player\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Spot Prize\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Bull\"],[13],[1,\"\\n                \"],[10,\"th\"],[12],[1,\"Awarded\"],[13],[1,\"\\n                \"],[10,\"th\"],[14,5,\"width:120px\"],[14,0,\"text-center\"],[12],[1,\"Actions\"],[13],[1,\"\\n              \"],[13],[1,\"\\n            \"],[13],[1,\"\\n            \"],[10,\"tbody\"],[12],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"awards\"]]],null]],null],null,[[[41,[28,[37,2],[[30,0,[\"editingAwardId\"]],[30,10,[\"spot_prize_award_id\"]]],null],[[[1,\"                  \"],[10,\"tr\"],[14,0,\"table-warning\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"align-middle fw-semibold\"],[12],[1,[30,10,[\"spot_prize_award_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"form\"],[16,1,[29,[\"edit-award-\",[30,10,[\"spot_prize_award_id\"]]]]],[4,[38,3],[\"submit\",[28,[37,4],[[30,0,[\"saveAward\"]],[30,10,[\"spot_prize_award_id\"]]],null]],null],[12],[1,\"\\n                        \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"editAwardPlayerId\"],null]],null],[12],[1,\"\\n                          \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"—\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"players\"]]],null]],null],null,[[[1,\"                            \"],[10,\"option\"],[15,2,[30,11,[\"player_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,9],[[30,11,[\"player_id\"]]],null],[28,[37,9],[[30,0,[\"editAwardPlayerId\"]]],null]],null]],[12],[1,[30,11,[\"first_name\"]]],[1,\" \"],[1,[30,11,[\"last_name\"]]],[13],[1,\"\\n\"]],[11]],null],[1,\"                        \"],[13],[1,\"\\n                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[16,\"form\",[29,[\"edit-award-\",[30,10,[\"spot_prize_award_id\"]]]]],[24,\"required\",\"\"],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"editAwardPrizeId\"],null]],null],[12],[1,\"\\n                        \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"—\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"prizes\"]]],null]],null],null,[[[1,\"                          \"],[10,\"option\"],[15,2,[30,12,[\"spot_prize_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,9],[[30,12,[\"spot_prize_id\"]]],null],[28,[37,9],[[30,0,[\"editAwardPrizeId\"]]],null]],null]],[12],[1,[30,12,[\"prize_title\"]]],[13],[1,\"\\n\"]],[12]],null],[1,\"                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,\"\\n                      \"],[11,\"select\"],[24,0,\"form-select form-select-sm\"],[16,\"form\",[29,[\"edit-award-\",[30,10,[\"spot_prize_award_id\"]]]]],[4,[38,3],[\"change\",[28,[37,4],[[30,0,[\"updateField\"]],\"editAwardBullId\"],null]],null],[12],[1,\"\\n                        \"],[10,\"option\"],[14,2,\"\"],[12],[1,\"— None —\"],[13],[1,\"\\n\"],[42,[28,[37,7],[[28,[37,7],[[30,0,[\"bulls\"]]],null]],null],null,[[[1,\"                          \"],[10,\"option\"],[15,2,[30,13,[\"bull_id\"]]],[15,\"selected\",[28,[37,2],[[28,[37,9],[[30,13,[\"bull_id\"]]],null],[28,[37,9],[[30,0,[\"editAwardBullId\"]]],null]],null]],[12],[1,[52,[30,13,[\"bull_name\"]],[30,13,[\"bull_name\"]],[28,[37,8],[\"Bull #\",[30,13,[\"bull_id\"]]],null]]],[13],[1,\"\\n\"]],[13]],null],[1,\"                      \"],[13],[1,\"\\n                    \"],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[10,\"button\"],[15,\"form\",[29,[\"edit-award-\",[30,10,[\"spot_prize_award_id\"]]]]],[14,0,\"btn btn-sm btn-success me-1\"],[15,\"disabled\",[30,0,[\"isLoading\"]]],[14,4,\"submit\"],[12],[10,\"i\"],[14,0,\"bi bi-check-lg\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-secondary\"],[24,4,\"button\"],[4,[38,3],[\"click\",[30,0,[\"cancelEditAward\"]]],null],[12],[10,\"i\"],[14,0,\"bi bi-x-lg\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]],[[[1,\"                  \"],[10,\"tr\"],[12],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"fw-semibold\"],[12],[1,[30,10,[\"spot_prize_award_id\"]]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[28,[35,10],[[30,0,[\"players\"]],\"player_id\",[30,10,[\"player_id\"]],\"first_name\",[28,[37,8],[\"Player #\",[30,10,[\"player_id\"]]],null]],null]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[28,[35,10],[[30,0,[\"prizes\"]],\"spot_prize_id\",[30,10,[\"spot_prize_id\"]],\"prize_title\",[28,[37,8],[\"Prize #\",[30,10,[\"spot_prize_id\"]]],null]],null]],[13],[1,\"\\n                    \"],[10,\"td\"],[12],[1,[52,[30,10,[\"bull_id\"]],[28,[37,10],[[30,0,[\"bulls\"]],\"bull_id\",[30,10,[\"bull_id\"]],\"bull_name\",[28,[37,8],[\"Bull #\",[30,10,[\"bull_id\"]]],null]],null],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-muted small\"],[12],[1,[52,[30,10,[\"awarded_time\"]],[30,10,[\"awarded_time\"]],\"—\"]],[13],[1,\"\\n                    \"],[10,\"td\"],[14,0,\"text-center\"],[12],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-primary me-1\"],[24,\"title\",\"Edit\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"startEditAward\"]],[30,10]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-pencil-fill\"],[12],[13],[13],[1,\"\\n                      \"],[11,\"button\"],[24,0,\"btn btn-sm btn-outline-danger\"],[24,\"title\",\"Delete\"],[4,[38,3],[\"click\",[28,[37,4],[[30,0,[\"deleteAward\"]],[30,10,[\"spot_prize_award_id\"]]],null]],null],[12],[10,\"i\"],[14,0,\"bi bi-trash-fill\"],[12],[13],[13],[1,\"\\n                    \"],[13],[1,\"\\n                  \"],[13],[1,\"\\n\"]],[]]]],[10]],[[[1,\"                \"],[10,\"tr\"],[12],[1,\"\\n                  \"],[10,\"td\"],[14,\"colspan\",\"6\"],[14,0,\"text-center text-muted py-4\"],[12],[1,\"\\n                    \"],[10,\"i\"],[14,0,\"bi bi-award\"],[14,5,\"font-size:2rem\"],[12],[13],[1,\"\\n                    \"],[10,2],[14,0,\"mt-2 mb-0\"],[12],[1,\"No awards given yet. Click \"],[10,\"strong\"],[12],[1,\"Give Award\"],[13],[1,\" to award a spot prize to a player.\"],[13],[1,\"\\n                  \"],[13],[1,\"\\n                \"],[13],[1,\"\\n\"]],[]]],[1,\"            \"],[13],[1,\"\\n          \"],[13],[1,\"\\n        \"],[13],[1,\"\\n      \"],[13],[1,\"\\n    \"],[13],[1,\"\\n\"]],[]],null],[1,\"\\n  \"],[10,0],[14,0,\"text-muted small mt-3\"],[12],[1,\"\\n    \"],[10,\"i\"],[14,0,\"bi bi-info-circle\"],[12],[13],[1,\" Spot prizes are special one-off awards given during a match by sponsors. Create \"],[10,\"strong\"],[12],[1,\"Types\"],[13],[1,\" first, then define \"],[10,\"strong\"],[12],[1,\"Spot Prizes\"],[13],[1,\", and finally give \"],[10,\"strong\"],[12],[1,\"Awards\"],[13],[1,\" to players.\\n  \"],[13],[1,\"\\n\"],[13],[1,\"\\n\"]],[\"t\",\"m\",\"p\",\"t\",\"m\",\"t\",\"pl\",\"sp\",\"b\",\"a\",\"pl\",\"sp\",\"b\"],false,[\"page-title\",\"if\",\"eq\",\"on\",\"fn\",\"unless\",\"each\",\"-track-array\",\"concat\",\"to-string\",\"lookup-label\"]]",
+    "moduleName": "jallikattu-frontend/templates/spot-prizes.hbs",
     "isStrictMode": false
   });
 });
@@ -7203,7 +8750,7 @@ catch(err) {
 
 ;
           if (!runningTests) {
-            require("jallikattu-frontend/app")["default"].create({"API_HOST":"http://localhost:8080","API_NAMESPACE":"jallikattu-admin/api","name":"jallikattu-frontend","version":"1.0.0+9868af60"});
+            require("jallikattu-frontend/app")["default"].create({"API_HOST":"http://localhost:8080","API_NAMESPACE":"jallikattu-admin/api","name":"jallikattu-frontend","version":"v2+756d152e"});
           }
         
 //# sourceMappingURL=jallikattu-frontend.map

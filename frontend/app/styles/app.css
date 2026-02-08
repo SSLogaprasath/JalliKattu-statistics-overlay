@@ -39,7 +39,7 @@ a { text-decoration: none; }
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-w);
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
   color: #c8c8d4;
   position: fixed;

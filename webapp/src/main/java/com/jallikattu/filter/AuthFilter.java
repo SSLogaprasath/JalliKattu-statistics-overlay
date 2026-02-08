@@ -33,7 +33,7 @@ public class AuthFilter implements Filter {
 
     // API paths scorers can access
     private static final Set<String> SCORER_API = Set.of(
-        "/api/dashboard", "/api/scores", "/api/winners", "/api/matches"
+        "/api/dashboard", "/api/scores", "/api/winners", "/api/matches", "/api/tables"
     );
 
     // API paths registrars can access

@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * GET  /api/public/matches                   - list matches (?status=Live|Scheduled|Completed)
  * GET  /api/public/matches/{id}/scores       - scores for a match
  * GET  /api/public/matches/{id}/winners      - winners for a match
+ * GET  /api/public/matches/{id}/spot-prizes  - spot prize awards for a match
  * GET  /api/public/players/{id}              - player career profile + match history
  * GET  /api/public/bulls/{id}                - bull career profile + match history
  * GET  /api/public/leaderboard               - all-time top players and bulls
@@ -131,8 +132,49 @@ public class PublicApiServlet extends BaseRestServlet {
                 winners.put("overallWinner", WinnerDAO.getOverallWinner(matchId));
                 sendJson(resp, winners);
             }
+            case "spot-prizes" -> {
+                sendJson(resp, getSpotPrizeAwardsForMatch(matchId));
+            }
             default -> sendError(resp, "Unknown sub-path: " + sub, 404);
         }
+    }
+
+    // ───────── SPOT PRIZE AWARDS (public) ─────────
+
+    /**
+     * Returns spot prize awards for a given match, with joined player/bull/sponsor/type info.
+     */
+    private java.util.List<Map<String, Object>> getSpotPrizeAwardsForMatch(String matchId) throws Exception {
+        String sql = """
+            SELECT spa.spot_prize_award_id,
+                   p.first_name, p.last_name,
+                   sp.prize_title, sp.sponsor_name, sp.quantity,
+                   spt.spot_prize_type_name AS prize_type,
+                   bt.bull_name,
+                   spa.awarded_time
+            FROM spot_prize_award spa
+            JOIN spot_prize sp   ON spa.spot_prize_id = sp.spot_prize_id
+            JOIN player p        ON spa.player_id     = p.player_id
+            LEFT JOIN spot_prize_type spt ON sp.spot_type_id = spt.spot_prize_type_id
+            LEFT JOIN bull_table bt       ON spa.bull_id     = bt.bull_id
+            WHERE sp.match_id = ?
+            ORDER BY spa.awarded_time DESC, spa.spot_prize_award_id DESC
+            """;
+        java.util.List<Map<String, Object>> rows = new java.util.ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(matchId));
+            try (ResultSet rs = ps.executeQuery()) {
+                var meta = rs.getMetaData();
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    for (int i = 1; i <= meta.getColumnCount(); i++)
+                        row.put(meta.getColumnLabel(i), rs.getObject(i));
+                    rows.add(row);
+                }
+            }
+        }
+        return rows;
     }
 
     // ───────── SELF-REGISTRATION ─────────

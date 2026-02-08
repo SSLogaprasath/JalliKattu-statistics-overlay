@@ -29,7 +29,8 @@ public class TableApiServlet extends BaseRestServlet {
             "player", "owner", "bull_breed", "batch", "round_type",
             "location", "prize", "organizer", "match", "bull_table",
             "player_match_history", "bull_match_history", "bull_player_interaction",
-            "app_user");
+            "app_user",
+            "spot_prize_type", "spot_prize", "spot_prize_award");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {

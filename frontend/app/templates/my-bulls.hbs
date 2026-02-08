@@ -1,7 +1,12 @@
 {{page-title "My Bulls"}}
 
-<div class="section-header">
+<div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
   <h5><i class="bi bi-shield-fill"></i> My Bulls</h5>
+  {{#unless this.showAddForm}}
+    <button class="btn btn-accent" type="button" {{on "click" this.toggleAddForm}}>
+      <i class="bi bi-plus-circle"></i> Add Bull
+    </button>
+  {{/unless}}
 </div>
 
 {{!-- Status message --}}
@@ -10,6 +15,49 @@
     <i class="bi {{if (eq this.messageType 'success') 'bi-check-circle-fill' (if (eq this.messageType 'danger') 'bi-exclamation-triangle-fill' 'bi-info-circle-fill')}}"></i>
     {{this.message}}
     <button type="button" class="btn-close" {{on "click" this.dismissMessage}}></button>
+  </div>
+{{/if}}
+
+{{!-- Add Bull Form --}}
+{{#if this.showAddForm}}
+  <div class="card mb-4 border-accent">
+    <div class="card-header bg-accent text-white fw-semibold">
+      <i class="bi bi-plus-circle"></i> Register New Bull
+    </div>
+    <div class="card-body">
+      <form {{on "submit" this.addBull}}>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Bull Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" value={{this.newBullName}} {{on "input" (fn this.updateField "newBullName")}} required placeholder="e.g. Kaalai Veeran">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Age (years) <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" value={{this.newBullAge}} {{on "input" (fn this.updateField "newBullAge")}} required min="3" max="15" placeholder="3–15">
+            <small class="text-muted">Min 3 years per regulations</small>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Breed <span class="text-danger">*</span></label>
+            <select class="form-select" {{on "change" (fn this.updateField "newBreedId")}} required>
+              <option value="">-- Select Breed --</option>
+              {{#each @model.breeds as |b|}}
+                <option value={{b.bull_breed_id}} selected={{eq (to-string b.bull_breed_id) (to-string this.newBreedId)}}>{{b.bull_breed_name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Fitness Certificate No. <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" value={{this.newFitnessCert}} {{on "input" (fn this.updateField "newFitnessCert")}} required placeholder="Veterinary certificate reference">
+          </div>
+          <div class="col-md-6 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-success" disabled={{this.isAddingBull}}>
+              {{#if this.isAddingBull}}<span class="spinner-border spinner-border-sm"></span> Saving...{{else}}<i class="bi bi-check-lg"></i> Register Bull{{/if}}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" {{on "click" this.toggleAddForm}}>Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 {{/if}}
 
@@ -120,5 +168,10 @@
     <i class="bi bi-shield-x" style="font-size:3rem;"></i>
     <h5 class="mt-3">No Bulls Registered</h5>
     <p class="text-muted">You haven't registered any bulls yet</p>
+    {{#unless this.showAddForm}}
+      <button class="btn btn-accent" type="button" {{on "click" this.toggleAddForm}}>
+        <i class="bi bi-plus-circle"></i> Add Your First Bull
+      </button>
+    {{/unless}}
   </div>
 {{/if}}

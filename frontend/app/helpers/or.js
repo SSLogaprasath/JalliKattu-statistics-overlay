@@ -1,7 +1,8 @@
-import Helper from '@ember/component/helper';
+import { helper } from '@ember/component/helper';
 
-export default class OrHelper extends Helper {
-  compute(params) {
-    return params.some(Boolean);
+export default helper(function or(params) {
+  for (const p of params) {
+    if (p) return p;
   }
-}
+  return params[params.length - 1];
+});

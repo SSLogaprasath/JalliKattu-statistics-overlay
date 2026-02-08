@@ -59,6 +59,7 @@
               {{/each}}
             </optgroup>
           {{/if}}
+          {{#if (gt this.completedMatchCount 0)}}
           <optgroup label="Completed">
             {{#each @model.matches as |m|}}
               {{#if (eq m.status "Completed")}}
@@ -68,6 +69,7 @@
               {{/if}}
             {{/each}}
           </optgroup>
+          {{/if}}
         </select>
       </div>
       {{#if this.selectedMatch}}
@@ -103,6 +105,12 @@
     <button class="tab-btn {{if (eq this.activeTab 'interactions') 'active'}}" type="button" {{on "click" (fn this.switchTab "interactions")}}>
       <i class="bi bi-arrow-left-right"></i> Interactions
       <span class="badge bg-info ms-1">{{this.scoringData.interactions.length}}</span>
+    </button>
+    <button class="tab-btn {{if (eq this.activeTab 'spot-prizes') 'active'}}" type="button" {{on "click" (fn this.switchTab "spot-prizes")}}>
+      <i class="bi bi-gift-fill"></i> Spot Prizes
+      {{#if this.spotAwards.length}}
+        <span class="badge bg-warning text-dark ms-1">{{this.spotAwards.length}}</span>
+      {{/if}}
     </button>
   </div>
 
@@ -348,6 +356,103 @@
                   <div class="empty-state py-3">
                     <i class="bi bi-arrow-left-right"></i>
                     <p>No interactions recorded yet</p>
+                  </div>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- ═══════ SPOT PRIZES TAB ═══════ --}}
+  {{#if (eq this.activeTab "spot-prizes")}}
+    {{!-- Award Form (Live only) --}}
+    {{#if this.isLive}}
+      <div class="card mb-3 border-warning">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3"><i class="bi bi-gift-fill text-warning"></i> Award Spot Prize</h6>
+          <form {{on "submit" this.awardSpotPrize}}>
+            <div class="row g-2">
+              <div class="col-md-3 col-6">
+                <label class="form-label small fw-semibold">Spot Prize <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" required {{on "change" (fn this.updateSpotField "newSpotPrizeId")}}>
+                  <option value="">Select prize...</option>
+                  {{#each this.matchSpotPrizes as |sp|}}
+                    <option value={{sp.spot_prize_id}} selected={{eq (to-string sp.spot_prize_id) (to-string this.newSpotPrizeId)}}>
+                      {{sp.prize_title}}{{if sp.sponsor_name (concat " (" sp.sponsor_name ")") ""}}
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label small fw-semibold">Player <span class="text-danger">*</span></label>
+                <select class="form-select form-select-sm" required {{on "change" (fn this.updateSpotField "newSpotPlayerId")}}>
+                  <option value="">Select player...</option>
+                  {{#each this.scoringData.approvedPlayers as |p|}}
+                    <option value={{p.player_id}} selected={{eq (to-string p.player_id) (to-string this.newSpotPlayerId)}}>{{p.player_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label small fw-semibold">Bull (optional)</label>
+                <select class="form-select form-select-sm" {{on "change" (fn this.updateSpotField "newSpotBullId")}}>
+                  <option value="">None</option>
+                  {{#each this.scoringData.approvedBulls as |b|}}
+                    <option value={{b.bull_id}} selected={{eq (to-string b.bull_id) (to-string this.newSpotBullId)}}>{{b.bull_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3 col-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-warning btn-sm w-100">
+                  <i class="bi bi-gift"></i> Award
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{/if}}
+
+    {{!-- Awards Log --}}
+    <div class="card">
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Player</th>
+              <th>Prize</th>
+              <th>Type</th>
+              <th>Sponsor</th>
+              <th>Bull</th>
+              <th>Awarded</th>
+              {{#if this.isLive}}<th class="text-center" style="width:60px"></th>{{/if}}
+            </tr>
+          </thead>
+          <tbody>
+            {{#each this.spotAwards as |a|}}
+              <tr>
+                <td class="fw-semibold">{{a.first_name}} {{a.last_name}}</td>
+                <td>{{a.prize_title}}</td>
+                <td>{{#if a.prize_type}}<span class="badge bg-secondary">{{a.prize_type}}</span>{{else}}—{{/if}}</td>
+                <td>{{if a.sponsor_name a.sponsor_name "—"}}</td>
+                <td>{{if a.bull_name a.bull_name "—"}}</td>
+                <td class="text-muted small">{{if a.awarded_time a.awarded_time "—"}}</td>
+                {{#if this.isLive}}
+                  <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" title="Remove" {{on "click" (fn this.deleteSpotAward a.spot_prize_award_id)}}>
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </td>
+                {{/if}}
+              </tr>
+            {{else}}
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state py-3">
+                    <i class="bi bi-gift"></i>
+                    <p>No spot prizes awarded yet</p>
                   </div>
                 </td>
               </tr>

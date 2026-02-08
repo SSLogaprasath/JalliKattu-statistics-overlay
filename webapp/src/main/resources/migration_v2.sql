@@ -3,8 +3,8 @@
 -- Adds: player/owner roles, user_id links, auto-increment match_id
 -- =====================================================
 
--- 1. Expand app_user role enum to include player and owner
-ALTER TABLE app_user MODIFY COLUMN role ENUM('admin','registrar','scorer','player','owner') NOT NULL;
+-- 1. Expand app_user role enum to include player, owner, and super_admin
+ALTER TABLE app_user MODIFY COLUMN role ENUM('admin','super_admin','registrar','scorer','player','owner') NOT NULL;
 
 -- 2. Link player table to app_user for self-service accounts
 ALTER TABLE player ADD COLUMN user_id INT NULL;

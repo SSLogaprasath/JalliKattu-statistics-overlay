@@ -7,6 +7,7 @@ export default class ScoreboardController extends Controller {
   @service auth;
   @tracked selectedMatchId = null;
   @tracked scores = null;
+  @tracked spotPrizes = null;
   @tracked isLoading = false;
   @tracked autoRefresh = true;
   _timer = null;
@@ -40,12 +41,15 @@ export default class ScoreboardController extends Controller {
     this.isLoading = true;
     try {
       const base = this.auth.apiBase;
-      const resp = await fetch(
-        `${base}/public/matches/${this.selectedMatchId}/scores`
-      );
-      this.scores = await resp.json();
+      const [scoresResp, spotResp] = await Promise.all([
+        fetch(`${base}/public/matches/${this.selectedMatchId}/scores`),
+        fetch(`${base}/public/matches/${this.selectedMatchId}/spot-prizes`),
+      ]);
+      this.scores = await scoresResp.json();
+      this.spotPrizes = await spotResp.json();
     } catch {
       this.scores = null;
+      this.spotPrizes = null;
     }
     this.isLoading = false;
   }

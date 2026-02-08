@@ -16,11 +16,29 @@ export default class MatchControlRoute extends Route {
   }
 
   async model() {
+    // Load matches first — must always succeed for the page to work
+    let matches = [];
     try {
-      const matches = await this.auth.apiGet('/matches');
-      return { matches };
+      matches = await this.auth.apiGet('/matches');
     } catch {
-      return { matches: [] };
+      // matches stays empty
     }
+
+    // Load spot-prize reference data separately so a failure here
+    // does not blank the match dropdown
+    let spotPrizeTypes = [];
+    let spotPrizes = [];
+    try {
+      const [typesData, prizesData] = await Promise.all([
+        this.auth.apiGet('/tables/spot_prize_type'),
+        this.auth.apiGet('/tables/spot_prize'),
+      ]);
+      spotPrizeTypes = typesData.rows || [];
+      spotPrizes = prizesData.rows || [];
+    } catch {
+      // spot-prize data stays empty — tab will just show "no prizes"
+    }
+
+    return { matches, spotPrizeTypes, spotPrizes };
   }
 }

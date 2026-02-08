@@ -1,0 +1,406 @@
+{{page-title "Spot Prize Management"}}
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-gift-fill text-warning"></i> Spot Prize Management</h2>
+  </div>
+
+  {{!-- Alerts --}}
+  {{#if this.error}}
+    <div class="alert alert-danger alert-dismissible fade show">
+      <i class="bi bi-exclamation-triangle-fill"></i> {{this.error}}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {{/if}}
+  {{#if this.success}}
+    <div class="alert alert-success alert-dismissible fade show">
+      <i class="bi bi-check-circle-fill"></i> {{this.success}}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {{/if}}
+
+  {{!-- Tabs --}}
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <button class="nav-link {{if (eq this.activeTab 'prizes') 'active'}}" type="button" {{on "click" (fn this.switchTab "prizes")}}>
+        <i class="bi bi-gift"></i> Spot Prizes
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {{if (eq this.activeTab 'types') 'active'}}" type="button" {{on "click" (fn this.switchTab "types")}}>
+        <i class="bi bi-tags"></i> Prize Types
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {{if (eq this.activeTab 'awards') 'active'}}" type="button" {{on "click" (fn this.switchTab "awards")}}>
+        <i class="bi bi-award"></i> Awards
+      </button>
+    </li>
+  </ul>
+
+  {{!-- ═══════════════════════════════════════════
+       TAB: SPOT PRIZES
+       ═══════════════════════════════════════════ --}}
+  {{#if (eq this.activeTab "prizes")}}
+
+    {{#unless this.isAddingPrize}}
+      <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddPrize}}>
+        <i class="bi bi-plus-circle"></i> Add Spot Prize
+      </button>
+    {{/unless}}
+
+    {{#if this.isAddingPrize}}
+      <div class="card mb-4 border-accent">
+        <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> New Spot Prize</div>
+        <div class="card-body">
+          <form {{on "submit" this.addPrize}}>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Prize Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" value={{this.newPrizeTitle}} {{on "input" (fn this.updateField "newPrizeTitle")}} required placeholder="e.g. Best Tackle">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold">Type</label>
+                <select class="form-select" {{on "change" (fn this.updateField "newPrizeTypeId")}}>
+                  <option value="">— Select —</option>
+                  {{#each this.types as |t|}}
+                    <option value={{t.spot_prize_type_id}}>{{t.spot_prize_type_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold">Match</label>
+                <select class="form-select" {{on "change" (fn this.updateField "newPrizeMatchId")}}>
+                  <option value="">— Select —</option>
+                  {{#each this.matches as |m|}}
+                    <option value={{m.match_id}}>{{if m.match_name m.match_name (concat "Match #" m.match_id)}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-semibold">Sponsor</label>
+                <input type="text" class="form-control" value={{this.newPrizeSponsor}} {{on "input" (fn this.updateField "newPrizeSponsor")}} placeholder="Sponsor name">
+              </div>
+              <div class="col-md-1">
+                <label class="form-label fw-semibold">Qty</label>
+                <input type="number" class="form-control" min="1" value={{this.newPrizeQty}} {{on "input" (fn this.updateField "newPrizeQty")}}>
+              </div>
+              <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                  {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Save{{/if}}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddPrize}}>Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width:50px">ID</th>
+                <th>Prize Title</th>
+                <th>Type</th>
+                <th>Match</th>
+                <th>Sponsor</th>
+                <th style="width:60px">Qty</th>
+                <th>Created</th>
+                <th style="width:120px" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.prizes as |p|}}
+                {{#if (eq this.editingPrizeId p.spot_prize_id)}}
+                  <tr class="table-warning">
+                    <td class="align-middle fw-semibold">{{p.spot_prize_id}}</td>
+                    <td>
+                      <form id="edit-prize-{{p.spot_prize_id}}" {{on "submit" (fn this.savePrize p.spot_prize_id)}}>
+                        <input type="text" class="form-control form-control-sm" value={{this.editPrizeTitle}} {{on "input" (fn this.updateField "editPrizeTitle")}} required>
+                      </form>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" form="edit-prize-{{p.spot_prize_id}}" {{on "change" (fn this.updateField "editPrizeTypeId")}}>
+                        <option value="">—</option>
+                        {{#each this.types as |t|}}
+                          <option value={{t.spot_prize_type_id}} selected={{eq (to-string t.spot_prize_type_id) (to-string this.editPrizeTypeId)}}>{{t.spot_prize_type_name}}</option>
+                        {{/each}}
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" form="edit-prize-{{p.spot_prize_id}}" {{on "change" (fn this.updateField "editPrizeMatchId")}}>
+                        <option value="">—</option>
+                        {{#each this.matches as |m|}}
+                          <option value={{m.match_id}} selected={{eq (to-string m.match_id) (to-string this.editPrizeMatchId)}}>{{if m.match_name m.match_name (concat "Match #" m.match_id)}}</option>
+                        {{/each}}
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" value={{this.editPrizeSponsor}} {{on "input" (fn this.updateField "editPrizeSponsor")}} form="edit-prize-{{p.spot_prize_id}}">
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" min="1" value={{this.editPrizeQty}} {{on "input" (fn this.updateField "editPrizeQty")}} form="edit-prize-{{p.spot_prize_id}}">
+                    </td>
+                    <td></td>
+                    <td class="text-center">
+                      <button type="submit" form="edit-prize-{{p.spot_prize_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditPrize}}><i class="bi bi-x-lg"></i></button>
+                    </td>
+                  </tr>
+                {{else}}
+                  <tr>
+                    <td class="fw-semibold">{{p.spot_prize_id}}</td>
+                    <td>{{if p.prize_title p.prize_title "—"}}</td>
+                    <td>{{lookup-label this.types "spot_prize_type_id" p.spot_type_id "spot_prize_type_name" "—"}}</td>
+                    <td>{{lookup-label this.matches "match_id" p.match_id "match_name" (concat "Match #" p.match_id)}}</td>
+                    <td>{{if p.sponsor_name p.sponsor_name "—"}}</td>
+                    <td>{{if p.quantity p.quantity "—"}}</td>
+                    <td class="text-muted small">{{if p.created_time p.created_time "—"}}</td>
+                    <td class="text-center">
+                      <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditPrize p)}}><i class="bi bi-pencil-fill"></i></button>
+                      <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deletePrize p.spot_prize_id)}}><i class="bi bi-trash-fill"></i></button>
+                    </td>
+                  </tr>
+                {{/if}}
+              {{else}}
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-gift" style="font-size:2rem"></i>
+                    <p class="mt-2 mb-0">No spot prizes yet. Click <strong>Add Spot Prize</strong> to get started.</p>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- ═══════════════════════════════════════════
+       TAB: PRIZE TYPES
+       ═══════════════════════════════════════════ --}}
+  {{#if (eq this.activeTab "types")}}
+
+    {{#unless this.isAddingType}}
+      <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddType}}>
+        <i class="bi bi-plus-circle"></i> Add Type
+      </button>
+    {{/unless}}
+
+    {{#if this.isAddingType}}
+      <div class="card mb-4 border-accent">
+        <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> New Prize Type</div>
+        <div class="card-body">
+          <form {{on "submit" this.addType}}>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">Type Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" value={{this.newTypeName}} {{on "input" (fn this.updateField "newTypeName")}} required placeholder="e.g. Best Performance, Longest Hold, First Tamer">
+              </div>
+              <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                  {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Save{{/if}}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddType}}>Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width:60px">ID</th>
+                <th>Type Name</th>
+                <th style="width:150px" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.types as |t|}}
+                {{#if (eq this.editingTypeId t.spot_prize_type_id)}}
+                  <tr class="table-warning">
+                    <td class="align-middle fw-semibold">{{t.spot_prize_type_id}}</td>
+                    <td>
+                      <form id="edit-type-{{t.spot_prize_type_id}}" {{on "submit" (fn this.saveType t.spot_prize_type_id)}}>
+                        <input type="text" class="form-control form-control-sm" value={{this.editTypeName}} {{on "input" (fn this.updateField "editTypeName")}} required>
+                      </form>
+                    </td>
+                    <td class="text-center">
+                      <button type="submit" form="edit-type-{{t.spot_prize_type_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditType}}><i class="bi bi-x-lg"></i></button>
+                    </td>
+                  </tr>
+                {{else}}
+                  <tr>
+                    <td class="fw-semibold">{{t.spot_prize_type_id}}</td>
+                    <td>{{t.spot_prize_type_name}}</td>
+                    <td class="text-center">
+                      <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditType t)}}><i class="bi bi-pencil-fill"></i></button>
+                      <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deleteType t.spot_prize_type_id)}}><i class="bi bi-trash-fill"></i></button>
+                    </td>
+                  </tr>
+                {{/if}}
+              {{else}}
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">
+                    <i class="bi bi-tags" style="font-size:2rem"></i>
+                    <p class="mt-2 mb-0">No prize types yet. Click <strong>Add Type</strong> to create categories like "Best Tackle", "Longest Hold".</p>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- ═══════════════════════════════════════════
+       TAB: AWARDS
+       ═══════════════════════════════════════════ --}}
+  {{#if (eq this.activeTab "awards")}}
+
+    {{#unless this.isAddingAward}}
+      <button class="btn btn-accent mb-3" type="button" {{on "click" this.startAddAward}}>
+        <i class="bi bi-plus-circle"></i> Give Award
+      </button>
+    {{/unless}}
+
+    {{#if this.isAddingAward}}
+      <div class="card mb-4 border-accent">
+        <div class="card-header bg-accent text-white fw-semibold"><i class="bi bi-plus-circle"></i> Give Spot Prize Award</div>
+        <div class="card-body">
+          <form {{on "submit" this.addAward}}>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Player <span class="text-danger">*</span></label>
+                <select class="form-select" {{on "change" (fn this.updateField "newAwardPlayerId")}} required>
+                  <option value="">— Select Player —</option>
+                  {{#each this.players as |pl|}}
+                    <option value={{pl.player_id}}>{{pl.first_name}} {{pl.last_name}} (#{{pl.player_id}})</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Spot Prize <span class="text-danger">*</span></label>
+                <select class="form-select" {{on "change" (fn this.updateField "newAwardPrizeId")}} required>
+                  <option value="">— Select Prize —</option>
+                  {{#each this.prizes as |sp|}}
+                    <option value={{sp.spot_prize_id}}>{{sp.prize_title}} (#{{sp.spot_prize_id}})</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-semibold">Bull (optional)</label>
+                <select class="form-select" {{on "change" (fn this.updateField "newAwardBullId")}}>
+                  <option value="">— None —</option>
+                  {{#each this.bulls as |b|}}
+                    <option value={{b.bull_id}}>{{if b.bull_name b.bull_name (concat "Bull #" b.bull_id)}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-success" disabled={{this.isLoading}}>
+                  {{#if this.isLoading}}<span class="spinner-border spinner-border-sm"></span>{{else}}<i class="bi bi-check-lg"></i> Award{{/if}}
+                </button>
+                <button type="button" class="btn btn-outline-secondary" {{on "click" this.cancelAddAward}}>Cancel</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{/if}}
+
+    <div class="card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width:50px">ID</th>
+                <th>Player</th>
+                <th>Spot Prize</th>
+                <th>Bull</th>
+                <th>Awarded</th>
+                <th style="width:120px" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.awards as |a|}}
+                {{#if (eq this.editingAwardId a.spot_prize_award_id)}}
+                  <tr class="table-warning">
+                    <td class="align-middle fw-semibold">{{a.spot_prize_award_id}}</td>
+                    <td>
+                      <form id="edit-award-{{a.spot_prize_award_id}}" {{on "submit" (fn this.saveAward a.spot_prize_award_id)}}>
+                        <select class="form-select form-select-sm" {{on "change" (fn this.updateField "editAwardPlayerId")}} required>
+                          <option value="">—</option>
+                          {{#each this.players as |pl|}}
+                            <option value={{pl.player_id}} selected={{eq (to-string pl.player_id) (to-string this.editAwardPlayerId)}}>{{pl.first_name}} {{pl.last_name}}</option>
+                          {{/each}}
+                        </select>
+                      </form>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" form="edit-award-{{a.spot_prize_award_id}}" {{on "change" (fn this.updateField "editAwardPrizeId")}} required>
+                        <option value="">—</option>
+                        {{#each this.prizes as |sp|}}
+                          <option value={{sp.spot_prize_id}} selected={{eq (to-string sp.spot_prize_id) (to-string this.editAwardPrizeId)}}>{{sp.prize_title}}</option>
+                        {{/each}}
+                      </select>
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" form="edit-award-{{a.spot_prize_award_id}}" {{on "change" (fn this.updateField "editAwardBullId")}}>
+                        <option value="">— None —</option>
+                        {{#each this.bulls as |b|}}
+                          <option value={{b.bull_id}} selected={{eq (to-string b.bull_id) (to-string this.editAwardBullId)}}>{{if b.bull_name b.bull_name (concat "Bull #" b.bull_id)}}</option>
+                        {{/each}}
+                      </select>
+                    </td>
+                    <td></td>
+                    <td class="text-center">
+                      <button type="submit" form="edit-award-{{a.spot_prize_award_id}}" class="btn btn-sm btn-success me-1" disabled={{this.isLoading}}><i class="bi bi-check-lg"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" {{on "click" this.cancelEditAward}}><i class="bi bi-x-lg"></i></button>
+                    </td>
+                  </tr>
+                {{else}}
+                  <tr>
+                    <td class="fw-semibold">{{a.spot_prize_award_id}}</td>
+                    <td>{{lookup-label this.players "player_id" a.player_id "first_name" (concat "Player #" a.player_id)}}</td>
+                    <td>{{lookup-label this.prizes "spot_prize_id" a.spot_prize_id "prize_title" (concat "Prize #" a.spot_prize_id)}}</td>
+                    <td>{{if a.bull_id (lookup-label this.bulls "bull_id" a.bull_id "bull_name" (concat "Bull #" a.bull_id)) "—"}}</td>
+                    <td class="text-muted small">{{if a.awarded_time a.awarded_time "—"}}</td>
+                    <td class="text-center">
+                      <button class="btn btn-sm btn-outline-primary me-1" title="Edit" {{on "click" (fn this.startEditAward a)}}><i class="bi bi-pencil-fill"></i></button>
+                      <button class="btn btn-sm btn-outline-danger" title="Delete" {{on "click" (fn this.deleteAward a.spot_prize_award_id)}}><i class="bi bi-trash-fill"></i></button>
+                    </td>
+                  </tr>
+                {{/if}}
+              {{else}}
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-award" style="font-size:2rem"></i>
+                    <p class="mt-2 mb-0">No awards given yet. Click <strong>Give Award</strong> to award a spot prize to a player.</p>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="text-muted small mt-3">
+    <i class="bi bi-info-circle"></i> Spot prizes are special one-off awards given during a match by sponsors. Create <strong>Types</strong> first, then define <strong>Spot Prizes</strong>, and finally give <strong>Awards</strong> to players.
+  </div>
+</div>

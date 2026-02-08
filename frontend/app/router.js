@@ -28,6 +28,7 @@ Router.map(function () {
   // Scorer / Admin
   this.route('match-control');
   this.route('winners');
+  this.route('spot-prizes');
 
   // Registrar / Admin
   this.route('registration');

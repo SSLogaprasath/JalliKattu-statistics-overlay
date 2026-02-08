@@ -24,7 +24,7 @@ export default class SignupController extends Controller {
   @tracked oUsername = '';
   @tracked oPassword = '';
   @tracked oName = '';
-  @tracked oPhone = '';
+  @tracked oAadhaar = '';
 
   @action
   setTab(tab) {
@@ -86,15 +86,15 @@ export default class SignupController extends Controller {
         body: JSON.stringify({
           username: this.oUsername,
           password: this.oPassword,
-          owner_name: this.oName,
-          phone: this.oPhone,
+          name: this.oName,
+          aadhaar: this.oAadhaar,
         }),
       });
       const data = await resp.json();
       if (resp.ok) {
         this.success =
           'Registration successful! You can now login with your credentials.';
-        this.oUsername = this.oPassword = this.oName = this.oPhone = '';
+        this.oUsername = this.oPassword = this.oName = this.oAadhaar = '';
       } else {
         this.error = data.error || 'Registration failed';
       }
