@@ -1,0 +1,35 @@
+{{page-title "Matches"}}
+<div class="container py-4">
+  <div class="section-header">
+    <h5><i class="bi bi-calendar-event"></i> All Matches</h5>
+  </div>
+
+  <div class="row g-3">
+    {{#each this.model.matches as |match|}}
+      <div class="col-md-6 col-lg-4">
+        <LinkTo @route="match-detail" @model={{match.match_id}} class="text-decoration-none">
+          <div class="match-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-bold mb-0">Match #{{match.match_id}}</h6>
+              <span class="status-badge {{match.status}}">{{match.status}}</span>
+            </div>
+            <div class="match-venue"><i class="bi bi-geo-alt"></i> {{match.location}}</div>
+            <div class="match-date"><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+            {{#if match.player_limit}}
+              <div class="mt-2">
+                <small class="text-muted">Capacity: {{match.player_limit}} players / {{match.bull_limit}} bulls</small>
+              </div>
+            {{/if}}
+          </div>
+        </LinkTo>
+      </div>
+    {{else}}
+      <div class="col-12">
+        <div class="empty-state">
+          <i class="bi bi-calendar-x d-block"></i>
+          <h6>No matches found</h6>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</div>

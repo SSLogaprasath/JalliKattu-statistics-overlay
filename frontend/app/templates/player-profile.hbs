@@ -1,0 +1,94 @@
+{{page-title (concat "Player - " (or this.model.profile.player_name "Unknown"))}}
+<div class="container py-4">
+  <div class="mb-3">
+    <LinkTo @route="leaderboard" class="text-decoration-none text-muted">
+      <i class="bi bi-arrow-left"></i> Back to Leaderboard
+    </LinkTo>
+  </div>
+
+  {{#if this.model.error}}
+    <div class="alert alert-danger">{{this.model.error}}</div>
+  {{else}}
+    <div class="row g-4">
+      {{!-- Profile Card --}}
+      <div class="col-lg-4">
+        <div class="card profile-card">
+          <div class="profile-avatar">
+            {{#let (or this.model.profile.player_name "?") as |name|}}
+              {{#let (get (split name " ") 0) as |first|}}
+                {{slice first 0 1}}
+              {{/let}}
+            {{/let}}
+          </div>
+          <h4 class="fw-bold">{{this.model.profile.player_name}}</h4>
+          {{#if this.model.profile.Phone_number}}
+            <p class="text-muted"><i class="bi bi-phone"></i> {{this.model.profile.Phone_number}}</p>
+          {{/if}}
+        </div>
+      </div>
+
+      {{!-- Career Stats --}}
+      <div class="col-lg-8">
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="card stat-card accent">
+              <div class="stat-value">{{or this.model.profile.matches_played 0}}</div>
+              <div class="stat-label">Matches</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card green">
+              <div class="stat-value">{{or this.model.profile.total_bulls_caught 0}}</div>
+              <div class="stat-label">Bulls Caught</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card saffron">
+              <div class="stat-value">{{or this.model.profile.total_penalties 0}}</div>
+              <div class="stat-label">Penalties</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card stat-card blue">
+              <div class="stat-value">{{or this.model.profile.career_net_score 0}}</div>
+              <div class="stat-label">Net Score</div>
+            </div>
+          </div>
+        </div>
+
+        {{!-- Match History --}}
+        <div class="card">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Match History</h6>
+            {{#if this.model.matchHistory.length}}
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr><th>Match</th><th>Round</th><th class="text-center">Caught</th><th class="text-center">Penalties</th><th class="text-center">Net</th></tr>
+                  </thead>
+                  <tbody>
+                    {{#each this.model.matchHistory as |h|}}
+                      <tr>
+                        <td>
+                          <LinkTo @route="match-detail" @model={{h.match_id}} class="text-decoration-none">
+                            Match #{{h.match_id}}
+                          </LinkTo>
+                        </td>
+                        <td>{{h.round_name}}</td>
+                        <td class="text-center">{{h.bull_caught}}</td>
+                        <td class="text-center text-danger">{{h.penalties}}</td>
+                        <td class="text-center fw-bold">{{h.net_score}}</td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            {{else}}
+              <div class="empty-state"><i class="bi bi-inbox d-block"></i>No match history</div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+</div>

@@ -1,0 +1,43 @@
+{
+  "name": "jallikattu-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jallikattu Statistics Overlay - Ember.js Frontend",
+  "scripts": {
+    "build": "ember build",
+    "start": "ember serve --proxy http://localhost:8080",
+    "test": "ember test"
+  },
+  "devDependencies": {
+    "@ember/optional-features": "^2.0.0",
+    "@ember/string": "^3.1.1",
+    "@ember/test-helpers": "^3.2.0",
+    "@embroider/compat": "^3.2.0",
+    "@embroider/core": "^3.2.0",
+    "@embroider/webpack": "^3.2.0",
+    "@glimmer/component": "^1.1.2",
+    "@glimmer/tracking": "^1.1.2",
+    "broccoli-asset-rev": "^3.0.0",
+    "ember-auto-import": "^2.6.3",
+    "ember-cli": "~5.4.0",
+    "ember-cli-app-version": "^6.0.1",
+    "ember-cli-babel": "^8.2.0",
+    "ember-cli-htmlbars": "^6.3.0",
+    "ember-cli-inject-live-reload": "^2.1.0",
+    "ember-data": "~5.3.0",
+    "ember-fetch": "^8.1.2",
+    "ember-load-initializers": "^2.1.2",
+    "ember-page-title": "^8.0.0",
+    "ember-resolver": "^11.0.1",
+    "ember-source": "~5.4.0",
+    "loader.js": "^4.7.0",
+    "webpack": "^5.89.0"
+  },
+  "engines": {
+    "node": ">= 18",
+    "npm": ">= 10"
+  },
+  "ember": {
+    "edition": "octane"
+  }
+}

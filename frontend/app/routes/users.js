@@ -1,0 +1,25 @@
+import Route from '@ember/routing/route';
+import { service } from '@ember/service';
+
+export default class UsersRoute extends Route {
+  @service auth;
+  @service router;
+
+  beforeModel() {
+    if (!this.auth.isAuthenticated) {
+      this.router.transitionTo('login');
+      return;
+    }
+    if (!this.auth.isSuperAdmin) {
+      this.router.transitionTo('dashboard');
+    }
+  }
+
+  async model() {
+    try {
+      return await this.auth.apiGet('/auth/users');
+    } catch {
+      return [];
+    }
+  }
+}

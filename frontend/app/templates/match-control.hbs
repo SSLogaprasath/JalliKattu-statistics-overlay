@@ -1,0 +1,368 @@
+{{page-title "Match Control"}}
+
+<div class="section-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <h5><i class="bi bi-sliders2"></i> Match Control Panel</h5>
+  {{#if this.matchStatus}}
+    <div class="d-flex align-items-center gap-2">
+      <span class="status-badge {{if (eq this.matchStatus 'Live') 'live' (if (eq this.matchStatus 'Completed') 'completed' 'scheduled')}}">
+        {{this.matchStatus}}
+      </span>
+      {{#if (eq this.matchStatus "Scheduled")}}
+        <button class="btn btn-success btn-sm" type="button" {{on "click" (fn this.updateMatchStatus "Live")}}>
+          <i class="bi bi-play-circle-fill"></i> Go Live
+        </button>
+      {{/if}}
+      {{#if (eq this.matchStatus "Live")}}
+        <button class="btn btn-outline-danger btn-sm" type="button" {{on "click" (fn this.updateMatchStatus "Completed")}}>
+          <i class="bi bi-stop-circle-fill"></i> End Match
+        </button>
+      {{/if}}
+    </div>
+  {{/if}}
+</div>
+
+{{!-- Toast --}}
+{{#if this.statusMessage}}
+  <div class="toast-notification {{this.statusType}}" role="alert">
+    <i class="bi {{if (eq this.statusType 'success') 'bi-check-circle-fill' 'bi-exclamation-triangle-fill'}}"></i>
+    {{this.statusMessage}}
+  </div>
+{{/if}}
+
+{{!-- Match Selector --}}
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center g-3">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold mb-1">Select Match</label>
+        <select class="form-select" {{on "change" this.loadMatch}}>
+          <option value="">-- Choose a Match --</option>
+          {{#if (gt this.liveMatchCount 0)}}
+            <optgroup label="&#x1F534; Live">
+              {{#each @model.matches as |m|}}
+                {{#if (eq m.status "Live")}}
+                  <option value={{m.match_id}} selected={{eq (to-string m.match_id) (to-string this.selectedMatchId)}}>
+                    {{m.match_name}}
+                  </option>
+                {{/if}}
+              {{/each}}
+            </optgroup>
+          {{/if}}
+          {{#if (gt this.scheduledMatchCount 0)}}
+            <optgroup label="&#x1F7E1; Scheduled">
+              {{#each @model.matches as |m|}}
+                {{#if (eq m.status "Scheduled")}}
+                  <option value={{m.match_id}} selected={{eq (to-string m.match_id) (to-string this.selectedMatchId)}}>
+                    {{m.match_name}}
+                  </option>
+                {{/if}}
+              {{/each}}
+            </optgroup>
+          {{/if}}
+          <optgroup label="Completed">
+            {{#each @model.matches as |m|}}
+              {{#if (eq m.status "Completed")}}
+                <option value={{m.match_id}} selected={{eq (to-string m.match_id) (to-string this.selectedMatchId)}}>
+                  {{m.match_name}}
+                </option>
+              {{/if}}
+            {{/each}}
+          </optgroup>
+        </select>
+      </div>
+      {{#if this.selectedMatch}}
+        <div class="col-md-7">
+          <div class="d-flex flex-wrap gap-3 text-muted small mt-md-4">
+            <span><i class="bi bi-geo-alt-fill text-danger"></i> {{this.selectedMatch.location}}</span>
+            <span><i class="bi bi-calendar3 text-primary"></i> {{this.selectedMatch.match_date}}</span>
+            <span><i class="bi bi-building text-secondary"></i> {{this.selectedMatch.organizer_name}}</span>
+          </div>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+{{#if this.isLoading}}
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status"></div>
+    <p class="mt-2 text-muted">Loading match data...</p>
+  </div>
+{{else if this.scoringData}}
+
+  {{!-- Tab Navigation --}}
+  <div class="tab-nav mb-3">
+    <button class="tab-btn {{if (eq this.activeTab 'players') 'active'}}" type="button" {{on "click" (fn this.switchTab "players")}}>
+      <i class="bi bi-person-arms-up"></i> Player Scores
+      <span class="badge bg-primary ms-1">{{this.scoringData.playerScores.length}}</span>
+    </button>
+    <button class="tab-btn {{if (eq this.activeTab 'bulls') 'active'}}" type="button" {{on "click" (fn this.switchTab "bulls")}}>
+      <i class="bi bi-shield-fill"></i> Bull Scores
+      <span class="badge bg-danger ms-1">{{this.scoringData.bullScores.length}}</span>
+    </button>
+    <button class="tab-btn {{if (eq this.activeTab 'interactions') 'active'}}" type="button" {{on "click" (fn this.switchTab "interactions")}}>
+      <i class="bi bi-arrow-left-right"></i> Interactions
+      <span class="badge bg-info ms-1">{{this.scoringData.interactions.length}}</span>
+    </button>
+  </div>
+
+  {{!-- ═══════ PLAYER SCORES TAB ═══════ --}}
+  {{#if (eq this.activeTab "players")}}
+    <div class="score-panel">
+      <div class="score-panel-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-arms-up"></i> Player Score Entry</span>
+        {{#if this.isLive}}
+          <button class="btn btn-success btn-sm" type="button"
+            disabled={{this.isSaving}}
+            {{on "click" this.saveAllScores}}>
+            {{#if this.isSaving}}
+              <span class="spinner-border spinner-border-sm"></span> Saving...
+            {{else}}
+              <i class="bi bi-floppy-fill"></i> Save All Scores
+            {{/if}}
+          </button>
+        {{/if}}
+      </div>
+
+      {{#each this.scoringData.playerScores as |p|}}
+        <div class="score-row">
+          <div class="score-row-header">
+            <div>
+              <strong>{{p.player_name}}</strong>
+              <span class="badge bg-secondary ms-2">{{p.round_name}}</span>
+              <small class="text-muted ms-2">Batch: {{p.batch_name}}</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+              <span class="fw-bold" style="font-size:1.1rem; color:var(--accent);">
+                Net: {{p.net_score}}
+              </span>
+            </div>
+          </div>
+          <div class="score-row-inputs">
+            <div class="score-input-group">
+              <label>Bulls Caught</label>
+              {{#if this.isLive}}
+                <input type="number" class="score-input success" value={{p.bull_caught}} min="0"
+                  id="p-bc-{{p.player_id}}-{{p.round_type_id}}">
+              {{else}}
+                <div class="score-display success">{{p.bull_caught}}</div>
+              {{/if}}
+            </div>
+            <div class="score-input-group">
+              <label>Penalties</label>
+              {{#if this.isLive}}
+                <input type="number" class="score-input danger" value={{p.penalties}} min="0"
+                  id="p-pen-{{p.player_id}}-{{p.round_type_id}}">
+              {{else}}
+                <div class="score-display danger">{{p.penalties}}</div>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      {{else}}
+        <div class="empty-state py-4">
+          <i class="bi bi-person-x"></i>
+          <p>No approved players for this match</p>
+          <LinkTo @route="registration" class="btn btn-outline-primary btn-sm">Register Players</LinkTo>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- ═══════ BULL SCORES TAB ═══════ --}}
+  {{#if (eq this.activeTab "bulls")}}
+    <div class="score-panel">
+      <div class="score-panel-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-fill"></i> Bull Score Entry</span>
+        {{#if this.isLive}}
+          <button class="btn btn-success btn-sm" type="button"
+            disabled={{this.isSaving}}
+            {{on "click" this.saveAllScores}}>
+            {{#if this.isSaving}}
+              <span class="spinner-border spinner-border-sm"></span> Saving...
+            {{else}}
+              <i class="bi bi-floppy-fill"></i> Save All Scores
+            {{/if}}
+          </button>
+        {{/if}}
+      </div>
+
+      {{#each this.scoringData.bullScores as |b|}}
+        <div class="score-row">
+          <div class="score-row-header">
+            <div>
+              <strong>{{b.bull_name}}</strong>
+              <span class="badge bg-secondary ms-2">{{b.round_name}}</span>
+              <small class="text-muted ms-2">Tamer: {{b.tamer_name}}</small>
+            </div>
+            <div>
+              <span class="text-muted small">Releases: <strong>{{b.release_count}}</strong></span>
+            </div>
+          </div>
+          <div class="score-row-inputs">
+            <div class="score-input-group">
+              <label>Aggression</label>
+              {{#if this.isLive}}
+                <input type="number" class="score-input" value={{b.aggression}} min="0" max="10"
+                  id="b-agg-{{b.bull_id}}-{{b.round_type_id}}">
+              {{else}}
+                <div class="score-display">{{b.aggression}}</div>
+              {{/if}}
+            </div>
+            <div class="score-input-group">
+              <label>Play Area</label>
+              {{#if this.isLive}}
+                <input type="number" class="score-input" value={{b.play_area}} min="0" max="10"
+                  id="b-pa-{{b.bull_id}}-{{b.round_type_id}}">
+              {{else}}
+                <div class="score-display">{{b.play_area}}</div>
+              {{/if}}
+            </div>
+            <div class="score-input-group">
+              <label>Difficulty</label>
+              {{#if this.isLive}}
+                <input type="number" class="score-input danger" value={{b.difficulty}} min="0" max="10"
+                  id="b-diff-{{b.bull_id}}-{{b.round_type_id}}">
+              {{else}}
+                <div class="score-display danger">{{b.difficulty}}</div>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      {{else}}
+        <div class="empty-state py-4">
+          <i class="bi bi-shield-x"></i>
+          <p>No approved bulls for this match</p>
+          <LinkTo @route="registration" class="btn btn-outline-primary btn-sm">Register Bulls</LinkTo>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- ═══════ INTERACTIONS TAB ═══════ --}}
+  {{#if (eq this.activeTab "interactions")}}
+    {{!-- Add Interaction Form (Live only) --}}
+    {{#if this.isLive}}
+      <div class="card mb-3 border-info">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3"><i class="bi bi-plus-circle-fill text-info"></i> Record Interaction</h6>
+          <form {{on "submit" this.addInteraction}}>
+            <div class="row g-2">
+              <div class="col-md-3 col-6">
+                <label class="form-label small fw-semibold">Player</label>
+                <select name="player_id" class="form-select form-select-sm" required>
+                  <option value="">Select...</option>
+                  {{#each this.scoringData.approvedPlayers as |p|}}
+                    <option value={{p.player_id}}>{{p.player_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold">Bull</label>
+                <select name="bull_id" class="form-select form-select-sm" required>
+                  <option value="">Select...</option>
+                  {{#each this.scoringData.approvedBulls as |b|}}
+                    <option value={{b.bull_id}}>{{b.bull_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold">Round</label>
+                <select name="round_type_id" class="form-select form-select-sm" required>
+                  <option value="">Select...</option>
+                  {{#each this.scoringData.roundTypes as |r|}}
+                    <option value={{r.round_type_id}}>{{r.round_name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold">Hold #</label>
+                <input type="number" name="hold_sequence" class="form-control form-control-sm" min="1" required>
+              </div>
+              <div class="col-md-2 col-6">
+                <label class="form-label small fw-semibold">Duration (s)</label>
+                <div class="input-group input-group-sm">
+                  <input type="number" name="hold_duration" class="form-control form-control-sm" min="0" step="0.1" required>
+                  {{#if this.timerRunning}}
+                    <button type="button" class="btn btn-danger btn-sm stopwatch-btn stopwatch-active"
+                      title="Release to stop"
+                      {{on "mouseup" this.stopTimer}}
+                      {{on "mouseleave" this.stopTimer}}
+                      {{on "touchend" this.stopTimer}}>
+                      <i class="bi bi-stopwatch-fill"></i> {{this.timerDisplay}}s
+                    </button>
+                  {{else}}
+                    <button type="button" class="btn btn-outline-warning btn-sm stopwatch-btn"
+                      title="Hold to time"
+                      {{on "mousedown" this.startTimer}}
+                      {{on "touchstart" this.startTimer}}>
+                      <i class="bi bi-stopwatch"></i>
+                      {{#if (not-eq this.timerDisplay "0.0")}}
+                        {{this.timerDisplay}}s
+                      {{/if}}
+                    </button>
+                  {{/if}}
+                </div>
+                {{#if (not-eq this.timerDisplay "0.0")}}
+                  <button type="button" class="btn btn-link btn-sm text-muted p-0 mt-1" {{on "click" this.resetTimer}}>
+                    <i class="bi bi-arrow-counterclockwise"></i> reset
+                  </button>
+                {{/if}}
+              </div>
+              <div class="col-md-1 col-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-info btn-sm text-white w-100">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{/if}}
+
+    {{!-- Interaction Log --}}
+    <div class="card">
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Player</th>
+              <th>Bull</th>
+              <th>Round</th>
+              <th class="text-center">Sequence</th>
+              <th class="text-center">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each this.scoringData.interactions as |i|}}
+              <tr>
+                <td class="fw-semibold">{{i.player_name}}</td>
+                <td>{{i.bull_name}}</td>
+                <td><span class="badge bg-secondary">{{i.round_name}}</span></td>
+                <td class="text-center">{{i.hold_sequence}}</td>
+                <td class="text-center"><span class="badge bg-primary">{{i.hold_duration}}s</span></td>
+              </tr>
+            {{else}}
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state py-3">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <p>No interactions recorded yet</p>
+                  </div>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {{/if}}
+
+{{else}}
+  <div class="empty-state py-5">
+    <i class="bi bi-sliders2" style="font-size:3rem;"></i>
+    <h5 class="mt-3">Select a Match to Begin Scoring</h5>
+    <p class="text-muted">Choose a match from the dropdown above.<br>
+      Only <strong>Live</strong> matches can be edited. Set a <strong>Scheduled</strong> match to Live to start.</p>
+  </div>
+{{/if}}

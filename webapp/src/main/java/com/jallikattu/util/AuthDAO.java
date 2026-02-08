@@ -101,6 +101,19 @@ public class AuthDAO {
     }
 
     /**
+     * Update a user's role.
+     */
+    public static boolean updateUserRole(int userId, String newRole) throws SQLException {
+        String sql = "UPDATE app_user SET role = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newRole);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
      * Delete a user by ID (prevent deleting the last admin).
      */
     public static boolean deleteUser(int userId) throws SQLException {
@@ -117,13 +130,16 @@ public class AuthDAO {
                     role = rs.getString("role");
                 }
             }
-            // If admin, check count
-            if ("admin".equals(role)) {
-                try (Statement stmt = conn.createStatement();
-                     ResultSet rs = stmt.executeQuery(checkSql)) {
-                    rs.next();
-                    if (rs.getInt(1) <= 1) {
-                        throw new SQLException("Cannot delete the last admin user");
+            // If admin or super_admin, check count of that role
+            if ("admin".equals(role) || "super_admin".equals(role)) {
+                String countSql = "SELECT COUNT(*) FROM app_user WHERE role = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(countSql)) {
+                    ps2.setString(1, role);
+                    try (ResultSet rs = ps2.executeQuery()) {
+                        rs.next();
+                        if (rs.getInt(1) <= 1) {
+                            throw new SQLException("Cannot delete the last " + role + " user");
+                        }
                     }
                 }
             }

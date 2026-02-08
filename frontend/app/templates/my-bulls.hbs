@@ -1,0 +1,124 @@
+{{page-title "My Bulls"}}
+
+<div class="section-header">
+  <h5><i class="bi bi-shield-fill"></i> My Bulls</h5>
+</div>
+
+{{!-- Status message --}}
+{{#if this.message}}
+  <div class="alert alert-{{this.messageType}} alert-dismissible fade show" role="alert">
+    <i class="bi {{if (eq this.messageType 'success') 'bi-check-circle-fill' (if (eq this.messageType 'danger') 'bi-exclamation-triangle-fill' 'bi-info-circle-fill')}}"></i>
+    {{this.message}}
+    <button type="button" class="btn-close" {{on "click" this.dismissMessage}}></button>
+  </div>
+{{/if}}
+
+{{#if @model.bulls.length}}
+  <div class="row g-3 mb-4">
+    {{#each @model.bulls as |bull|}}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" style="width:48px;height:48px;font-size:1.3rem;">
+                <i class="bi bi-shield-fill"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold mb-0">{{bull.bull_name}}</h6>
+                <small class="text-muted">Age: {{bull.age}} &bull; Breed: {{bull.breed}}</small>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              {{#if bull.fitness_certificate}}
+                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Fitness Certified</span>
+              {{else}}
+                <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> No Certificate</span>
+              {{/if}}
+            </div>
+            {{#if bull.stats}}
+              <div class="row g-2 mt-2">
+                <div class="col-4 text-center">
+                  <div class="fw-bold text-primary">{{bull.stats.total_matches}}</div>
+                  <small class="text-muted">Matches</small>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="fw-bold text-danger">{{bull.stats.avg_aggression}}</div>
+                  <small class="text-muted">Avg Aggr.</small>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="fw-bold text-warning">{{bull.stats.avg_difficulty}}</div>
+                  <small class="text-muted">Avg Diff.</small>
+                </div>
+              </div>
+            {{/if}}
+            <div class="mt-3">
+              <LinkTo @route="bull-profile" @model={{bull.bull_id}} class="btn btn-outline-primary btn-sm w-100">
+                <i class="bi bi-eye"></i> View Full Profile
+              </LinkTo>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  {{!-- ═══════ REGISTER BULL FOR MATCH ═══════ --}}
+  {{#if @model.matches.length}}
+    <div class="section-header">
+      <h5><i class="bi bi-flag-fill"></i> Register Bull for Match</h5>
+    </div>
+    <p class="text-muted mb-3">Available scheduled matches</p>
+
+    <div class="row g-3">
+      {{#each @model.matches as |match|}}
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">{{match.match_name}}</h6>
+                <span class="status-badge scheduled">{{match.status}}</span>
+              </div>
+              <div class="text-muted small mb-2">
+                <div><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+                <div><i class="bi bi-geo-alt-fill"></i> {{match.location}}{{#if match.area}}, {{match.area}}{{/if}}</div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap mb-3">
+                <span class="badge bg-secondary">
+                  <i class="bi bi-people-fill"></i> {{match.capacity.registeredPlayers}}/{{match.player_limit}} players
+                </span>
+                <span class="badge {{if (eq match.capacity.bullSlotsRemaining 0) 'bg-danger' 'bg-secondary'}}">
+                  <i class="bi bi-shield-fill"></i> {{match.capacity.registeredBulls}}/{{match.bull_limit}} bulls
+                </span>
+              </div>
+
+              {{#if (eq match.capacity.bullSlotsRemaining 0)}}
+                <div class="text-center">
+                  <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Bull Slots Full</span>
+                </div>
+              {{else}}
+                <div class="d-flex flex-wrap gap-2">
+                  {{#each @model.bulls as |bull|}}
+                    <button
+                      class="btn btn-outline-danger btn-sm"
+                      type="button"
+                      disabled={{if this.registeringKey true false}}
+                      {{on "click" (fn this.registerBullForMatch bull.bull_id match.match_id)}}
+                    >
+                      <i class="bi bi-shield-plus"></i> {{bull.bull_name}}
+                    </button>
+                  {{/each}}
+                </div>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+{{else}}
+  <div class="empty-state py-5">
+    <i class="bi bi-shield-x" style="font-size:3rem;"></i>
+    <h5 class="mt-3">No Bulls Registered</h5>
+    <p class="text-muted">You haven't registered any bulls yet</p>
+  </div>
+{{/if}}

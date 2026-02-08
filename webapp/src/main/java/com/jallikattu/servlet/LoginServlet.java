@@ -34,7 +34,7 @@ public class LoginServlet extends HttpServlet {
             // Only admins can manage users
             HttpSession session = request.getSession(false);
             String role = (String) session.getAttribute("role");
-            if (!"admin".equals(role)) {
+            if (!"admin".equals(role) && !"super_admin".equals(role)) {
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard");
                 return;
             }
@@ -72,7 +72,7 @@ public class LoginServlet extends HttpServlet {
             // Create new user (admin only)
             HttpSession session = request.getSession(false);
             String role = (String) session.getAttribute("role");
-            if (!"admin".equals(role)) {
+            if (!"admin".equals(role) && !"super_admin".equals(role)) {
                 response.sendRedirect(request.getContextPath() + "/admin/dashboard");
                 return;
             }

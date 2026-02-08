@@ -1,0 +1,103 @@
+{{page-title (concat "Match #" this.model.match_id)}}
+<div class="container py-4">
+  <div class="mb-3">
+    <LinkTo @route="matches" class="text-decoration-none text-muted">
+      <i class="bi bi-arrow-left"></i> Back to Matches
+    </LinkTo>
+  </div>
+
+  <div class="section-header">
+    <h5><i class="bi bi-trophy"></i> Match #{{this.model.match_id}} — Results</h5>
+  </div>
+
+  {{!-- Winners --}}
+  {{#if this.model.winners.overallWinner.length}}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h6 class="fw-bold text-warning"><i class="bi bi-award-fill"></i> Overall Winner</h6>
+        {{#let (get this.model.winners.overallWinner 0) as |w|}}
+          <div class="d-flex align-items-center gap-3 mt-2">
+            <div class="profile-avatar" style="width:50px;height:50px;font-size:1.2rem;">
+              <i class="bi bi-trophy-fill"></i>
+            </div>
+            <div>
+              <h5 class="mb-0 fw-bold">{{w.player_name}}</h5>
+              <span class="text-muted">Net Score: <strong>{{w.net_score}}</strong> ({{w.total_bulls_caught}} caught)</span>
+            </div>
+          </div>
+        {{/let}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- Round Winners --}}
+  {{#if this.model.winners.roundWinners.length}}
+    <h6 class="fw-bold mb-3"><i class="bi bi-flag-fill"></i> Round Winners</h6>
+    <div class="row g-3 mb-4">
+      {{#each this.model.winners.roundWinners as |rw|}}
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <small class="text-muted">{{rw.round_name}}</small>
+              <h6 class="fw-bold mt-1">{{rw.player_name}}</h6>
+              <span class="badge bg-success">Caught: {{rw.bull_caught}}</span>
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- Best Bulls --}}
+  {{#if this.model.winners.bestBullPerRound.length}}
+    <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill"></i> Top Bulls</h6>
+    <div class="table-container mb-4">
+      <table class="table table-sm">
+        <thead>
+          <tr><th>Bull</th><th>Round</th><th class="text-center">Difficulty</th></tr>
+        </thead>
+        <tbody>
+          {{#each this.model.winners.bestBullPerRound as |b|}}
+            <tr>
+              <td class="fw-semibold">{{b.bull_name}}</td>
+              <td>{{b.round_name}}</td>
+              <td class="text-center fw-bold">{{b.difficulty}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{/if}}
+
+  {{!-- Player Scores --}}
+  {{#if this.model.scores.topPlayers.length}}
+    <h6 class="fw-bold mb-3"><i class="bi bi-person-fill"></i> Player Scores</h6>
+    <div class="table-container mb-4">
+      <table class="table table-sm">
+        <thead>
+          <tr><th>#</th><th>Player</th><th>Batch</th><th class="text-center">Caught</th><th class="text-center">Penalties</th><th class="text-center">Net</th></tr>
+        </thead>
+        <tbody>
+          {{#each this.model.scores.topPlayers as |p index|}}
+            <tr>
+              <td>
+                <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                  {{add index 1}}
+                </span>
+              </td>
+              <td>
+                <LinkTo @route="player-profile" @model={{p.player_id}} class="fw-semibold text-decoration-none">
+                  {{p.player_name}}
+                </LinkTo>
+              </td>
+              <td><small class="text-muted">{{p.batch_name}}</small></td>
+              <td class="text-center">{{p.total_caught}}</td>
+              <td class="text-center text-danger">{{p.total_penalties}}</td>
+              <td class="text-center"><span class="score-net">{{p.net_score}}</span></td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{/if}}
+</div>

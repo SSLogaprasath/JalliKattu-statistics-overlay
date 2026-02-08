@@ -1,0 +1,215 @@
+{{page-title "Home - Jallikattu Statistics"}}
+
+{{!-- Hero Section --}}
+<section class="hero">
+  <div class="container position-relative" style="z-index:1">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <h1>Jallikattu<br>Statistics Overlay</h1>
+        <p class="lead mt-3">Live scores, leaderboards, player &amp; bull statistics for Tamil Nadu's legendary bull-taming sport.</p>
+        <div class="d-flex gap-3 mt-4">
+          <LinkTo @route="scoreboard" class="btn btn-light btn-lg px-4">
+            <i class="bi bi-broadcast"></i> Live Scores
+          </LinkTo>
+          <LinkTo @route="leaderboard" class="btn btn-outline-light btn-lg px-4">
+            <i class="bi bi-bar-chart"></i> Leaderboard
+          </LinkTo>
+        </div>
+      </div>
+      <div class="col-lg-5 text-center mt-4 mt-lg-0">
+        {{#if this.model.stats}}
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                <div class="fs-1 fw-bold">{{this.model.stats.totalPlayers}}</div>
+                <small class="text-white-50">Players</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                <div class="fs-1 fw-bold">{{this.model.stats.totalBulls}}</div>
+                <small class="text-white-50">Bulls</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                <div class="fs-1 fw-bold">{{this.model.stats.totalMatches}}</div>
+                <small class="text-white-50">Matches</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-white bg-opacity-10 rounded-3 p-3">
+                <div class="fs-1 fw-bold text-warning">{{this.model.stats.liveMatches}}</div>
+                <small class="text-white-50">Live Now</small>
+              </div>
+            </div>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container py-4">
+  {{!-- Live Matches --}}
+  {{#if this.liveMatches.length}}
+    <div class="section-header">
+      <h5><i class="bi bi-broadcast text-danger"></i> Live Now</h5>
+    </div>
+    <div class="row g-3 mb-4">
+      {{#each this.liveMatches as |match|}}
+        <div class="col-md-6 col-lg-4">
+          <LinkTo @route="match-detail" @model={{match.match_id}} class="text-decoration-none">
+            <div class="match-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">Match #{{match.match_id}}</h6>
+                <span class="status-badge live">LIVE</span>
+              </div>
+              <div class="match-venue"><i class="bi bi-geo-alt"></i> {{match.location}}</div>
+              <div class="match-date"><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+            </div>
+          </LinkTo>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- Upcoming Matches --}}
+  {{#if this.upcomingMatches.length}}
+    <div class="section-header">
+      <h5><i class="bi bi-calendar-event text-primary"></i> Upcoming Matches</h5>
+      <LinkTo @route="matches" class="btn btn-sm btn-outline-secondary">View All</LinkTo>
+    </div>
+    <div class="row g-3 mb-4">
+      {{#each this.upcomingMatches as |match|}}
+        <div class="col-md-6 col-lg-4">
+          <LinkTo @route="match-detail" @model={{match.match_id}} class="text-decoration-none">
+            <div class="match-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">Match #{{match.match_id}}</h6>
+                <span class="status-badge scheduled">Scheduled</span>
+              </div>
+              <div class="match-venue"><i class="bi bi-geo-alt"></i> {{match.location}}</div>
+              <div class="match-date"><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+            </div>
+          </LinkTo>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- Top Players & Bulls --}}
+  {{#if this.model.leaderboard}}
+    <div class="row g-4 mb-4">
+      {{!-- Top Players --}}
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0"><i class="bi bi-trophy-fill text-warning"></i> Top Players</h5>
+              <LinkTo @route="leaderboard" class="btn btn-sm btn-outline-secondary">See All</LinkTo>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr><th>#</th><th>Player</th><th class="text-end">Net Score</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.model.leaderboard.topPlayers as |p index|}}
+                    <tr>
+                      <td>
+                        <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                          {{add index 1}}
+                        </span>
+                      </td>
+                      <td>
+                        <LinkTo @route="player-profile" @model={{p.player_id}} class="text-decoration-none fw-semibold">
+                          {{p.player_name}}
+                        </LinkTo>
+                      </td>
+                      <td class="text-end fw-bold">{{p.net_score}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{!-- Top Bulls --}}
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0"><i class="bi bi-shield-fill text-success"></i> Top Bulls</h5>
+              <LinkTo @route="leaderboard" class="btn btn-sm btn-outline-secondary">See All</LinkTo>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr><th>#</th><th>Bull</th><th class="text-end">Avg Difficulty</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.model.leaderboard.topBulls as |b index|}}
+                    <tr>
+                      <td>
+                        <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                          {{add index 1}}
+                        </span>
+                      </td>
+                      <td>
+                        <LinkTo @route="bull-profile" @model={{b.bull_id}} class="text-decoration-none fw-semibold">
+                          {{b.bull_name}}
+                        </LinkTo>
+                      </td>
+                      <td class="text-end fw-bold">{{b.avg_difficulty}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- Call-to-action --}}
+  <div class="card bg-dark text-white">
+    <div class="card-body text-center py-4">
+      {{#if this.auth.isAuthenticated}}
+        <h5 class="fw-bold">Ready to compete?</h5>
+        <p class="text-white-50 mb-3">Browse available matches and register</p>
+        <div class="d-flex gap-2 justify-content-center">
+          {{#if this.auth.isPlayer}}
+            <LinkTo @route="my-matches" class="btn btn-accent px-4">
+              <i class="bi bi-flag-fill"></i> Register for Match
+            </LinkTo>
+          {{/if}}
+          <LinkTo @route="events" class="btn btn-outline-light px-4">
+            <i class="bi bi-calendar-event"></i> Browse Events
+          </LinkTo>
+        </div>
+      {{else}}
+        <h5 class="fw-bold">Want to participate?</h5>
+        <p class="text-white-50 mb-3">Register as a player or bull owner</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <LinkTo @route="signup" class="btn btn-accent px-4">
+            <i class="bi bi-person-plus"></i> Register Now
+          </LinkTo>
+          <LinkTo @route="login" class="btn btn-outline-light px-4">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+          </LinkTo>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+{{!-- Footer --}}
+<footer class="bg-dark text-white-50 py-4 mt-4">
+  <div class="container text-center">
+    <p class="mb-0"><i class="bi bi-trophy-fill text-warning"></i> Jallikattu Statistics Overlay &copy; 2026</p>
+  </div>
+</footer>

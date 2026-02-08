@@ -1,0 +1,75 @@
+{{page-title "Login"}}
+
+<div class="login-page">
+  {{!-- Left hero panel --}}
+  <div class="login-hero">
+    <div class="position-relative" style="z-index:1;">
+      <h1 class="fw-bold mb-3" style="font-size: 2.5rem;">Jallikattu<br>Statistics Overlay</h1>
+      <p class="lead opacity-75">Tamil Nadu's premier bull-taming sport management platform.</p>
+      <div class="mt-4">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="bg-white bg-opacity-10 rounded-3 p-2"><i class="bi bi-broadcast fs-5"></i></div>
+          <span>Live scoring &amp; real-time updates</span>
+        </div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="bg-white bg-opacity-10 rounded-3 p-2"><i class="bi bi-bar-chart fs-5"></i></div>
+          <span>Player &amp; bull career statistics</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-white bg-opacity-10 rounded-3 p-2"><i class="bi bi-people fs-5"></i></div>
+          <span>Event management &amp; registration</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Right login form --}}
+  <div class="login-form-section">
+    <div style="max-width: 360px; margin: 0 auto;">
+      <div class="mb-4">
+        <h3 class="fw-bold"><i class="bi bi-trophy-fill text-accent"></i> Welcome back</h3>
+        <p class="text-muted">Sign in to your account</p>
+      </div>
+
+      {{#if this.error}}
+        <div class="alert alert-danger py-2">
+          <i class="bi bi-exclamation-triangle"></i> {{this.error}}
+        </div>
+      {{/if}}
+
+      <form {{on "submit" this.login}}>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="username">Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" class="form-control" id="username" placeholder="Enter username"
+              value={{this.username}} {{on "input" (fn this.updateField "username")}} required autofocus>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold" for="password">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" class="form-control" id="password" placeholder="Enter password"
+              value={{this.password}} {{on "input" (fn this.updateField "password")}} required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-accent w-100 py-2" disabled={{this.isLoading}}>
+          {{#if this.isLoading}}
+            <span class="spinner-border spinner-border-sm"></span> Signing in...
+          {{else}}
+            <i class="bi bi-box-arrow-in-right"></i> Sign In
+          {{/if}}
+        </button>
+      </form>
+
+      <div class="text-center mt-4">
+        <span class="text-muted">Don't have an account?</span>
+        <LinkTo @route="signup" class="text-accent fw-semibold ms-1">Register</LinkTo>
+      </div>
+      <div class="text-center mt-2">
+        <LinkTo @route="index" class="text-muted small"><i class="bi bi-arrow-left"></i> Browse public stats</LinkTo>
+      </div>
+    </div>
+  </div>
+</div>

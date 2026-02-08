@@ -1,0 +1,52 @@
+{{page-title "Events"}}
+
+<div class="section-header d-flex justify-content-between align-items-center">
+  <h5><i class="bi bi-calendar-check-fill"></i> Event Management</h5>
+</div>
+
+{{#if @model.length}}
+  <div class="row g-3">
+    {{#each @model as |event|}}
+      <div class="col-md-6 col-lg-4">
+        <LinkTo @route="event-detail" @model={{event.match_id}} class="text-decoration-none">
+          <div class="card match-card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">{{event.match_name}}</h6>
+                <span class="status-badge {{if (eq event.status 'Completed') 'completed' (if (eq event.status 'Live') 'live' 'scheduled')}}">
+                  {{event.status}}
+                </span>
+              </div>
+              <div class="text-muted small mb-2">
+                <div><i class="bi bi-calendar3"></i> {{event.match_date}}</div>
+                <div><i class="bi bi-geo-alt-fill"></i> {{event.location}} — {{event.area}}</div>
+                <div><i class="bi bi-building"></i> {{event.organizer_name}}</div>
+              </div>
+              {{#if event.capacity}}
+                <div class="mb-1">
+                  <small class="text-muted">Players: {{event.capacity.registeredPlayers}}/{{event.player_limit}}</small>
+                  <div class="capacity-meter">
+                    <div class="capacity-fill" style="width:{{if event.player_limit (mult (div event.capacity.registeredPlayers event.player_limit) 100) 0}}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <small class="text-muted">Bulls: {{event.capacity.registeredBulls}}/{{event.bull_limit}}</small>
+                  <div class="capacity-meter">
+                    <div class="capacity-fill" style="width:{{if event.bull_limit (mult (div event.capacity.registeredBulls event.bull_limit) 100) 0}}%"></div>
+                  </div>
+                </div>
+              {{/if}}
+            </div>
+          </div>
+        </LinkTo>
+      </div>
+    {{/each}}
+  </div>
+{{else}}
+  <div class="empty-state py-5">
+    <i class="bi bi-calendar-x" style="font-size:3rem;"></i>
+    <h5 class="mt-3">No Events Found</h5>
+    <p class="text-muted">Schedule a match using the Registration page first</p>
+    <LinkTo @route="registration" class="btn btn-accent btn-sm">Go to Registration</LinkTo>
+  </div>
+{{/if}}

@@ -1,0 +1,115 @@
+{{page-title "Register"}}
+<div class="container py-5" style="max-width: 600px;">
+  <div class="text-center mb-4">
+    <i class="bi bi-trophy-fill text-accent" style="font-size:2.5rem;"></i>
+    <h3 class="fw-bold mt-2">Join Jallikattu</h3>
+    <p class="text-muted">Register as a player or bull owner</p>
+  </div>
+
+  {{!-- Tab switcher --}}
+  <ul class="nav nav-tabs mb-4 justify-content-center">
+    <li class="nav-item">
+      <button class="nav-link {{if (eq this.activeTab 'player') 'active'}}" type="button" {{on "click" (fn this.setTab "player")}}>
+        <i class="bi bi-person-fill"></i> Player
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link {{if (eq this.activeTab 'owner') 'active'}}" type="button" {{on "click" (fn this.setTab "owner")}}>
+        <i class="bi bi-shield-fill"></i> Bull Owner
+      </button>
+    </li>
+  </ul>
+
+  {{#if this.error}}
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> {{this.error}}</div>
+  {{/if}}
+  {{#if this.success}}
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle"></i> {{this.success}}
+      <div class="mt-2"><LinkTo @route="login" class="btn btn-sm btn-success">Go to Login</LinkTo></div>
+    </div>
+  {{/if}}
+
+  {{!-- Player Form --}}
+  {{#if (eq this.activeTab "player")}}
+    <div class="card">
+      <div class="card-body">
+        <form {{on "submit" this.registerPlayer}}>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" class="form-control" value={{this.pUsername}} {{on "input" (fn this.updateField "pUsername")}} required minlength="3">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="password" class="form-control" value={{this.pPassword}} {{on "input" (fn this.updateField "pPassword")}} required minlength="6">
+            <small class="text-muted">Minimum 6 characters</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" class="form-control" value={{this.pName}} {{on "input" (fn this.updateField "pName")}} required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date of Birth</label>
+            <input type="date" class="form-control" value={{this.pDOB}} {{on "input" (fn this.updateField "pDOB")}} required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone Number</label>
+            <input type="text" class="form-control" value={{this.pPhone}} {{on "input" (fn this.updateField "pPhone")}} required pattern="\d{10}" maxlength="10">
+            <small class="text-muted">10-digit phone number</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Aadhaar Number</label>
+            <input type="text" class="form-control" value={{this.pAadhaar}} {{on "input" (fn this.updateField "pAadhaar")}} required pattern="\d{12}" maxlength="12">
+            <small class="text-muted">12-digit Aadhaar number</small>
+          </div>
+          <button type="submit" class="btn btn-accent w-100" disabled={{this.isLoading}}>
+            {{#if this.isLoading}}
+              <span class="spinner-border spinner-border-sm"></span> Registering...
+            {{else}}
+              <i class="bi bi-person-plus"></i> Register as Player
+            {{/if}}
+          </button>
+        </form>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- Owner Form --}}
+  {{#if (eq this.activeTab "owner")}}
+    <div class="card">
+      <div class="card-body">
+        <form {{on "submit" this.registerOwner}}>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" class="form-control" value={{this.oUsername}} {{on "input" (fn this.updateField "oUsername")}} required minlength="3">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="password" class="form-control" value={{this.oPassword}} {{on "input" (fn this.updateField "oPassword")}} required minlength="6">
+            <small class="text-muted">Minimum 6 characters</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Owner Name</label>
+            <input type="text" class="form-control" value={{this.oName}} {{on "input" (fn this.updateField "oName")}} required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone Number</label>
+            <input type="text" class="form-control" value={{this.oPhone}} {{on "input" (fn this.updateField "oPhone")}} required pattern="\d{10}" maxlength="10">
+          </div>
+          <button type="submit" class="btn btn-accent w-100" disabled={{this.isLoading}}>
+            {{#if this.isLoading}}
+              <span class="spinner-border spinner-border-sm"></span> Registering...
+            {{else}}
+              <i class="bi bi-shield-plus"></i> Register as Bull Owner
+            {{/if}}
+          </button>
+        </form>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="text-center mt-3">
+    <span class="text-muted">Already have an account?</span>
+    <LinkTo @route="login" class="text-accent fw-semibold">Login</LinkTo>
+  </div>
+</div>

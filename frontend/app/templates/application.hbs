@@ -1,0 +1,164 @@
+{{page-title "Jallikattu Statistics"}}
+
+{{!-- Toast notifications --}}
+<div class="toast-container" id="toast-container"></div>
+
+{{#if this.auth.isAuthenticated}}
+  {{!-- ===== AUTHENTICATED LAYOUT ===== --}}
+  <div class="app-wrapper">
+    {{!-- Sidebar overlay (mobile) --}}
+    <div class="sidebar-overlay {{if this.sidebarOpen 'show'}}" {{on "click" this.toggleSidebar}} role="button"></div>
+
+    {{!-- Sidebar --}}
+    <aside class="sidebar {{if this.sidebarOpen 'show'}}">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon"><i class="bi bi-trophy-fill"></i></div>
+        <div>
+          <h5>Jallikattu</h5>
+          <small>Statistics Overlay</small>
+        </div>
+      </div>
+
+      <ul class="sidebar-nav">
+        {{!-- Main --}}
+        <li class="sidebar-section">Main</li>
+        <li class="nav-item">
+          <LinkTo @route="dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</LinkTo>
+        </li>
+
+        {{!-- Public --}}
+        <li class="sidebar-section">Public</li>
+        <li class="nav-item">
+          <LinkTo @route="index"><i class="bi bi-house-fill"></i> Home</LinkTo>
+        </li>
+        <li class="nav-item">
+          <LinkTo @route="scoreboard"><i class="bi bi-broadcast"></i> Live Scoreboard</LinkTo>
+        </li>
+        <li class="nav-item">
+          <LinkTo @route="matches"><i class="bi bi-calendar-event"></i> Matches</LinkTo>
+        </li>
+        <li class="nav-item">
+          <LinkTo @route="leaderboard"><i class="bi bi-bar-chart-fill"></i> Leaderboard</LinkTo>
+        </li>
+
+        {{!-- Scorer --}}
+        {{#if this.auth.isScorer}}
+          <li class="sidebar-section">Scoring</li>
+          <li class="nav-item">
+            <LinkTo @route="match-control"><i class="bi bi-sliders2"></i> Match Control</LinkTo>
+          </li>
+          <li class="nav-item">
+            <LinkTo @route="winners"><i class="bi bi-award-fill"></i> Winners</LinkTo>
+          </li>
+        {{/if}}
+
+        {{!-- Registrar / Events --}}
+        {{#if this.auth.isRegistrar}}
+          <li class="sidebar-section">Events</li>
+          <li class="nav-item">
+            <LinkTo @route="events"><i class="bi bi-calendar-check"></i> Event Manager</LinkTo>
+          </li>
+          <li class="nav-item">
+            <LinkTo @route="registration"><i class="bi bi-person-plus-fill"></i> Registration</LinkTo>
+          </li>
+        {{/if}}
+
+        {{!-- Player --}}
+        {{#if this.auth.isPlayer}}
+          <li class="sidebar-section">My Account</li>
+          <li class="nav-item">
+            <LinkTo @route="my-profile"><i class="bi bi-person-circle"></i> My Profile</LinkTo>
+          </li>
+          <li class="nav-item">
+            <LinkTo @route="my-history"><i class="bi bi-clock-history"></i> Match History</LinkTo>
+          </li>
+          <li class="nav-item">
+            <LinkTo @route="my-matches"><i class="bi bi-flag-fill"></i> Register for Match</LinkTo>
+          </li>
+        {{/if}}
+
+        {{!-- Owner --}}
+        {{#if this.auth.isOwner}}
+          <li class="sidebar-section">Bull Management</li>
+          <li class="nav-item">
+            <LinkTo @route="my-bulls"><i class="bi bi-shield-fill"></i> My Bulls</LinkTo>
+          </li>
+        {{/if}}
+
+        {{!-- Admin --}}
+        {{#if this.auth.isAdmin}}
+          <li class="sidebar-section">Administration</li>
+          <li class="nav-item">
+            <LinkTo @route="prizes"><i class="bi bi-trophy-fill"></i> Prize Management</LinkTo>
+          </li>
+          <li class="nav-item">
+            <LinkTo @route="tables"><i class="bi bi-database-fill"></i> Data Tables</LinkTo>
+          </li>
+          {{#if this.auth.isSuperAdmin}}
+            <li class="nav-item">
+              <LinkTo @route="users"><i class="bi bi-shield-fill-check"></i> User Management</LinkTo>
+            </li>
+          {{/if}}
+        {{/if}}
+      </ul>
+    </aside>
+
+    {{!-- Main content area --}}
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle" type="button" {{on "click" this.toggleSidebar}}>
+            <i class="bi bi-list"></i>
+          </button>
+          <span class="topbar-title">{{this.pageTitle}}</span>
+        </div>
+        <div class="topbar-right">
+          <span class="role-tag {{this.auth.role}}">{{this.auth.role}}</span>
+          <div class="user-badge">
+            <div class="user-avatar">{{this.auth.initials}}</div>
+            <span class="d-none d-md-inline">{{this.auth.user.full_name}}</span>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" type="button" title="Logout" {{on "click" this.logout}}>
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        {{outlet}}
+      </main>
+    </div>
+  </div>
+
+{{else if this.isPublicRoute}}
+  {{!-- ===== PUBLIC LAYOUT (no sidebar) ===== --}}
+  <nav class="navbar navbar-expand-lg public-navbar sticky-top">
+    <div class="container">
+      <LinkTo @route="index" class="navbar-brand">
+        <i class="bi bi-trophy-fill"></i> Jallikattu
+      </LinkTo>
+      <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav">
+        <i class="bi bi-list"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="publicNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><LinkTo @route="index" class="nav-link">Home</LinkTo></li>
+          <li class="nav-item"><LinkTo @route="scoreboard" class="nav-link">Live Scores</LinkTo></li>
+          <li class="nav-item"><LinkTo @route="matches" class="nav-link">Matches</LinkTo></li>
+          <li class="nav-item"><LinkTo @route="leaderboard" class="nav-link">Leaderboard</LinkTo></li>
+        </ul>
+        <ul class="navbar-nav">
+          <li class="nav-item"><LinkTo @route="signup" class="nav-link">Register</LinkTo></li>
+          <li class="nav-item"><LinkTo @route="login" class="nav-link"><i class="bi bi-box-arrow-in-right"></i> Login</LinkTo></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main>
+    {{outlet}}
+  </main>
+
+{{else}}
+  {{!-- ===== LOGIN PAGE (bare layout) ===== --}}
+  {{outlet}}
+{{/if}}

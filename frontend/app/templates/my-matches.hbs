@@ -1,0 +1,74 @@
+{{page-title "Register for Match"}}
+
+<div class="section-header">
+  <h5><i class="bi bi-flag-fill"></i> Register for Match</h5>
+</div>
+
+{{!-- Status message --}}
+{{#if this.message}}
+  <div class="alert alert-{{this.messageType}} alert-dismissible fade show" role="alert">
+    <i class="bi {{if (eq this.messageType 'success') 'bi-check-circle-fill' (if (eq this.messageType 'danger') 'bi-exclamation-triangle-fill' 'bi-info-circle-fill')}}"></i>
+    {{this.message}}
+    <button type="button" class="btn-close" {{on "click" this.dismissMessage}}></button>
+  </div>
+{{/if}}
+
+{{#if @model.length}}
+  <p class="text-muted mb-3">Available scheduled matches</p>
+  <div class="row g-3">
+    {{#each @model as |match|}}
+      <div class="col-md-6 col-lg-4">
+        <div class="card match-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-bold mb-0">{{match.match_name}}</h6>
+              <span class="status-badge scheduled">{{match.status}}</span>
+            </div>
+            <div class="text-muted small mb-2">
+              <div><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+              <div><i class="bi bi-geo-alt-fill"></i> {{match.location}}{{#if match.area}}, {{match.area}}{{/if}}</div>
+              {{#if match.organizer_name}}
+                <div><i class="bi bi-building"></i> {{match.organizer_name}}</div>
+              {{/if}}
+            </div>
+            <div class="d-flex gap-2 flex-wrap mb-3">
+              <span class="badge {{if (eq match.capacity.playerSlotsRemaining 0) 'bg-danger' 'bg-secondary'}}">
+                <i class="bi bi-people-fill"></i>
+                {{match.capacity.registeredPlayers}}/{{match.player_limit}} players
+              </span>
+              <span class="badge bg-secondary">
+                <i class="bi bi-shield-fill"></i>
+                {{match.capacity.registeredBulls}}/{{match.bull_limit}} bulls
+              </span>
+            </div>
+            {{#if (eq match.capacity.playerSlotsRemaining 0)}}
+              <button class="btn btn-secondary btn-sm w-100" disabled>
+                <i class="bi bi-x-circle"></i> Player Slots Full
+              </button>
+            {{else}}
+              <button
+                class="btn btn-accent btn-sm w-100"
+                type="button"
+                disabled={{if (eq this.registeringMatchId match.match_id) true false}}
+                {{on "click" (fn this.registerForMatch match)}}
+              >
+                {{#if (eq this.registeringMatchId match.match_id)}}
+                  <span class="spinner-border spinner-border-sm"></span> Registering...
+                {{else}}
+                  <i class="bi bi-check-lg"></i> Register
+                {{/if}}
+              </button>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+{{else}}
+  <div class="empty-state py-5">
+    <i class="bi bi-flag" style="font-size:3rem;"></i>
+    <h5 class="mt-3">No Available Matches</h5>
+    <p class="text-muted">There are no scheduled matches open for registration right now</p>
+    <LinkTo @route="events" class="btn btn-accent btn-sm">Browse Events</LinkTo>
+  </div>
+{{/if}}

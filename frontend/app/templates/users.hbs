@@ -1,0 +1,158 @@
+{{page-title "Super Admin – User Management"}}
+
+<div class="section-header d-flex justify-content-between align-items-center">
+  <h5><i class="bi bi-shield-fill-check"></i> Super Admin &mdash; User Management</h5>
+  <button class="btn btn-accent btn-sm" type="button" {{on "click" this.toggleAddForm}}>
+    <i class="bi bi-person-plus-fill"></i> {{if this.showAddForm "Cancel" "Add User"}}
+  </button>
+</div>
+
+{{!-- Toast --}}
+{{#if this.statusMessage}}
+  <div class="toast-notification {{this.statusType}}" role="alert">
+    <i class="bi {{if (eq this.statusType 'success') 'bi-check-circle-fill' 'bi-exclamation-triangle-fill'}}"></i>
+    {{this.statusMessage}}
+  </div>
+{{/if}}
+
+{{!-- Add User Form --}}
+{{#if this.showAddForm}}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3"><i class="bi bi-person-plus"></i> Create New User</h6>
+      <form {{on "submit" this.createUser}}>
+        <div class="row g-3">
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label fw-semibold">Username</label>
+            <input type="text" name="username" class="form-control" placeholder="johndoe" required>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" name="full_name" class="form-control" placeholder="John Doe" required>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <label class="form-label fw-semibold">Role</label>
+            <select name="role" class="form-select" required>
+              <option value="">Select role...</option>
+              <option value="super_admin">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="registrar">Registrar</option>
+              <option value="scorer">Scorer</option>
+              <option value="player">Player</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-check-lg"></i> Create User
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" {{on "click" this.toggleAddForm}}>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{{/if}}
+
+{{!-- Role filter tabs --}}
+<div class="mb-3">
+  <div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-sm {{if (eq this.roleFilter '') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "")}}>
+      All <span class="badge bg-secondary ms-1">{{@model.length}}</span>
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'super_admin') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "super_admin")}}>
+      <i class="bi bi-shield-fill-check"></i> Super Admin
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'admin') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "admin")}}>
+      <i class="bi bi-gear-fill"></i> Admin
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'scorer') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "scorer")}}>
+      <i class="bi bi-clipboard-data-fill"></i> Scorer
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'registrar') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "registrar")}}>
+      <i class="bi bi-calendar-check-fill"></i> Registrar
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'player') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "player")}}>
+      <i class="bi bi-person-arms-up"></i> Player
+    </button>
+    <button class="btn btn-sm {{if (eq this.roleFilter 'owner') 'btn-dark' 'btn-outline-secondary'}}" type="button" {{on "click" (fn this.filterByRole "owner")}}>
+      <i class="bi bi-person-badge-fill"></i> Owner
+    </button>
+  </div>
+</div>
+
+{{!-- Users table --}}
+<div class="card">
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:60px">ID</th>
+          <th>User</th>
+          <th>Current Role</th>
+          <th>Change Role</th>
+          <th style="width:100px" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each this.filteredUsers as |user|}}
+          <tr>
+            <td class="text-muted small">{{user.user_id}}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar-sm bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:0.75rem;">
+                  {{user.username}}
+                </div>
+                <div>
+                  <div class="fw-semibold">{{user.full_name}}</div>
+                  <small class="text-muted">@{{user.username}}</small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="role-tag {{user.role}}">{{user.role}}</span>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-sm"
+                style="max-width:160px"
+                {{on "change" (fn this.changeRole user.user_id)}}
+              >
+                <option value="" selected disabled>Change to...</option>
+                <option value="super_admin" disabled={{eq user.role "super_admin"}}>Super Admin</option>
+                <option value="admin" disabled={{eq user.role "admin"}}>Admin</option>
+                <option value="registrar" disabled={{eq user.role "registrar"}}>Registrar</option>
+                <option value="scorer" disabled={{eq user.role "scorer"}}>Scorer</option>
+                <option value="player" disabled={{eq user.role "player"}}>Player</option>
+                <option value="owner" disabled={{eq user.role "owner"}}>Owner</option>
+              </select>
+            </td>
+            <td class="text-end">
+              <button
+                class="btn btn-outline-danger btn-sm"
+                type="button"
+                title="Delete user"
+                {{on "click" (fn this.deleteUser user.user_id)}}
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </td>
+          </tr>
+        {{else}}
+          <tr>
+            <td colspan="5">
+              <div class="empty-state py-4">
+                <i class="bi bi-people"></i>
+                <p>No users found</p>
+              </div>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</div>

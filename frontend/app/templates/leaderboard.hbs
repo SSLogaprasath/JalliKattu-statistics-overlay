@@ -1,0 +1,85 @@
+{{page-title "Leaderboard"}}
+<div class="container py-4">
+  <div class="section-header">
+    <h5><i class="bi bi-bar-chart-fill"></i> All-Time Leaderboard</h5>
+  </div>
+
+  <div class="row g-4">
+    {{!-- Players --}}
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning"></i> Top Players</h6>
+          {{#if this.model.topPlayers.length}}
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr><th>#</th><th>Player</th><th class="text-center">Matches</th><th class="text-center">Caught</th><th class="text-center">Net Score</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.model.topPlayers as |p index|}}
+                    <tr>
+                      <td>
+                        <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                          {{add index 1}}
+                        </span>
+                      </td>
+                      <td>
+                        <LinkTo @route="player-profile" @model={{p.player_id}} class="fw-semibold text-decoration-none">
+                          {{p.player_name}}
+                        </LinkTo>
+                      </td>
+                      <td class="text-center">{{p.matches_played}}</td>
+                      <td class="text-center">{{p.total_caught}}</td>
+                      <td class="text-center"><span class="score-net">{{p.net_score}}</span></td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          {{else}}
+            <div class="empty-state"><i class="bi bi-person-x d-block"></i>No player data</div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+
+    {{!-- Bulls --}}
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill text-success"></i> Top Bulls</h6>
+          {{#if this.model.topBulls.length}}
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr><th>#</th><th>Bull</th><th>Owner</th><th class="text-center">Avg Difficulty</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.model.topBulls as |b index|}}
+                    <tr>
+                      <td>
+                        <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                          {{add index 1}}
+                        </span>
+                      </td>
+                      <td>
+                        <LinkTo @route="bull-profile" @model={{b.bull_id}} class="fw-semibold text-decoration-none">
+                          {{b.bull_name}}
+                        </LinkTo>
+                      </td>
+                      <td><small class="text-muted">{{b.owner_name}}</small></td>
+                      <td class="text-center fw-bold">{{b.avg_difficulty}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          {{else}}
+            <div class="empty-state"><i class="bi bi-shield-x d-block"></i>No bull data</div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

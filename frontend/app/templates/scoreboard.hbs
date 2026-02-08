@@ -1,0 +1,131 @@
+{{page-title "Live Scoreboard"}}
+<div class="container py-4">
+  <div class="section-header">
+    <h5><i class="bi bi-broadcast text-danger"></i> Live Scoreboard</h5>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm {{if this.autoRefresh 'btn-success' 'btn-outline-secondary'}}" type="button" {{on "click" this.toggleAutoRefresh}}>
+        <i class="bi {{if this.autoRefresh 'bi-pause-circle' 'bi-play-circle'}}"></i>
+        {{if this.autoRefresh "Auto-refresh ON" "Auto-refresh OFF"}}
+      </button>
+    </div>
+  </div>
+
+  {{!-- Match selector --}}
+  <div class="row g-3 mb-4">
+    {{#each this.allMatches as |match|}}
+      <div class="col-md-4 col-lg-3">
+        <div class="match-card cursor-pointer {{if (eq this.selectedMatchId match.match_id) 'border-danger'}}"
+             role="button" {{on "click" (fn this.selectMatch match.match_id)}}>
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <h6 class="fw-bold mb-0 small">Match #{{match.match_id}}</h6>
+            <span class="status-badge {{match.status}}">{{match.status}}</span>
+          </div>
+          <div class="match-venue"><i class="bi bi-geo-alt"></i> {{match.location}}</div>
+          <div class="match-date"><i class="bi bi-calendar3"></i> {{match.match_date}}</div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  {{#if this.isLoading}}
+    <div class="loading-spinner">
+      <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  {{else if this.scores}}
+    <div class="row g-4">
+      {{!-- Player Leaderboard --}}
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-person-fill text-primary"></i> Player Leaderboard</h6>
+            {{#if this.topPlayers.length}}
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Player</th><th class="text-center">Caught</th>
+                      <th class="text-center">Penalties</th><th class="text-center">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{#each this.topPlayers as |p index|}}
+                      <tr>
+                        <td>
+                          <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                            {{add index 1}}
+                          </span>
+                        </td>
+                        <td>
+                          <LinkTo @route="player-profile" @model={{p.player_id}} class="fw-semibold text-decoration-none">
+                            {{p.player_name}}
+                          </LinkTo>
+                          <br><small class="text-muted">{{p.batch_name}}</small>
+                        </td>
+                        <td class="text-center">{{p.total_caught}}</td>
+                        <td class="text-center text-danger">{{p.total_penalties}}</td>
+                        <td class="text-center"><span class="score-net">{{p.net_score}}</span></td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            {{else}}
+              <div class="empty-state"><i class="bi bi-inbox d-block"></i>No player scores yet</div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+
+      {{!-- Bull Leaderboard --}}
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill text-success"></i> Bull Leaderboard</h6>
+            {{#if this.topBulls.length}}
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Bull</th><th class="text-center">Aggression</th>
+                      <th class="text-center">Difficulty</th><th class="text-center">Releases</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{#each this.topBulls as |b index|}}
+                      <tr>
+                        <td>
+                          <span class="leaderboard-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">
+                            {{add index 1}}
+                          </span>
+                        </td>
+                        <td>
+                          <LinkTo @route="bull-profile" @model={{b.bull_id}} class="fw-semibold text-decoration-none">
+                            {{b.bull_name}}
+                          </LinkTo>
+                          <br><small class="text-muted">{{b.owner_name}}</small>
+                        </td>
+                        <td class="text-center">{{b.avg_aggression}}</td>
+                        <td class="text-center">{{b.avg_difficulty}}</td>
+                        <td class="text-center">{{b.total_releases}}</td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            {{else}}
+              <div class="empty-state"><i class="bi bi-inbox d-block"></i>No bull scores yet</div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+  {{else}}
+    <div class="empty-state">
+      <i class="bi bi-hand-index d-block"></i>
+      <h6>Select a match above to view scores</h6>
+      <p class="text-muted">Pick any match to see the live scoreboard</p>
+    </div>
+  {{/if}}
+</div>

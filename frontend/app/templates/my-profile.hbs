@@ -1,0 +1,90 @@
+{{page-title "My Profile"}}
+
+<div class="section-header">
+  <h5><i class="bi bi-person-circle"></i> My Profile</h5>
+</div>
+
+{{#if @model.error}}
+  <div class="empty-state py-5">
+    <i class="bi bi-person-x" style="font-size:3rem;"></i>
+    <h5 class="mt-3">Profile Not Found</h5>
+    <p class="text-muted">Your account may not have a linked player or owner profile</p>
+  </div>
+{{else}}
+  {{!-- Profile card --}}
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="d-flex align-items-center gap-3">
+        <div class="profile-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:64px;height:64px;font-size:1.5rem;font-weight:700;">
+          {{this.auth.initials}}
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0">{{@model.player.player_name}}</h4>
+          <span class="role-tag player">Player</span>
+          {{#if @model.player.Phone_number}}
+            <div class="text-muted small mt-1"><i class="bi bi-telephone"></i> {{@model.player.Phone_number}}</div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Stats --}}
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card stat-card accent">
+          <div class="stat-value">{{if @model.career.matches_played @model.career.matches_played 0}}</div>
+          <div class="stat-label">Matches Played</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card green">
+          <div class="stat-value">{{if @model.career.total_bulls_caught @model.career.total_bulls_caught 0}}</div>
+          <div class="stat-label">Bulls Caught</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card saffron">
+          <div class="stat-value">{{if @model.career.total_penalties @model.career.total_penalties 0}}</div>
+          <div class="stat-label">Penalties</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-card blue">
+          <div class="stat-value">{{if @model.career.career_net_score @model.career.career_net_score 0}}</div>
+          <div class="stat-label">Net Score</div>
+        </div>
+      </div>
+    </div>
+
+  {{!-- Quick links --}}
+  <div class="row g-3">
+    <div class="col-md-4">
+      <LinkTo @route="my-history" class="text-decoration-none">
+        <div class="card action-card">
+          <div class="action-icon bg-primary"><i class="bi bi-clock-history"></i></div>
+          <h6>Match History</h6>
+          <p>View your past performances</p>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-md-4">
+      <LinkTo @route="my-matches" class="text-decoration-none">
+        <div class="card action-card">
+          <div class="action-icon bg-success"><i class="bi bi-flag-fill"></i></div>
+          <h6>My Matches</h6>
+          <p>Upcoming registered matches</p>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-md-4">
+      <LinkTo @route="leaderboard" class="text-decoration-none">
+        <div class="card action-card">
+          <div class="action-icon bg-warning"><i class="bi bi-bar-chart-fill"></i></div>
+          <h6>Leaderboard</h6>
+          <p>See how you rank</p>
+        </div>
+      </LinkTo>
+    </div>
+  </div>
+{{/if}}

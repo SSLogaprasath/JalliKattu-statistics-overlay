@@ -1,0 +1,170 @@
+{{page-title "Winners"}}
+
+<div class="section-header">
+  <h5><i class="bi bi-award-fill"></i> Match Winners</h5>
+</div>
+
+{{!-- Match Selector --}}
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold mb-1">Select Completed Match</label>
+        <select class="form-select" {{on "change" this.loadWinners}}>
+          <option value="">-- Choose Match --</option>
+          {{#each this.completedMatches as |m|}}
+            <option value={{m.match_id}}>{{m.match_name}}</option>
+          {{/each}}
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#if this.isLoading}}
+  <div class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+{{else if this.winnerData}}
+
+  {{!-- Overall Winner --}}
+  {{#if this.winnerData.overallWinner.length}}
+    <div class="card mb-4" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color:#fff;">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-trophy-fill" style="font-size:2.5rem;"></i>
+        {{#each this.winnerData.overallWinner as |w|}}
+          <h3 class="fw-bold mt-2 mb-1">{{w.player_name}}</h3>
+          <p class="mb-0 opacity-75" style="font-size:1.1rem;">{{w.total_bulls_caught}} Bulls Caught — Overall Champion</p>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="row g-3">
+    {{!-- Round Winners --}}
+    {{#if this.winnerData.roundWinners.length}}
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-flag-fill text-primary"></i> Round Winners</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Round</th><th>Player</th><th class="text-center">Caught</th><th class="text-center">Penalties</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.winnerData.roundWinners as |w|}}
+                    <tr>
+                      <td><span class="badge bg-secondary">{{w.round_name}}</span></td>
+                      <td class="fw-semibold">{{w.player_name}}</td>
+                      <td class="text-center text-success fw-bold">{{w.bull_caught}}</td>
+                      <td class="text-center text-danger">{{w.penalties}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+
+    {{!-- Best Bull Per Round --}}
+    {{#if this.winnerData.bestBullPerRound.length}}
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill-exclamation text-danger"></i> Best Bull Per Round</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Round</th><th>Bull</th><th class="text-center">Aggression</th><th class="text-center">Difficulty</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.winnerData.bestBullPerRound as |b|}}
+                    <tr>
+                      <td><span class="badge bg-secondary">{{b.round_name}}</span></td>
+                      <td class="fw-semibold">{{b.bull_name}}</td>
+                      <td class="text-center">{{b.aggression}}</td>
+                      <td class="text-center text-danger fw-bold">{{b.difficulty}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="row g-3 mt-1">
+    {{!-- Best Bull Overall --}}
+    {{#if this.winnerData.bestBullOverall.length}}
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-star-fill text-warning"></i> Best Bull Overall</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Bull</th><th class="text-center">Total Aggression</th><th class="text-center">Total Difficulty</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.winnerData.bestBullOverall as |b|}}
+                    <tr>
+                      <td class="fw-semibold">{{b.bull_name}}</td>
+                      <td class="text-center">{{b.total_aggression}}</td>
+                      <td class="text-center text-danger fw-bold">{{b.total_difficulty}}</td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+
+    {{!-- Interaction Winners --}}
+    {{#if this.winnerData.interactionWinners.length}}
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="bi bi-hand-thumbs-up-fill text-success"></i> Interaction Winners</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr><th>Player</th><th>Bull</th><th class="text-center">Longest Hold</th><th class="text-center">Total Hold</th></tr>
+                </thead>
+                <tbody>
+                  {{#each this.winnerData.interactionWinners as |i|}}
+                    <tr>
+                      <td class="fw-semibold">{{i.player_name}}</td>
+                      <td>{{i.bull_name}}</td>
+                      <td class="text-center"><span class="badge bg-primary">{{i.longest_hold}}s</span></td>
+                      <td class="text-center"><span class="badge bg-secondary">{{i.total_hold_time}}s</span></td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+
+{{else if this.selectedMatchId}}
+  <div class="empty-state py-5">
+    <i class="bi bi-award" style="font-size:3rem;"></i>
+    <h5 class="mt-3">No Winners Data</h5>
+    <p class="text-muted">Winners have not been declared for this match yet</p>
+  </div>
+{{else}}
+  <div class="empty-state py-5">
+    <i class="bi bi-trophy" style="font-size:3rem;"></i>
+    <h5 class="mt-3">Select a Completed Match</h5>
+    <p class="text-muted">Choose a match from the dropdown above to view its winners</p>
+  </div>
+{{/if}}
