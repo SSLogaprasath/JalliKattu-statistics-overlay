@@ -63,13 +63,34 @@ public class ScoreApiServlet extends BaseRestServlet {
                 case "bull" -> {
                     ScoringDAO.updateBullScore(matchId, str(body, "bull_id"),
                             str(body, "round_type_id"), str(body, "aggression"), str(body, "play_area"),
-                            str(body, "difficulty"), str(body, "release_count"), str(body, "player_id"));
+                            str(body, "difficulty"), str(body, "release_order"), str(body, "player_id"));
                     sendSuccess(resp, "Bull score updated");
                 }
                 case "interaction" -> {
                     ScoringDAO.addInteraction(matchId, str(body, "player_id"), str(body, "bull_id"),
                             str(body, "hold_sequence"), str(body, "hold_duration"), str(body, "round_type_id"));
                     sendSuccess(resp, "Interaction recorded");
+                }
+                case "disqualify" -> {
+                    String type = str(body, "type"); // "player" or "bull"
+                    boolean dq = body.containsKey("disqualify") ? Boolean.parseBoolean(str(body, "disqualify")) : true;
+                    // Only admin / super_admin can reinstate
+                    if (!dq) {
+                        String role = (String) req.getSession().getAttribute("role");
+                        if (!"admin".equals(role) && !"super_admin".equals(role)) {
+                            sendError(resp, "Only an admin can reinstate a disqualified participant", 403);
+                            return;
+                        }
+                    }
+                    if ("player".equals(type)) {
+                        ScoringDAO.setPlayerDqStatus(matchId, str(body, "player_id"), dq);
+                        sendSuccess(resp, dq ? "Player disqualified from match" : "Player reinstated");
+                    } else if ("bull".equals(type)) {
+                        ScoringDAO.setBullDqStatus(matchId, str(body, "bull_id"), dq);
+                        sendSuccess(resp, dq ? "Bull disqualified from match" : "Bull reinstated");
+                    } else {
+                        sendError(resp, "type must be 'player' or 'bull'", 400);
+                    }
                 }
                 default -> sendError(resp, "Unknown action: " + action, 400);
             }

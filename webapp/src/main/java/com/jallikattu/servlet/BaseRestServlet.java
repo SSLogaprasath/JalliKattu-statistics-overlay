@@ -5,6 +5,10 @@ import java.io.IOException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +23,30 @@ public abstract class BaseRestServlet extends HttpServlet {
     protected static final Gson gson = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
             .serializeNulls()
+            .registerTypeAdapter(java.time.LocalDateTime.class, new TypeAdapter<java.time.LocalDateTime>() {
+                @Override
+                public void write(JsonWriter out, java.time.LocalDateTime value) throws IOException {
+                    if (value == null) { out.nullValue(); return; }
+                    out.value(value.toString()); // ISO-8601: 2026-02-10T14:30:00
+                }
+                @Override
+                public java.time.LocalDateTime read(JsonReader in) throws IOException {
+                    if (in.peek() == JsonToken.NULL) { in.nextNull(); return null; }
+                    return java.time.LocalDateTime.parse(in.nextString());
+                }
+            })
+            .registerTypeAdapter(java.time.LocalDate.class, new TypeAdapter<java.time.LocalDate>() {
+                @Override
+                public void write(JsonWriter out, java.time.LocalDate value) throws IOException {
+                    if (value == null) { out.nullValue(); return; }
+                    out.value(value.toString()); // ISO-8601: 2026-02-10
+                }
+                @Override
+                public java.time.LocalDate read(JsonReader in) throws IOException {
+                    if (in.peek() == JsonToken.NULL) { in.nextNull(); return null; }
+                    return java.time.LocalDate.parse(in.nextString());
+                }
+            })
             .create();
 
     /**

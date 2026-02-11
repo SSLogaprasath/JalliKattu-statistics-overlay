@@ -2,7 +2,8 @@
 <div class="container py-4">
   <div class="mb-3">
     <LinkTo @route="leaderboard" class="text-decoration-none text-muted">
-      <i class="bi bi-arrow-left"></i> Back to Leaderboard
+      <i class="bi bi-arrow-left"></i>
+      Back to Leaderboard
     </LinkTo>
   </div>
 
@@ -10,80 +11,109 @@
     <div class="alert alert-danger">{{this.model.error}}</div>
   {{else}}
     <div class="row g-4">
-      {{!-- Profile Card --}}
+      {{! Profile Card }}
       <div class="col-lg-4">
         <div class="card profile-card">
-          <div class="profile-avatar" style="background: linear-gradient(135deg, #198754, #20c997);">
+          <div
+            class="profile-avatar"
+            style="background: linear-gradient(135deg, #198754, #20c997);"
+          >
             <i class="bi bi-shield-fill"></i>
           </div>
           <h4 class="fw-bold">{{this.model.profile.bull_name}}</h4>
-          <p class="text-muted mb-1">Breed: <strong>{{this.model.profile.breed}}</strong></p>
-          <p class="text-muted mb-1">Age: <strong>{{this.model.profile.age}} years</strong></p>
-          <p class="text-muted mb-1">Owner: <strong>{{this.model.profile.owner_name}}</strong></p>
+          <p class="text-muted mb-1">Breed:
+            <strong>{{this.model.profile.breed}}</strong></p>
+          <p class="text-muted mb-1">Age:
+            <strong>{{this.model.profile.age}} years</strong></p>
+          <p class="text-muted mb-1">Owner:
+            <strong>{{this.model.profile.owner_name}}</strong></p>
           {{#if this.model.profile.fitness_certificate}}
-            <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{this.model.profile.fitness_certificate}}</span>
+            <span class="badge bg-success"><i class="bi bi-check-circle"></i>
+              {{this.model.profile.fitness_certificate}}</span>
           {{/if}}
         </div>
       </div>
 
-      {{!-- Career Stats --}}
+      {{! Career Stats }}
       <div class="col-lg-8">
         <div class="row g-3 mb-4">
           <div class="col-6 col-md-3">
             <div class="card stat-card accent">
-              <div class="stat-value">{{or this.model.profile.matches_played 0}}</div>
+              <div class="stat-value">{{or
+                  this.model.profile.matches_played
+                  0
+                }}</div>
               <div class="stat-label">Matches</div>
             </div>
           </div>
           <div class="col-6 col-md-3">
             <div class="card stat-card green">
-              <div class="stat-value">{{or this.model.profile.avg_aggression "0"}}</div>
+              <div class="stat-value">{{or
+                  this.model.profile.avg_aggression
+                  "0"
+                }}</div>
               <div class="stat-label">Avg Aggression</div>
             </div>
           </div>
           <div class="col-6 col-md-3">
             <div class="card stat-card saffron">
-              <div class="stat-value">{{or this.model.profile.avg_difficulty "0"}}</div>
+              <div class="stat-value">{{or
+                  this.model.profile.avg_difficulty
+                  "0"
+                }}</div>
               <div class="stat-label">Avg Difficulty</div>
             </div>
           </div>
           <div class="col-6 col-md-3">
             <div class="card stat-card blue">
-              <div class="stat-value">{{or this.model.profile.total_releases 0}}</div>
+              <div class="stat-value">{{or
+                  this.model.profile.total_releases
+                  0
+                }}</div>
               <div class="stat-label">Total Releases</div>
             </div>
           </div>
         </div>
 
-        {{!-- Match History --}}
+        {{! Match History }}
         <div class="card">
           <div class="card-body">
-            <h6 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Match History</h6>
+            <h6 class="fw-bold mb-3"><i class="bi bi-clock-history"></i>
+              Match History</h6>
             {{#if this.model.matchHistory.length}}
               <div class="table-responsive">
                 <table class="table table-sm mb-0">
                   <thead>
-                    <tr><th>Match</th><th>Round</th><th class="text-center">Aggression</th><th class="text-center">Difficulty</th><th class="text-center">Releases</th></tr>
+                    <tr><th>Match</th><th>Round</th><th
+                        class="text-center"
+                      >Aggression</th><th class="text-center">Difficulty</th><th
+                        class="text-center"
+                      >Releases</th></tr>
                   </thead>
                   <tbody>
                     {{#each this.model.matchHistory as |h|}}
                       <tr>
                         <td>
-                          <LinkTo @route="match-detail" @model={{h.match_id}} class="text-decoration-none">
+                          <LinkTo
+                            @route="match-detail"
+                            @model={{h.match_id}}
+                            class="text-decoration-none"
+                          >
                             Match #{{h.match_id}}
                           </LinkTo>
                         </td>
                         <td>{{h.round_name}}</td>
                         <td class="text-center">{{h.aggression}}</td>
                         <td class="text-center">{{h.difficulty}}</td>
-                        <td class="text-center">{{h.release_count}}</td>
+                        <td class="text-center">{{h.release_order}}</td>
                       </tr>
                     {{/each}}
                   </tbody>
                 </table>
               </div>
             {{else}}
-              <div class="empty-state"><i class="bi bi-inbox d-block"></i>No match history</div>
+              <div class="empty-state"><i class="bi bi-inbox d-block"></i>No
+                match history</div>
             {{/if}}
           </div>
         </div>

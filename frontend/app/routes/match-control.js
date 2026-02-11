@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { MATCHES, SPOT_PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MatchControlRoute extends Route {
   @service auth;
@@ -19,7 +20,7 @@ export default class MatchControlRoute extends Route {
     // Load matches first — must always succeed for the page to work
     let matches = [];
     try {
-      matches = await this.auth.apiGet('/matches');
+      matches = await this.auth.apiGet(MATCHES.LIST);
     } catch {
       // matches stays empty
     }
@@ -30,8 +31,8 @@ export default class MatchControlRoute extends Route {
     let spotPrizes = [];
     try {
       const [typesData, prizesData] = await Promise.all([
-        this.auth.apiGet('/tables/spot_prize_type'),
-        this.auth.apiGet('/tables/spot_prize'),
+        this.auth.apiGet(SPOT_PRIZES.TYPES),
+        this.auth.apiGet(SPOT_PRIZES.LIST),
       ]);
       spotPrizeTypes = typesData.rows || [];
       spotPrizes = prizesData.rows || [];

@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { AUTH } from 'jallikattu-frontend/constants/api-paths';
 
 export default class UsersController extends Controller {
   @service auth;
@@ -10,6 +11,7 @@ export default class UsersController extends Controller {
   @tracked statusMessage = '';
   @tracked statusType = 'success';
   @tracked roleFilter = '';
+  @tracked selectedRole = '';
 
   get filteredUsers() {
     if (!this.roleFilter) return this.model || [];
@@ -24,19 +26,35 @@ export default class UsersController extends Controller {
   @action
   toggleAddForm() {
     this.showAddForm = !this.showAddForm;
+    this.selectedRole = '';
+  }
+
+  @action
+  onRoleChange(event) {
+    this.selectedRole = event.target.value;
   }
 
   @action
   async createUser(event) {
     event.preventDefault();
     const form = event.target;
+    const role = form.role.value;
+    const payload = {
+      username: form.username.value,
+      password: form.password.value,
+      full_name: form.full_name.value,
+      role,
+    };
+    // Add role-specific fields
+    if (role === 'player') {
+      payload.dob = form.dob?.value || '';
+      payload.aadhaar = form.aadhaar?.value || '';
+      payload.phone = form.phone?.value || '';
+    } else if (role === 'owner') {
+      payload.aadhaar = form.aadhaar?.value || '';
+    }
     try {
-      const result = await this.auth.apiPost('/auth/users', {
-        username: form.username.value,
-        password: form.password.value,
-        full_name: form.full_name.value,
-        role: form.role.value,
-      });
+      const result = await this.auth.apiPost(AUTH.USERS, payload);
       if (result.error) {
         this.statusMessage = result.error;
         this.statusType = 'danger';
@@ -44,8 +62,9 @@ export default class UsersController extends Controller {
         this.statusMessage = 'User created successfully';
         this.statusType = 'success';
         this.showAddForm = false;
+        this.selectedRole = '';
         form.reset();
-        const users = await this.auth.apiGet('/auth/users');
+        const users = await this.auth.apiGet(AUTH.USERS);
         this.set('model', users);
       }
     } catch (e) {
@@ -59,14 +78,14 @@ export default class UsersController extends Controller {
   async deleteUser(userId) {
     if (!confirm('Delete this user?')) return;
     try {
-      const result = await this.auth.apiDelete(`/auth/users/${userId}`);
+      const result = await this.auth.apiDelete(AUTH.USER(userId));
       if (result.error) {
         this.statusMessage = result.error;
         this.statusType = 'danger';
       } else {
         this.statusMessage = 'User deleted';
         this.statusType = 'success';
-        const users = await this.auth.apiGet('/auth/users');
+        const users = await this.auth.apiGet(AUTH.USERS);
         this.set('model', users);
       }
     } catch (e) {
@@ -81,14 +100,14 @@ export default class UsersController extends Controller {
     const newRole = event.target.value;
     if (!newRole) return;
     try {
-      const result = await this.auth.apiPut(`/auth/users/${userId}`, { role: newRole });
+      const result = await this.auth.apiPut(AUTH.USER(userId), { role: newRole });
       if (result.error) {
         this.statusMessage = result.error;
         this.statusType = 'danger';
       } else {
         this.statusMessage = `Role updated to ${newRole}`;
         this.statusType = 'success';
-        const users = await this.auth.apiGet('/auth/users');
+        const users = await this.auth.apiGet(AUTH.USERS);
         this.set('model', users);
       }
     } catch (e) {

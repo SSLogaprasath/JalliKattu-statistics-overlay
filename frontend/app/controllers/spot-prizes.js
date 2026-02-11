@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { SPOT_PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class SpotPrizesController extends Controller {
   @service auth;
@@ -130,7 +131,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiPost('/tables/spot_prize_type', {
+      await this.auth.apiPost(SPOT_PRIZES.TYPE_CREATE, {
         spot_prize_type_name: this.newTypeName.trim(),
       });
       this.success = 'Spot-prize type added';
@@ -146,7 +147,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiPut('/tables/spot_prize_type', {
+      await this.auth.apiPut(SPOT_PRIZES.TYPE_UPDATE, {
         pkValues: { spot_prize_type_id: String(typeId) },
         values: { spot_prize_type_name: this.editTypeName.trim() },
       });
@@ -162,7 +163,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiDelete(`/tables/spot_prize_type?spot_prize_type_id=${typeId}`);
+      await this.auth.apiDelete(SPOT_PRIZES.TYPE_DELETE(typeId));
       this.success = 'Type deleted';
       this.router.refresh();
     } catch (e) { this.error = e.message || 'Failed to delete type'; }
@@ -211,7 +212,7 @@ export default class SpotPrizesController extends Controller {
       };
       if (this.newPrizeMatchId) body.match_id = this.newPrizeMatchId;
       if (this.newPrizeTypeId) body.spot_type_id = this.newPrizeTypeId;
-      await this.auth.apiPost('/tables/spot_prize', body);
+      await this.auth.apiPost(SPOT_PRIZES.CREATE, body);
       this.success = 'Spot prize added';
       this.isAddingPrize = false;
       this.router.refresh();
@@ -225,7 +226,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiPut('/tables/spot_prize', {
+      await this.auth.apiPut(SPOT_PRIZES.UPDATE, {
         pkValues: { spot_prize_id: String(prizeId) },
         values: {
           match_id: this.editPrizeMatchId || null,
@@ -247,7 +248,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiDelete(`/tables/spot_prize?spot_prize_id=${prizeId}`);
+      await this.auth.apiDelete(SPOT_PRIZES.DELETE(prizeId));
       this.success = 'Prize deleted';
       this.router.refresh();
     } catch (e) { this.error = e.message || 'Failed to delete prize'; }
@@ -291,7 +292,7 @@ export default class SpotPrizesController extends Controller {
         spot_prize_id: this.newAwardPrizeId,
       };
       if (this.newAwardBullId) body.bull_id = this.newAwardBullId;
-      await this.auth.apiPost('/tables/spot_prize_award', body);
+      await this.auth.apiPost(SPOT_PRIZES.AWARD_CREATE, body);
       this.success = 'Award given!';
       this.isAddingAward = false;
       this.router.refresh();
@@ -306,7 +307,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiPut('/tables/spot_prize_award', {
+      await this.auth.apiPut(SPOT_PRIZES.AWARD_UPDATE, {
         pkValues: { spot_prize_award_id: String(awardId) },
         values: {
           player_id: this.editAwardPlayerId,
@@ -326,7 +327,7 @@ export default class SpotPrizesController extends Controller {
     this.isLoading = true;
     this.clearMessages();
     try {
-      await this.auth.apiDelete(`/tables/spot_prize_award?spot_prize_award_id=${awardId}`);
+      await this.auth.apiDelete(SPOT_PRIZES.AWARD_DELETE(awardId));
       this.success = 'Award deleted';
       this.router.refresh();
     } catch (e) { this.error = e.message || 'Failed to delete award'; }

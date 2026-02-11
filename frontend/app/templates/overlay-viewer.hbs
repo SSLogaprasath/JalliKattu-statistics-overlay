@@ -1,0 +1,602 @@
+{{page-title "Live Overlay"}}
+
+<div class="overlay-viewer">
+  {{! Video Layer — auto-detects YouTube vs local/direct }}
+  <div class="overlay-video-layer">
+    {{#if this.isYouTubeVideo}}
+      <div id="yt-player-container" class="overlay-youtube-iframe"></div>
+    {{else if this.isDirectVideo}}
+      <video
+        id="html5-video-player"
+        class="overlay-html5-video"
+        src={{this.directVideoSrc}}
+        autoplay
+        controls
+        muted
+        playsinline
+      ></video>
+    {{else}}
+      <div class="overlay-no-video">
+        <i class="bi bi-play-circle" style="font-size:4rem;opacity:0.3"></i>
+        <p class="mt-3 text-muted">No video configured. Waiting for admin to set
+          a video URL…</p>
+      </div>
+    {{/if}}
+  </div>
+
+  {{! ======== BRANDING BAR (top) ======== }}
+  {{#if this.showBranding}}
+    <div class="ov-branding-bar">
+      <div class="ov-branding-logo">
+        <i class="bi bi-trophy-fill"></i>
+        <span class="ov-branding-title">JALLIKATTU</span>
+      </div>
+      <div class="ov-branding-match">
+        <span class="ov-branding-name">{{this.matchName}}</span>
+        {{#if this.matchLocation}}
+          <span class="ov-branding-sep">•</span>
+          <span class="ov-branding-loc"><i class="bi bi-geo-alt-fill"></i>
+            {{this.matchLocation}}</span>
+        {{/if}}
+      </div>
+      {{#if this.matchStatus}}
+        <div
+          class="ov-branding-status ov-branding-status--{{this.matchStatus}}"
+        >
+          {{this.matchStatus}}
+        </div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{! ======== BULL CLOCK (top-right) ======== }}
+  {{#if this.showClock}}
+    <div class="ov-clock {{if this.clockRunning 'ov-clock--running'}}">
+      <div class="ov-clock-icon"><i class="bi bi-stopwatch-fill"></i></div>
+      <div class="ov-clock-time">{{this.clockDisplay}}</div>
+      {{#if this.clockLabel}}
+        <div class="ov-clock-label">{{this.clockLabel}}</div>
+      {{/if}}
+    </div>
+  {{/if}}
+
+  {{! ======== RIGHT PANEL: Round Players (compact roster) ======== }}
+  {{#if this.hasRoundPlayers}}
+    <div class="ov-right-panel">
+      <div class="ov-right-panel-header">
+        <i class="bi bi-people-fill"></i>
+        PLAYERS
+      </div>
+      <div class="ov-right-panel-list">
+        {{#each this.roundPlayers as |rp idx|}}
+          <div class="ov-rp-row {{if (eq idx 0) 'ov-rp-row--top'}}">
+            <span class="ov-rp-rank">{{add idx 1}}</span>
+            <span class="ov-rp-name">{{rp.player_name}}</span>
+            <span class="ov-rp-batch">{{rp.batch_name}}</span>
+            <span class="ov-rp-stat ov-rp-caught">
+              <i class="bi bi-hand-thumbs-up-fill"></i>{{or rp.bull_caught "0"}}
+            </span>
+            <span class="ov-rp-stat ov-rp-pen">
+              <i class="bi bi-exclamation-triangle-fill"></i>{{or
+                rp.penalties
+                "0"
+              }}
+            </span>
+            <span class="ov-rp-score">{{or rp.net_score "0"}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{! ════════════════════════════════════════════════════════════
+       ALL OVERLAY SECTIONS BELOW ARE COMPOSABLE (independent)
+       ════════════════════════════════════════════════════════════ }}
+
+  {{! ======== DEDICATED TICKER (always-on when toggled) ======== }}
+  {{#if this.showTickerOverlay}}
+    <div class="ov-ticker-bar animate-slide-up">
+      <div class="ov-ticker-label"><i class="bi bi-bar-chart-fill"></i>
+        LEADERBOARD</div>
+      <div class="ov-ticker-track">
+        <div class="ov-ticker-scroll">
+          {{! Top 5 Players }}
+          <div class="ov-ticker-group-label ov-ticker-group-label--player"><i
+              class="bi bi-person-fill"
+            ></i>
+            PLAYERS</div>
+          {{#each this.tickerPlayerItems as |item|}}
+            <div class="ov-ticker-item ov-ticker-item--player">
+              <span class="ov-ticker-rank">#{{item.rank}}</span>
+              <i class="bi bi-person-fill"></i>
+              <span class="ov-ticker-name">{{item.name}}</span>
+              <span class="ov-ticker-stat">{{item.stat}}</span>
+            </div>
+          {{/each}}
+          {{! Top 5 Bulls }}
+          <div class="ov-ticker-group-label ov-ticker-group-label--bull"><i
+              class="bi bi-shield-fill"
+            ></i>
+            BULLS</div>
+          {{#each this.tickerBullItems as |item|}}
+            <div class="ov-ticker-item ov-ticker-item--bull">
+              <span class="ov-ticker-rank">#{{item.rank}}</span>
+              <i class="bi bi-shield-fill"></i>
+              <span class="ov-ticker-name">{{item.name}}</span>
+              <span class="ov-ticker-stat">{{item.stat}}</span>
+            </div>
+          {{/each}}
+          {{! Duplicate for seamless scroll }}
+          <div class="ov-ticker-group-label ov-ticker-group-label--player"><i
+              class="bi bi-person-fill"
+            ></i>
+            PLAYERS</div>
+          {{#each this.tickerPlayerItems as |item|}}
+            <div class="ov-ticker-item ov-ticker-item--player">
+              <span class="ov-ticker-rank">#{{item.rank}}</span>
+              <i class="bi bi-person-fill"></i>
+              <span class="ov-ticker-name">{{item.name}}</span>
+              <span class="ov-ticker-stat">{{item.stat}}</span>
+            </div>
+          {{/each}}
+          <div class="ov-ticker-group-label ov-ticker-group-label--bull"><i
+              class="bi bi-shield-fill"
+            ></i>
+            BULLS</div>
+          {{#each this.tickerBullItems as |item|}}
+            <div class="ov-ticker-item ov-ticker-item--bull">
+              <span class="ov-ticker-rank">#{{item.rank}}</span>
+              <i class="bi bi-shield-fill"></i>
+              <span class="ov-ticker-name">{{item.name}}</span>
+              <span class="ov-ticker-stat">{{item.stat}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{! ======== AUTO TICKER (periodic pop-up when dedicated ticker is OFF) ======== }}
+  {{#if this.tickerVisible}}
+    {{#unless this.showTickerOverlay}}
+      {{#if this.ticker}}
+        <div class="ov-auto-ticker ov-auto-ticker--show">
+          <div class="ov-auto-ticker-label"><i class="bi bi-bar-chart-fill"></i>
+            TOP 5</div>
+          <div class="ov-auto-ticker-track">
+            <div class="ov-auto-ticker-scroll">
+              <div
+                class="ov-ticker-group-label ov-ticker-group-label--player"
+              ><i class="bi bi-person-fill"></i> PLAYERS</div>
+              {{#each this.tickerPlayerItems as |item|}}
+                <div class="ov-ticker-item ov-ticker-item--player">
+                  <span class="ov-ticker-rank">#{{item.rank}}</span>
+                  <i class="bi bi-person-fill"></i>
+                  <span class="ov-ticker-name">{{item.name}}</span>
+                  <span class="ov-ticker-stat">{{item.stat}}</span>
+                </div>
+              {{/each}}
+              <div class="ov-ticker-group-label ov-ticker-group-label--bull"><i
+                  class="bi bi-shield-fill"
+                ></i>
+                BULLS</div>
+              {{#each this.tickerBullItems as |item|}}
+                <div class="ov-ticker-item ov-ticker-item--bull">
+                  <span class="ov-ticker-rank">#{{item.rank}}</span>
+                  <i class="bi bi-shield-fill"></i>
+                  <span class="ov-ticker-name">{{item.name}}</span>
+                  <span class="ov-ticker-stat">{{item.stat}}</span>
+                </div>
+              {{/each}}
+              {{! Duplicate for scroll }}
+              <div
+                class="ov-ticker-group-label ov-ticker-group-label--player"
+              ><i class="bi bi-person-fill"></i> PLAYERS</div>
+              {{#each this.tickerPlayerItems as |item|}}
+                <div class="ov-ticker-item ov-ticker-item--player">
+                  <span class="ov-ticker-rank">#{{item.rank}}</span>
+                  <i class="bi bi-person-fill"></i>
+                  <span class="ov-ticker-name">{{item.name}}</span>
+                  <span class="ov-ticker-stat">{{item.stat}}</span>
+                </div>
+              {{/each}}
+              <div class="ov-ticker-group-label ov-ticker-group-label--bull"><i
+                  class="bi bi-shield-fill"
+                ></i>
+                BULLS</div>
+              {{#each this.tickerBullItems as |item|}}
+                <div class="ov-ticker-item ov-ticker-item--bull">
+                  <span class="ov-ticker-rank">#{{item.rank}}</span>
+                  <i class="bi bi-shield-fill"></i>
+                  <span class="ov-ticker-name">{{item.name}}</span>
+                  <span class="ov-ticker-stat">{{item.stat}}</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        </div>
+      {{/if}}
+    {{/unless}}
+  {{/if}}
+
+  {{! ======== VS MATCHUP LAYOUT ======== }}
+  {{#if this.isVsLayout}}
+    <div class="ov-vs-container animate-slide-up">
+      {{! Player side }}
+      <div class="ov-vs-side ov-vs-side--player">
+        <div class="ov-vs-side-bg"></div>
+        <div class="ov-vs-content">
+          <div class="ov-vs-icon-wrap"><i class="bi bi-person-fill"></i></div>
+          <div class="ov-vs-name">{{this.entity.player_name}}</div>
+          {{#if this.entity.village}}<div
+              class="ov-vs-sub"
+            >{{this.entity.village}}</div>{{/if}}
+          <div class="ov-vs-stats">
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{this.playerBullsCaught}}</span>
+              <span class="ov-vs-stat-lbl">Bulls Caught</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{this.playerNetScore}}</span>
+              <span class="ov-vs-stat-lbl">Net Score</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{or
+                  this.entity.matches_played
+                  "0"
+                }}</span>
+              <span class="ov-vs-stat-lbl">Matches</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{or
+                  this.entity.total_penalties
+                  "0"
+                }}</span>
+              <span class="ov-vs-stat-lbl">Penalties</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{! VS badge }}
+      <div class="ov-vs-badge"><span>VS</span></div>
+
+      {{! Bull side }}
+      <div class="ov-vs-side ov-vs-side--bull">
+        <div class="ov-vs-side-bg"></div>
+        <div class="ov-vs-content">
+          <div class="ov-vs-icon-wrap"><i class="bi bi-shield-fill"></i></div>
+          <div class="ov-vs-name">{{this.secondaryEntity.bull_name}}</div>
+          {{#if this.secondaryEntity.breed}}<div
+              class="ov-vs-sub"
+            >{{this.secondaryEntity.breed}}</div>{{/if}}
+          <div class="ov-vs-stats">
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{this.bullAvgScore}}</span>
+              <span class="ov-vs-stat-lbl">Avg Score</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{or
+                  this.secondaryEntity.avg_aggression
+                  "0"
+                }}</span>
+              <span class="ov-vs-stat-lbl">Aggression</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{or
+                  this.secondaryEntity.avg_difficulty
+                  "0"
+                }}</span>
+              <span class="ov-vs-stat-lbl">Difficulty</span>
+            </div>
+            <div class="ov-vs-stat">
+              <span class="ov-vs-stat-val">{{or
+                  this.secondaryEntity.total_releases
+                  "0"
+                }}</span>
+              <span class="ov-vs-stat-lbl">Releases</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{! ======== STANDARD ENTITY OVERLAY (bottom-bar / top-bar / side-panel) ======== }}
+  {{#if this.showEntityOverlay}}
+    <div
+      class="stats-overlay stats-overlay--{{this.layout}}
+        {{if this.hasSecondary 'stats-overlay--dual'}}
+        animate-slide-up"
+    >
+      <div class="overlay-entities-row">
+        {{! PRIMARY ENTITY }}
+        <div class="overlay-entity-block overlay-entity-block--primary">
+          {{#if (eq this.overlayType "player")}}
+            <div class="overlay-entity-header">
+              <i class="bi bi-person-fill overlay-icon"></i>
+              <span
+                class="overlay-entity-name"
+              >{{this.entity.player_name}}</span>
+              {{#if this.entity.village}}<span
+                  class="overlay-entity-sub"
+                >{{this.entity.village}}</span>{{/if}}
+            </div>
+            <div class="overlay-stats-row">
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.matches_played "0"}}</span><span
+                  class="overlay-stat-label"
+                >Matches</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.total_bulls_caught "0"}}</span><span
+                  class="overlay-stat-label"
+                >Caught</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.total_penalties "0"}}</span><span
+                  class="overlay-stat-label"
+                >Penalties</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.career_net_score "0"}}</span><span
+                  class="overlay-stat-label"
+                >Net Score</span></div>
+            </div>
+          {{else if (eq this.overlayType "bull")}}
+            <div class="overlay-entity-header">
+              <i class="bi bi-shield-fill overlay-icon"></i>
+              <span class="overlay-entity-name">{{this.entity.bull_name}}</span>
+              {{#if this.entity.breed}}<span
+                  class="overlay-entity-sub"
+                >{{this.entity.breed}}</span>{{/if}}
+            </div>
+            <div class="overlay-stats-row">
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.matches_played "0"}}</span><span
+                  class="overlay-stat-label"
+                >Matches</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.avg_aggression "0"}}</span><span
+                  class="overlay-stat-label"
+                >Aggression</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.avg_difficulty "0"}}</span><span
+                  class="overlay-stat-label"
+                >Difficulty</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.total_releases "0"}}</span><span
+                  class="overlay-stat-label"
+                >Releases</span></div>
+            </div>
+          {{else if (eq this.overlayType "match")}}
+            <div class="overlay-entity-header">
+              <i class="bi bi-calendar-event overlay-icon"></i>
+              <span
+                class="overlay-entity-name"
+              >{{this.entity.match_name}}</span>
+              {{#if this.entity.area}}<span
+                  class="overlay-entity-sub"
+                >{{this.entity.area}}</span>{{/if}}
+            </div>
+            <div class="overlay-stats-row">
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.status "—"}}</span><span
+                  class="overlay-stat-label"
+                >Status</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.player_limit "0"}}</span><span
+                  class="overlay-stat-label"
+                >Players</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.bull_limit "0"}}</span><span
+                  class="overlay-stat-label"
+                >Bulls</span></div>
+              <div class="overlay-stat"><span
+                  class="overlay-stat-value ov-anim-num"
+                >{{or this.entity.match_date "—"}}</span><span
+                  class="overlay-stat-label"
+                >Date</span></div>
+            </div>
+          {{/if}}
+        </div>
+
+        {{! SECONDARY ENTITY (dual mode) }}
+        {{#if this.hasSecondary}}
+          <div class="overlay-entity-divider"></div>
+          <div class="overlay-entity-block overlay-entity-block--secondary">
+            {{#if (eq this.secondaryType "player")}}
+              <div class="overlay-entity-header">
+                <i class="bi bi-person-fill overlay-icon"></i>
+                <span
+                  class="overlay-entity-name"
+                >{{this.secondaryEntity.player_name}}</span>
+              </div>
+              <div class="overlay-stats-row">
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.matches_played "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Matches</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or
+                      this.secondaryEntity.total_bulls_caught
+                      "0"
+                    }}</span><span
+                    class="overlay-stat-label"
+                  >Caught</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.total_penalties "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Penalties</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.career_net_score "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Net Score</span></div>
+              </div>
+            {{else if (eq this.secondaryType "bull")}}
+              <div class="overlay-entity-header">
+                <i class="bi bi-shield-fill overlay-icon"></i>
+                <span
+                  class="overlay-entity-name"
+                >{{this.secondaryEntity.bull_name}}</span>
+              </div>
+              <div class="overlay-stats-row">
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.matches_played "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Matches</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.avg_aggression "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Aggression</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.avg_difficulty "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Difficulty</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.total_releases "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Releases</span></div>
+              </div>
+            {{else if (eq this.secondaryType "match")}}
+              <div class="overlay-entity-header">
+                <i class="bi bi-calendar-event overlay-icon"></i>
+                <span
+                  class="overlay-entity-name"
+                >{{this.secondaryEntity.match_name}}</span>
+              </div>
+              <div class="overlay-stats-row">
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.status "—"}}</span><span
+                    class="overlay-stat-label"
+                  >Status</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.player_limit "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Players</span></div>
+                <div class="overlay-stat"><span
+                    class="overlay-stat-value ov-anim-num"
+                  >{{or this.secondaryEntity.bull_limit "0"}}</span><span
+                    class="overlay-stat-label"
+                  >Bulls</span></div>
+              </div>
+            {{/if}}
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{! ======== ROUND SCOREBOARD OVERLAY ======== }}
+  {{#if this.showScoreboardOverlay}}
+    <div class="ov-scoreboard animate-slide-up">
+      <div class="ov-scoreboard-header">
+        <i class="bi bi-clipboard2-data-fill"></i>
+        ROUND SCOREBOARD
+      </div>
+      <div class="ov-scoreboard-table">
+        <div class="ov-scoreboard-thead">
+          <span class="ov-sb-rank">#</span>
+          <span class="ov-sb-name">Player</span>
+          <span class="ov-sb-batch">Batch</span>
+          <span class="ov-sb-caught">Caught</span>
+          <span class="ov-sb-pen">Pen</span>
+          <span class="ov-sb-net">Score</span>
+          <span class="ov-sb-bull">Bull</span>
+        </div>
+        <div class="ov-scoreboard-body">
+          {{#each this.scoreboard as |row idx|}}
+            <div
+              class="ov-scoreboard-row
+                {{if (eq idx 0) 'ov-scoreboard-row--top'}}
+                {{if
+                  (gt (or row.net_score 0) 0)
+                  'ov-scoreboard-row--positive'
+                }}"
+            >
+              <span class="ov-sb-rank">{{add idx 1}}</span>
+              <span class="ov-sb-name">{{row.player_name}}</span>
+              <span class="ov-sb-batch">{{row.batch_name}}</span>
+              <span class="ov-sb-caught">{{or row.bull_caught "0"}}</span>
+              <span class="ov-sb-pen">{{or row.penalties "0"}}</span>
+              <span class="ov-sb-net">{{or row.net_score "0"}}</span>
+              <span class="ov-sb-bull">{{or row.bull_names "—"}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{! ======== RATING OVERLAY (star rating set by scorer) ======== }}
+  {{#if this.showRatingOverlay}}
+    <div class="ov-rating animate-slide-up">
+      {{#if this.ratingLabel}}
+        <div class="ov-rating-label">{{this.ratingLabel}}</div>
+      {{/if}}
+      <div class="ov-rating-stars">
+        {{#each this.ratingStars as |star|}}
+          <i
+            class="bi
+              {{if
+                star.filled
+                'bi-star-fill ov-star--filled'
+                'bi-star ov-star--empty'
+              }}"
+          ></i>
+        {{/each}}
+      </div>
+      <div class="ov-rating-value">{{this.ratingValue}} / 5</div>
+    </div>
+  {{/if}}
+
+  {{! ======== NEXT BULL OVERLAY (set by scorer) ======== }}
+  {{#if this.showNextBullOverlay}}
+    <div class="ov-next-bull animate-slide-up">
+      <div class="ov-next-bull-tag">UP NEXT</div>
+      <div class="ov-next-bull-icon"><i class="bi bi-shield-fill"></i></div>
+      <div class="ov-next-bull-name">{{this.nextBullName}}</div>
+    </div>
+  {{/if}}
+
+  {{! ======== SPOT PRIZE ANNOUNCEMENT POPUP ======== }}
+  {{#if this.currentAnnouncement}}
+    <div class="ov-spot-popup ov-spot-popup--show">
+      <div class="ov-spot-popup-glow"></div>
+      <div class="ov-spot-popup-inner">
+        <div class="ov-spot-popup-badge"><i class="bi bi-award-fill"></i></div>
+        <div class="ov-spot-popup-title">SPOT PRIZE!</div>
+        <div
+          class="ov-spot-popup-prize"
+        >{{this.currentAnnouncement.prize_title}}</div>
+        <div class="ov-spot-popup-winner"><i class="bi bi-person-fill"></i>
+          {{this.currentAnnouncement.player_name}}</div>
+        {{#if this.currentAnnouncement.bull_name}}
+          <div class="ov-spot-popup-detail"><i class="bi bi-shield-fill"></i>
+            {{this.currentAnnouncement.bull_name}}</div>
+        {{/if}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{! Connection indicator }}
+  <div class="overlay-connection-dot {{if this.isConnected 'connected'}}"></div>
+</div>

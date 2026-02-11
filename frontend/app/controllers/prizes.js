@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class PrizesController extends Controller {
   @service auth;
@@ -60,7 +61,7 @@ export default class PrizesController extends Controller {
       // Get next ID
       const rows = this.model;
       const maxId = rows.reduce((max, p) => Math.max(max, p.prize_id || 0), 0);
-      await this.auth.apiPost('/tables/prize', {
+      await this.auth.apiPost(PRIZES.CREATE, {
         prize_id: maxId + 1,
         prize: this.newName.trim(),
         prize_provided_by: this.newProvider.trim() || null,
@@ -84,10 +85,12 @@ export default class PrizesController extends Controller {
     this.isLoading = true;
     this.error = null;
     try {
-      await this.auth.apiPut('/tables/prize', {
-        prize_id: prizeId,
-        prize: this.editName.trim(),
-        prize_provided_by: this.editProvider.trim() || null,
+      await this.auth.apiPut(PRIZES.UPDATE, {
+        pkValues: { prize_id: String(prizeId) },
+        values: {
+          prize: this.editName.trim(),
+          prize_provided_by: this.editProvider.trim() || null,
+        },
       });
       this.success = 'Prize updated successfully';
       this.editingId = null;
@@ -106,7 +109,7 @@ export default class PrizesController extends Controller {
     this.isLoading = true;
     this.error = null;
     try {
-      await this.auth.apiDelete(`/tables/prize?prize_id=${prizeId}`);
+      await this.auth.apiDelete(PRIZES.DELETE(prizeId));
       this.success = 'Prize deleted successfully';
       this.router.refresh();
     } catch (e) {

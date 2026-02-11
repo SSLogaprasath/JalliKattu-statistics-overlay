@@ -1,6 +1,7 @@
-import Service from '@ember/service';
-import { tracked } from '@glimmer/tracking';
-import config from 'jallikattu-frontend/config/environment';
+import Service from "@ember/service";
+import { tracked } from "@glimmer/tracking";
+import config from "jallikattu-frontend/config/environment";
+import { AUTH } from "jallikattu-frontend/constants/api-paths";
 
 export default class AuthService extends Service {
   @tracked user = null;
@@ -15,43 +16,43 @@ export default class AuthService extends Service {
   }
 
   get isAdmin() {
-    return ['admin', 'super_admin'].includes(this.role);
+    return ["admin", "super_admin"].includes(this.role);
   }
 
   get isSuperAdmin() {
-    return this.role === 'super_admin';
+    return this.role === "super_admin";
   }
 
   get isScorer() {
-    return this.role === 'scorer' || this.isAdmin;
+    return this.role === "scorer" || this.isAdmin;
   }
 
   get isRegistrar() {
-    return this.role === 'registrar' || this.isAdmin;
+    return this.role === "registrar" || this.isAdmin;
   }
 
   get isPlayer() {
-    return this.role === 'player' || this.isAdmin;
+    return this.role === "player" || this.isAdmin;
   }
 
   get isOwner() {
-    return this.role === 'owner' || this.isAdmin;
+    return this.role === "owner" || this.isAdmin;
   }
 
   get initials() {
-    if (!this.user?.full_name) return '?';
+    if (!this.user?.full_name) return "?";
     return this.user.full_name
-      .split(' ')
+      .split(" ")
       .map((w) => w[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   }
 
   async checkSession() {
     try {
-      const resp = await fetch(`${this.apiBase}/auth/session`, {
-        credentials: 'include',
+      const resp = await fetch(`${this.apiBase}${AUTH.SESSION}`, {
+        credentials: "include",
       });
       if (!resp.ok) {
         this.user = null;
@@ -73,10 +74,10 @@ export default class AuthService extends Service {
   }
 
   async login(username, password) {
-    const resp = await fetch(`${this.apiBase}/auth/login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+    const resp = await fetch(`${this.apiBase}${AUTH.LOGIN}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
     const data = await resp.json();
@@ -85,14 +86,14 @@ export default class AuthService extends Service {
       this.isAuthenticated = true;
       return { success: true };
     } else {
-      return { success: false, error: data.error || 'Login failed' };
+      return { success: false, error: data.error || "Login failed" };
     }
   }
 
   async logout() {
-    await fetch(`${this.apiBase}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
+    await fetch(`${this.apiBase}${AUTH.LOGOUT}`, {
+      method: "POST",
+      credentials: "include",
     });
     this.user = null;
     this.isAuthenticated = false;
@@ -101,17 +102,17 @@ export default class AuthService extends Service {
   async apiFetch(path, options = {}) {
     const url = `${this.apiBase}${path}`;
     const resp = await fetch(url, {
-      credentials: 'include',
+      credentials: "include",
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(options.headers || {}),
       },
     });
     if (resp.status === 401) {
       this.user = null;
       this.isAuthenticated = false;
-      throw new Error('Not authenticated');
+      throw new Error("Not authenticated");
     }
     if (!resp.ok) {
       let msg = `Request failed (${resp.status})`;
@@ -133,7 +134,7 @@ export default class AuthService extends Service {
 
   async apiPost(path, body) {
     const resp = await this.apiFetch(path, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(body),
     });
     return resp.json();
@@ -141,14 +142,14 @@ export default class AuthService extends Service {
 
   async apiPut(path, body) {
     const resp = await this.apiFetch(path, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(body),
     });
     return resp.json();
   }
 
   async apiDelete(path) {
-    const resp = await this.apiFetch(path, { method: 'DELETE' });
+    const resp = await this.apiFetch(path, { method: "DELETE" });
     return resp.json();
   }
 }

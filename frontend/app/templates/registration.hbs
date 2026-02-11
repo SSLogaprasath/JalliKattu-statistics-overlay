@@ -4,59 +4,121 @@
   <h5><i class="bi bi-person-plus-fill"></i> Registration &amp; Management</h5>
 </div>
 
-{{!-- Toast --}}
+{{! Toast }}
 {{#if this.statusMessage}}
   <div class="toast-notification {{this.statusType}}" role="alert">
-    <i class="bi {{if (eq this.statusType 'success') 'bi-check-circle-fill' 'bi-exclamation-triangle-fill'}}"></i>
+    <i
+      class="bi
+        {{if
+          (eq this.statusType 'success')
+          'bi-check-circle-fill'
+          'bi-exclamation-triangle-fill'
+        }}"
+    ></i>
     {{this.statusMessage}}
   </div>
 {{/if}}
 
-{{!-- Tab Navigation --}}
+{{! Tab Navigation }}
 <div class="tab-nav mb-4">
-  <button class="tab-btn {{if (eq this.activeTab 'player') 'active'}}" type="button" {{on "click" (fn this.setTab "player")}}>
-    <i class="bi bi-person-arms-up"></i> Players
+  <button
+    class="tab-btn {{if (eq this.activeTab 'player') 'active'}}"
+    type="button"
+    {{on "click" (fn this.setTab "player")}}
+  >
+    <i class="bi bi-person-arms-up"></i>
+    Players
   </button>
-  <button class="tab-btn {{if (eq this.activeTab 'bull') 'active'}}" type="button" {{on "click" (fn this.setTab "bull")}}>
-    <i class="bi bi-shield-fill"></i> Bulls
+  <button
+    class="tab-btn {{if (eq this.activeTab 'bull') 'active'}}"
+    type="button"
+    {{on "click" (fn this.setTab "bull")}}
+  >
+    <i class="bi bi-shield-fill"></i>
+    Bulls
   </button>
-  <button class="tab-btn {{if (eq this.activeTab 'owner') 'active'}}" type="button" {{on "click" (fn this.setTab "owner")}}>
-    <i class="bi bi-person-badge-fill"></i> Owners
+  <button
+    class="tab-btn {{if (eq this.activeTab 'owner') 'active'}}"
+    type="button"
+    {{on "click" (fn this.setTab "owner")}}
+  >
+    <i class="bi bi-person-badge-fill"></i>
+    Owners
   </button>
-  <button class="tab-btn {{if (eq this.activeTab 'organizer') 'active'}}" type="button" {{on "click" (fn this.setTab "organizer")}}>
-    <i class="bi bi-building"></i> Organizers
+  <button
+    class="tab-btn {{if (eq this.activeTab 'organizer') 'active'}}"
+    type="button"
+    {{on "click" (fn this.setTab "organizer")}}
+  >
+    <i class="bi bi-building"></i>
+    Organizers
   </button>
-  <button class="tab-btn {{if (eq this.activeTab 'match') 'active'}}" type="button" {{on "click" (fn this.setTab "match")}}>
-    <i class="bi bi-calendar-plus"></i> Schedule Match
+  <button
+    class="tab-btn {{if (eq this.activeTab 'match') 'active'}}"
+    type="button"
+    {{on "click" (fn this.setTab "match")}}
+  >
+    <i class="bi bi-calendar-plus"></i>
+    Schedule Match
   </button>
 </div>
 
-{{!-- ═══════════════════════════════════════ --}}
-{{!-- ═══════ PLAYERS TAB ═══════ --}}
-{{!-- ═══════════════════════════════════════ --}}
+{{! ═══════════════════════════════════════ }}
+{{! ═══════ PLAYERS TAB ═══════ }}
+{{! ═══════════════════════════════════════ }}
 {{#if (eq this.activeTab "player")}}
 
-  {{!-- Create New Player --}}
+  {{! Create New Player }}
   <div class="card mb-4 border-primary">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-person-plus text-primary"></i> Create New Player</h6>
+      <h6 class="fw-bold mb-3"><i class="bi bi-person-plus text-primary"></i>
+        Create New Player</h6>
       <form {{on "submit" this.createPlayer}}>
         <div class="row g-3">
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Name <span class="text-danger">*</span></label>
-            <input type="text" name="player_name" class="form-control form-control-sm" required placeholder="Full name">
+            <label class="form-label small fw-semibold">Name
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="player_name"
+              class="form-control form-control-sm"
+              required
+              placeholder="Full name"
+            />
           </div>
           <div class="col-md-2 col-6">
             <label class="form-label small fw-semibold">Date of Birth</label>
-            <input type="date" name="dob" class="form-control form-control-sm">
+            <input
+              type="date"
+              name="dob"
+              class="form-control form-control-sm"
+            />
           </div>
           <div class="col-md-2 col-6">
-            <label class="form-label small fw-semibold">Aadhaar <span class="text-danger">*</span></label>
-            <input type="text" name="aadhaar" class="form-control form-control-sm" required placeholder="12 digits" maxlength="12" pattern="\d{12}">
+            <label class="form-label small fw-semibold">Aadhaar
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="aadhaar"
+              class="form-control form-control-sm"
+              required
+              placeholder="12 digits"
+              maxlength="12"
+              pattern="\d{12}"
+            />
           </div>
           <div class="col-md-2 col-6">
-            <label class="form-label small fw-semibold">Phone <span class="text-danger">*</span></label>
-            <input type="text" name="phone" class="form-control form-control-sm" required placeholder="10 digits" maxlength="10" pattern="\d{10}">
+            <label class="form-label small fw-semibold">Phone
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="phone"
+              class="form-control form-control-sm"
+              required
+              placeholder="10 digits"
+              maxlength="10"
+              pattern="\d{10}"
+            />
           </div>
           <div class="col-md-3 col-6">
             <label class="form-label small fw-semibold">Link to User (optional)</label>
@@ -64,25 +126,31 @@
               <option value="">None</option>
               {{#each @model.users as |u|}}
                 {{#if (eq u.role "player")}}
-                  <option value={{u.user_id}}>{{u.username}} ({{u.full_name}})</option>
+                  <option value={{u.user_id}}>{{u.username}}
+                    ({{u.full_name}})</option>
                 {{/if}}
               {{/each}}
             </select>
           </div>
         </div>
-        <button type="submit" class="btn btn-primary btn-sm mt-3"><i class="bi bi-plus-lg"></i> Create Player</button>
+        <button type="submit" class="btn btn-primary btn-sm mt-3"><i
+            class="bi bi-plus-lg"
+          ></i>
+          Create Player</button>
       </form>
     </div>
   </div>
 
-  {{!-- Register Player for Match --}}
+  {{! Register Player for Match }}
   <div class="card mb-4">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-person-check text-success"></i> Register Player for Match</h6>
+      <h6 class="fw-bold mb-3"><i class="bi bi-person-check text-success"></i>
+        Register Player for Match</h6>
       <form {{on "submit" this.registerPlayer}}>
         <div class="row g-3">
-          <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Match <span class="text-danger">*</span></label>
+          <div class="col-md-6 col-6">
+            <label class="form-label small fw-semibold">Match
+              <span class="text-danger">*</span></label>
             <select name="match_id" class="form-select form-select-sm" required>
               <option value="">Select match...</option>
               {{#each @model.scheduledMatches as |m|}}
@@ -90,45 +158,39 @@
               {{/each}}
             </select>
           </div>
-          <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Player <span class="text-danger">*</span></label>
-            <select name="player_id" class="form-select form-select-sm" required>
+          <div class="col-md-6 col-6">
+            <label class="form-label small fw-semibold">Player
+              <span class="text-danger">*</span></label>
+            <select
+              name="player_id"
+              class="form-select form-select-sm"
+              required
+            >
               <option value="">Select player...</option>
               {{#each @model.players as |p|}}
                 <option value={{p.player_id}}>{{p.player_name}}</option>
               {{/each}}
             </select>
           </div>
-          <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Round <span class="text-danger">*</span></label>
-            <select name="round_type_id" class="form-select form-select-sm" required>
-              <option value="">Select round...</option>
-              {{#each @model.roundTypes as |r|}}
-                <option value={{r.round_type_id}}>{{r.round_name}}</option>
-              {{/each}}
-            </select>
-          </div>
-          <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Batch <span class="text-danger">*</span></label>
-            <select name="batch_id" class="form-select form-select-sm" required>
-              <option value="">Select batch...</option>
-              {{#each @model.batches as |b|}}
-                <option value={{b.batch_id}}>{{b.batch_name}}</option>
-              {{/each}}
-            </select>
-          </div>
         </div>
-        <button type="submit" class="btn btn-success btn-sm mt-3"><i class="bi bi-check-lg"></i> Register</button>
+        <div class="form-text mb-2">Player will be added to Round 1. Batch is
+          assigned automatically via Match Draw.</div>
+        <button type="submit" class="btn btn-success btn-sm mt-1"><i
+            class="bi bi-check-lg"
+          ></i>
+          Register</button>
       </form>
     </div>
   </div>
 
-  {{!-- Pending Player Registrations --}}
+  {{! Pending Player Registrations }}
   <div class="card">
     <div class="card-body p-0 table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
-          <tr><th>Match</th><th>Player</th><th>Round</th><th>Status</th><th class="text-end">Action</th></tr>
+          <tr><th>Match</th><th>Player</th><th>Round</th><th>Status</th><th
+              class="text-end"
+            >Action</th></tr>
         </thead>
         <tbody>
           {{#each @model.pendingPlayers as |p|}}
@@ -137,13 +199,28 @@
               <td class="fw-semibold">{{p.player_name}}</td>
               <td><span class="badge bg-secondary">{{p.round_name}}</span></td>
               <td>
-                <span class="status-badge {{if (eq p.status 'approved') 'approved' 'pending'}}">{{p.status}}</span>
+                <span
+                  class="status-badge
+                    {{if (eq p.status 'approved') 'approved' 'pending'}}"
+                >{{p.status}}</span>
               </td>
               <td class="text-end">
                 {{#if (eq p.status "registered")}}
-                  <button class="btn btn-success btn-sm" type="button"
-                    {{on "click" (fn this.approvePlayer p.match_id p.player_id p.round_type_id)}}>
-                    <i class="bi bi-check-lg"></i> Approve
+                  <button
+                    class="btn btn-success btn-sm"
+                    type="button"
+                    {{on
+                      "click"
+                      (fn
+                        this.approvePlayer
+                        p.match_id
+                        p.player_id
+                        p.round_type_id
+                      )
+                    }}
+                  >
+                    <i class="bi bi-check-lg"></i>
+                    Approve
                   </button>
                 {{else}}
                   <i class="bi bi-check-circle-fill text-success"></i>
@@ -153,7 +230,8 @@
           {{else}}
             <tr>
               <td colspan="5">
-                <div class="empty-state py-3"><i class="bi bi-inbox"></i><p>No player registrations</p></div>
+                <div class="empty-state py-3"><i class="bi bi-inbox"></i><p>No
+                    player registrations</p></div>
               </td>
             </tr>
           {{/each}}
@@ -162,13 +240,15 @@
     </div>
   </div>
 
-  {{!-- All Players List --}}
+  {{! All Players List }}
   <div class="card mt-4">
     <div class="card-body p-0 table-responsive">
-      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i> All Players ({{@model.players.length}})</h6>
+      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i>
+        All Players ({{@model.players.length}})</h6>
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
-          <tr><th>ID</th><th>Name</th><th>DOB</th><th>Aadhaar</th><th>Phone</th></tr>
+          <tr><th>ID</th><th>Name</th><th>DOB</th><th>Aadhaar</th><th
+            >Phone</th></tr>
         </thead>
         <tbody>
           {{#each @model.players as |p|}}
@@ -188,27 +268,46 @@
   </div>
 {{/if}}
 
-{{!-- ═══════════════════════════════════════ --}}
-{{!-- ═══════ BULLS TAB ═══════ --}}
-{{!-- ═══════════════════════════════════════ --}}
+{{! ═══════════════════════════════════════ }}
+{{! ═══════ BULLS TAB ═══════ }}
+{{! ═══════════════════════════════════════ }}
 {{#if (eq this.activeTab "bull")}}
 
-  {{!-- Create New Bull --}}
+  {{! Create New Bull }}
   <div class="card mb-4 border-danger">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill-plus text-danger"></i> Create New Bull</h6>
+      <h6 class="fw-bold mb-3"><i
+          class="bi bi-shield-fill-plus text-danger"
+        ></i>
+        Create New Bull</h6>
       <form {{on "submit" this.createBull}}>
         <div class="row g-3">
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Bull Name <span class="text-danger">*</span></label>
-            <input type="text" name="bull_name" class="form-control form-control-sm" required placeholder="e.g. Kodai">
+            <label class="form-label small fw-semibold">Bull Name
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="bull_name"
+              class="form-control form-control-sm"
+              required
+              placeholder="e.g. Kodai"
+            />
           </div>
           <div class="col-md-2 col-6">
-            <label class="form-label small fw-semibold">Age (yrs) <span class="text-danger">*</span></label>
-            <input type="number" name="age" class="form-control form-control-sm" required min="1" max="30">
+            <label class="form-label small fw-semibold">Age (yrs)
+              <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              name="age"
+              class="form-control form-control-sm"
+              required
+              min="1"
+              max="30"
+            />
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Owner <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold">Owner
+              <span class="text-danger">*</span></label>
             <select name="owner_id" class="form-select form-select-sm" required>
               <option value="">Select owner...</option>
               {{#each @model.owners as |o|}}
@@ -217,7 +316,8 @@
             </select>
           </div>
           <div class="col-md-2 col-6">
-            <label class="form-label small fw-semibold">Breed <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold">Breed
+              <span class="text-danger">*</span></label>
             <select name="breed_id" class="form-select form-select-sm" required>
               <option value="">Select breed...</option>
               {{#each @model.breeds as |b|}}
@@ -227,22 +327,34 @@
           </div>
           <div class="col-md-2 col-6">
             <label class="form-label small fw-semibold">Fitness Cert</label>
-            <input type="text" name="fitness_cert" class="form-control form-control-sm" placeholder="Certificate #">
+            <input
+              type="text"
+              name="fitness_cert"
+              class="form-control form-control-sm"
+              placeholder="Certificate #"
+            />
           </div>
         </div>
-        <button type="submit" class="btn btn-danger btn-sm mt-3"><i class="bi bi-plus-lg"></i> Create Bull</button>
+        <button type="submit" class="btn btn-danger btn-sm mt-3"><i
+            class="bi bi-plus-lg"
+          ></i>
+          Create Bull</button>
       </form>
     </div>
   </div>
 
-  {{!-- Register Bull for Match --}}
+  {{! Register Bull for Match }}
   <div class="card mb-4">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill-check text-success"></i> Register Bull for Match</h6>
+      <h6 class="fw-bold mb-3"><i
+          class="bi bi-shield-fill-check text-success"
+        ></i>
+        Register Bull for Match</h6>
       <form {{on "submit" this.registerBull}}>
         <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Match <span class="text-danger">*</span></label>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Match
+              <span class="text-danger">*</span></label>
             <select name="match_id" class="form-select form-select-sm" required>
               <option value="">Select match...</option>
               {{#each @model.scheduledMatches as |m|}}
@@ -250,8 +362,9 @@
               {{/each}}
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Bull <span class="text-danger">*</span></label>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Bull
+              <span class="text-danger">*</span></label>
             <select name="bull_id" class="form-select form-select-sm" required>
               <option value="">Select bull...</option>
               {{#each @model.bulls as |b|}}
@@ -259,27 +372,24 @@
               {{/each}}
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-semibold">Round <span class="text-danger">*</span></label>
-            <select name="round_type_id" class="form-select form-select-sm" required>
-              <option value="">Select round...</option>
-              {{#each @model.roundTypes as |r|}}
-                <option value={{r.round_type_id}}>{{r.round_name}}</option>
-              {{/each}}
-            </select>
-          </div>
         </div>
-        <button type="submit" class="btn btn-success btn-sm mt-3"><i class="bi bi-check-lg"></i> Register</button>
+        <div class="form-text mb-2">Bull queue order is assigned via Match Draw.</div>
+        <button type="submit" class="btn btn-success btn-sm mt-1"><i
+            class="bi bi-check-lg"
+          ></i>
+          Register</button>
       </form>
     </div>
   </div>
 
-  {{!-- Pending Bull Registrations --}}
+  {{! Pending Bull Registrations }}
   <div class="card">
     <div class="card-body p-0 table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
-          <tr><th>Match</th><th>Bull</th><th>Round</th><th>Status</th><th class="text-end">Action</th></tr>
+          <tr><th>Match</th><th>Bull</th><th>Round</th><th>Status</th><th
+              class="text-end"
+            >Action</th></tr>
         </thead>
         <tbody>
           {{#each @model.pendingBulls as |b|}}
@@ -288,13 +398,23 @@
               <td class="fw-semibold">{{b.bull_name}}</td>
               <td><span class="badge bg-secondary">{{b.round_name}}</span></td>
               <td>
-                <span class="status-badge {{if (eq b.status 'approved') 'approved' 'pending'}}">{{b.status}}</span>
+                <span
+                  class="status-badge
+                    {{if (eq b.status 'approved') 'approved' 'pending'}}"
+                >{{b.status}}</span>
               </td>
               <td class="text-end">
                 {{#if (eq b.status "registered")}}
-                  <button class="btn btn-success btn-sm" type="button"
-                    {{on "click" (fn this.approveBull b.match_id b.bull_id b.round_type_id)}}>
-                    <i class="bi bi-check-lg"></i> Approve
+                  <button
+                    class="btn btn-success btn-sm"
+                    type="button"
+                    {{on
+                      "click"
+                      (fn this.approveBull b.match_id b.bull_id b.round_type_id)
+                    }}
+                  >
+                    <i class="bi bi-check-lg"></i>
+                    Approve
                   </button>
                 {{else}}
                   <i class="bi bi-check-circle-fill text-success"></i>
@@ -304,7 +424,8 @@
           {{else}}
             <tr>
               <td colspan="5">
-                <div class="empty-state py-3"><i class="bi bi-inbox"></i><p>No bull registrations</p></div>
+                <div class="empty-state py-3"><i class="bi bi-inbox"></i><p>No
+                    bull registrations</p></div>
               </td>
             </tr>
           {{/each}}
@@ -313,13 +434,15 @@
     </div>
   </div>
 
-  {{!-- All Bulls List --}}
+  {{! All Bulls List }}
   <div class="card mt-4">
     <div class="card-body p-0 table-responsive">
-      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i> All Bulls ({{@model.bulls.length}})</h6>
+      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i>
+        All Bulls ({{@model.bulls.length}})</h6>
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
-          <tr><th>ID</th><th>Name</th><th>Age</th><th>Owner</th><th>Breed</th><th>Fitness</th></tr>
+          <tr><th>ID</th><th>Name</th><th>Age</th><th>Owner</th><th
+            >Breed</th><th>Fitness</th></tr>
         </thead>
         <tbody>
           {{#each @model.bulls as |b|}}
@@ -340,24 +463,41 @@
   </div>
 {{/if}}
 
-{{!-- ═══════════════════════════════════════ --}}
-{{!-- ═══════ OWNERS TAB ═══════ --}}
-{{!-- ═══════════════════════════════════════ --}}
+{{! ═══════════════════════════════════════ }}
+{{! ═══════ OWNERS TAB ═══════ }}
+{{! ═══════════════════════════════════════ }}
 {{#if (eq this.activeTab "owner")}}
 
-  {{!-- Create New Owner --}}
+  {{! Create New Owner }}
   <div class="card mb-4 border-warning">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-person-badge text-warning"></i> Create New Owner</h6>
+      <h6 class="fw-bold mb-3"><i class="bi bi-person-badge text-warning"></i>
+        Create New Owner</h6>
       <form {{on "submit" this.createOwner}}>
         <div class="row g-3">
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Owner Name <span class="text-danger">*</span></label>
-            <input type="text" name="name" class="form-control form-control-sm" required placeholder="Full name">
+            <label class="form-label small fw-semibold">Owner Name
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="name"
+              class="form-control form-control-sm"
+              required
+              placeholder="Full name"
+            />
           </div>
           <div class="col-md-3 col-6">
-            <label class="form-label small fw-semibold">Aadhaar <span class="text-danger">*</span></label>
-            <input type="text" name="aadhaar" class="form-control form-control-sm" required placeholder="12 digits" maxlength="12" pattern="\d{12}">
+            <label class="form-label small fw-semibold">Aadhaar
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="aadhaar"
+              class="form-control form-control-sm"
+              required
+              placeholder="12 digits"
+              maxlength="12"
+              pattern="\d{12}"
+            />
           </div>
           <div class="col-md-3 col-6">
             <label class="form-label small fw-semibold">Link to User (optional)</label>
@@ -365,21 +505,26 @@
               <option value="">None</option>
               {{#each @model.users as |u|}}
                 {{#if (eq u.role "owner")}}
-                  <option value={{u.user_id}}>{{u.username}} ({{u.full_name}})</option>
+                  <option value={{u.user_id}}>{{u.username}}
+                    ({{u.full_name}})</option>
                 {{/if}}
               {{/each}}
             </select>
           </div>
         </div>
-        <button type="submit" class="btn btn-warning btn-sm mt-3"><i class="bi bi-plus-lg"></i> Create Owner</button>
+        <button type="submit" class="btn btn-warning btn-sm mt-3"><i
+            class="bi bi-plus-lg"
+          ></i>
+          Create Owner</button>
       </form>
     </div>
   </div>
 
-  {{!-- Owners List --}}
+  {{! Owners List }}
   <div class="card">
     <div class="card-body p-0 table-responsive">
-      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i> All Owners ({{@model.owners.length}})</h6>
+      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i>
+        All Owners ({{@model.owners.length}})</h6>
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr><th>ID</th><th>Name</th><th>Aadhaar</th><th>Bulls Owned</th></tr>
@@ -407,31 +552,43 @@
   </div>
 {{/if}}
 
-{{!-- ═══════════════════════════════════════ --}}
-{{!-- ═══════ ORGANIZERS TAB ═══════ --}}
-{{!-- ═══════════════════════════════════════ --}}
+{{! ═══════════════════════════════════════ }}
+{{! ═══════ ORGANIZERS TAB ═══════ }}
+{{! ═══════════════════════════════════════ }}
 {{#if (eq this.activeTab "organizer")}}
 
-  {{!-- Create New Organizer --}}
+  {{! Create New Organizer }}
   <div class="card mb-4 border-info">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-building text-info"></i> Create New Organizer</h6>
+      <h6 class="fw-bold mb-3"><i class="bi bi-building text-info"></i>
+        Create New Organizer</h6>
       <form {{on "submit" this.createOrganizer}}>
         <div class="row g-3">
           <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Organizer Name <span class="text-danger">*</span></label>
-            <input type="text" name="organizer_name" class="form-control form-control-sm" required placeholder="e.g. Alanganallur Panchayat">
+            <label class="form-label small fw-semibold">Organizer Name
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="organizer_name"
+              class="form-control form-control-sm"
+              required
+              placeholder="e.g. Alanganallur Panchayat"
+            />
           </div>
         </div>
-        <button type="submit" class="btn btn-info btn-sm mt-3"><i class="bi bi-plus-lg"></i> Create Organizer</button>
+        <button type="submit" class="btn btn-info btn-sm mt-3"><i
+            class="bi bi-plus-lg"
+          ></i>
+          Create Organizer</button>
       </form>
     </div>
   </div>
 
-  {{!-- Organizers List --}}
+  {{! Organizers List }}
   <div class="card">
     <div class="card-body p-0 table-responsive">
-      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i> All Organizers ({{@model.organizers.length}})</h6>
+      <h6 class="fw-bold p-3 mb-0"><i class="bi bi-list-ul"></i>
+        All Organizers ({{@model.organizers.length}})</h6>
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr><th>ID</th><th>Name</th><th>Matches Organized</th></tr>
@@ -444,13 +601,16 @@
               <td>
                 {{#each @model.matches as |m|}}
                   {{#if (eq m.organizer_id o.organizer_id)}}
-                    <span class="badge bg-secondary me-1">{{m.match_name}}</span>
+                    <span
+                      class="badge bg-secondary me-1"
+                    >{{m.match_name}}</span>
                   {{/if}}
                 {{/each}}
               </td>
             </tr>
           {{else}}
-            <tr><td colspan="3"><div class="empty-state py-3"><p>No organizers yet</p></div></td></tr>
+            <tr><td colspan="3"><div class="empty-state py-3"><p>No organizers
+                    yet</p></div></td></tr>
           {{/each}}
         </tbody>
       </table>
@@ -458,39 +618,60 @@
   </div>
 {{/if}}
 
-{{!-- ═══════════════════════════════════════ --}}
-{{!-- ═══════ SCHEDULE MATCH TAB ═══════ --}}
-{{!-- ═══════════════════════════════════════ --}}
+{{! ═══════════════════════════════════════ }}
+{{! ═══════ SCHEDULE MATCH TAB ═══════ }}
+{{! ═══════════════════════════════════════ }}
 {{#if (eq this.activeTab "match")}}
   <div class="card mb-4">
     <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-calendar-plus text-primary"></i> Schedule New Match</h6>
+      <h6 class="fw-bold mb-3"><i class="bi bi-calendar-plus text-primary"></i>
+        Schedule New Match</h6>
       <form {{on "submit" this.scheduleMatch}}>
         <div class="row g-3">
           <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Match ID <span class="text-danger">*</span></label>
-            <input type="number" name="match_id" class="form-control form-control-sm" required placeholder="Unique ID">
+            <label class="form-label small fw-semibold">Match Name
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              name="match_name"
+              class="form-control form-control-sm"
+              required
+              placeholder="e.g. Alanganallur 2026"
+            />
           </div>
           <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Match Name <span class="text-danger">*</span></label>
-            <input type="text" name="match_name" class="form-control form-control-sm" required placeholder="e.g. Alanganallur 2026">
+            <label class="form-label small fw-semibold">Date
+              <span class="text-danger">*</span></label>
+            <input
+              type="date"
+              name="match_date"
+              class="form-control form-control-sm"
+              required
+            />
           </div>
           <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Date <span class="text-danger">*</span></label>
-            <input type="date" name="match_date" class="form-control form-control-sm" required>
-          </div>
-          <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Location <span class="text-danger">*</span></label>
-            <select name="location_id" class="form-select form-select-sm" required>
+            <label class="form-label small fw-semibold">Location
+              <span class="text-danger">*</span></label>
+            <select
+              name="location_id"
+              class="form-select form-select-sm"
+              required
+            >
               <option value="">Select...</option>
               {{#each @model.locations as |l|}}
-                <option value={{l.location_id}}>{{l.area}}, {{l.district}}</option>
+                <option value={{l.location_id}}>{{l.area}},
+                  {{l.district}}</option>
               {{/each}}
             </select>
           </div>
           <div class="col-md-4 col-6">
-            <label class="form-label small fw-semibold">Organizer <span class="text-danger">*</span></label>
-            <select name="organizer_id" class="form-select form-select-sm" required>
+            <label class="form-label small fw-semibold">Organizer
+              <span class="text-danger">*</span></label>
+            <select
+              name="organizer_id"
+              class="form-select form-select-sm"
+              required
+            >
               <option value="">Select...</option>
               {{#each @model.organizers as |o|}}
                 <option value={{o.organizer_id}}>{{o.organizer_name}}</option>
@@ -499,14 +680,36 @@
           </div>
           <div class="col-md-2 col-6">
             <label class="form-label small fw-semibold">Player Limit</label>
-            <input type="number" name="player_limit" class="form-control form-control-sm" placeholder="Max">
+            <input
+              type="number"
+              name="player_limit"
+              class="form-control form-control-sm"
+              placeholder="Max"
+            />
           </div>
           <div class="col-md-2 col-6">
             <label class="form-label small fw-semibold">Bull Limit</label>
-            <input type="number" name="bull_limit" class="form-control form-control-sm" placeholder="Max">
+            <input
+              type="number"
+              name="bull_limit"
+              class="form-control form-control-sm"
+              placeholder="Max"
+            />
+          </div>
+          <div class="col-md-4 col-6">
+            <label class="form-label small fw-semibold">Registration Deadline</label>
+            <input
+              type="datetime-local"
+              name="registration_deadline"
+              class="form-control form-control-sm"
+            />
+            <div class="form-text">Leave blank for no deadline</div>
           </div>
         </div>
-        <button type="submit" class="btn btn-success btn-sm mt-3"><i class="bi bi-calendar-check"></i> Schedule</button>
+        <button type="submit" class="btn btn-success btn-sm mt-3"><i
+            class="bi bi-calendar-check"
+          ></i>
+          Schedule</button>
       </form>
     </div>
   </div>
@@ -515,7 +718,8 @@
     <div class="card-body p-0 table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
-          <tr><th>ID</th><th>Name</th><th>Date</th><th>Capacity</th><th>Status</th></tr>
+          <tr><th>ID</th><th>Name</th><th>Date</th><th>Reg. Deadline</th><th
+            >Capacity</th><th>Status</th><th class="text-end">Draw</th></tr>
         </thead>
         <tbody>
           {{#each @model.matches as |m|}}
@@ -524,18 +728,46 @@
               <td class="fw-semibold">{{m.match_name}}</td>
               <td>{{m.match_date}}</td>
               <td>
-                <small>P: {{m.registered_player_count}}/{{m.player_limit}} &bull; B: {{m.registered_bull_count}}/{{m.bull_limit}}</small>
+                {{#if m.registration_deadline}}
+                  <span class="small">{{m.registration_deadline}}</span>
+                {{else}}
+                  <span class="text-muted small">No deadline</span>
+                {{/if}}
               </td>
               <td>
-                <span class="status-badge {{if (eq m.status 'Completed') 'completed' (if (eq m.status 'Live') 'live' 'scheduled')}}">
+                <small>P:
+                  {{m.registered_player_count}}/{{m.player_limit}}
+                  &bull; B:
+                  {{m.registered_bull_count}}/{{m.bull_limit}}</small>
+              </td>
+              <td>
+                <span
+                  class="status-badge
+                    {{if
+                      (eq m.status 'Completed')
+                      'completed'
+                      (if (eq m.status 'Live') 'live' 'scheduled')
+                    }}"
+                >
                   {{m.status}}
                 </span>
+              </td>
+              <td class="text-end">
+                <LinkTo
+                  @route="match-draw"
+                  @model={{m.match_id}}
+                  class="btn btn-outline-primary btn-sm"
+                >
+                  <i class="bi bi-shuffle"></i>
+                  Draw
+                </LinkTo>
               </td>
             </tr>
           {{else}}
             <tr>
-              <td colspan="5">
-                <div class="empty-state py-3"><i class="bi bi-calendar-x"></i><p>No matches scheduled</p></div>
+              <td colspan="7">
+                <div class="empty-state py-3"><i class="bi bi-calendar-x"></i><p
+                  >No matches scheduled</p></div>
               </td>
             </tr>
           {{/each}}

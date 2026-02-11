@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { PUBLIC } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MatchDetailRoute extends Route {
   @service auth;
@@ -8,13 +9,13 @@ export default class MatchDetailRoute extends Route {
     const base = this.auth.apiBase;
     try {
       const [scores, winners, spotPrizes] = await Promise.all([
-        fetch(`${base}/public/matches/${params.match_id}/scores`).then((r) =>
+        fetch(`${base}${PUBLIC.MATCH_SCORES(params.match_id)}`).then((r) =>
           r.json()
         ),
-        fetch(`${base}/public/matches/${params.match_id}/winners`).then((r) =>
+        fetch(`${base}${PUBLIC.MATCH_WINNERS(params.match_id)}`).then((r) =>
           r.json()
         ),
-        fetch(`${base}/public/matches/${params.match_id}/spot-prizes`).then((r) =>
+        fetch(`${base}${PUBLIC.MATCH_SPOTS(params.match_id)}`).then((r) =>
           r.json()
         ),
       ]);

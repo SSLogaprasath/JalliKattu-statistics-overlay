@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { SPOT_PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class SpotPrizesRoute extends Route {
   @service auth;
@@ -19,12 +20,12 @@ export default class SpotPrizesRoute extends Route {
     try {
       const [typesData, prizesData, awardsData, matchesData, playersData, bullsData] =
         await Promise.all([
-          this.auth.apiGet('/tables/spot_prize_type'),
-          this.auth.apiGet('/tables/spot_prize'),
-          this.auth.apiGet('/tables/spot_prize_award'),
-          this.auth.apiGet('/tables/match'),
-          this.auth.apiGet('/tables/player'),
-          this.auth.apiGet('/tables/bull_table'),
+          this.auth.apiGet(SPOT_PRIZES.TYPES),
+          this.auth.apiGet(SPOT_PRIZES.LIST),
+          this.auth.apiGet(SPOT_PRIZES.AWARDS),
+          this.auth.apiGet(SPOT_PRIZES.MATCHES),
+          this.auth.apiGet(SPOT_PRIZES.PLAYERS),
+          this.auth.apiGet(SPOT_PRIZES.BULLS),
         ]);
       return {
         types: typesData.rows || [],

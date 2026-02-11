@@ -1,0 +1,658 @@
+{{page-title
+  (if
+    @model.match (concat "Match Draw - " @model.match.match_name) "Match Draw"
+  )
+}}
+
+<div class="section-header">
+  <h5><i class="bi bi-shuffle"></i>
+    Match Draw
+    {{#if @model.match}}&mdash; {{@model.match.match_name}}{{/if}}</h5>
+  {{#if @model.match}}
+    <span class="badge bg-info ms-2">Arena:
+      {{@model.match.arena_capacity}}
+      players</span>
+    <span class="badge bg-secondary ms-1">{{@model.match.area}},
+      {{@model.match.district}}</span>
+  {{/if}}
+</div>
+
+{{! Toast }}
+{{#if this.statusMessage}}
+  <div class="toast-notification {{this.statusType}}" role="alert">
+    <i
+      class="bi
+        {{if
+          (eq this.statusType 'success')
+          'bi-check-circle-fill'
+          'bi-exclamation-triangle-fill'
+        }}"
+    ></i>
+    {{this.statusMessage}}
+  </div>
+{{/if}}
+
+{{#unless @model.match}}
+  <div class="card"><div class="card-body"><div class="empty-state py-5"><i
+          class="bi bi-exclamation-triangle"
+        ></i><p>Match not found</p></div></div></div>
+{{/unless}}
+
+{{#if @model.match}}
+
+  {{! Summary Cards }}
+  <div class="row g-3 mb-4">
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div
+            class="fs-4 fw-bold text-primary"
+          >{{@model.summary.approvedPlayers}}</div>
+          <small class="text-muted">Approved Players</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div
+            class="fs-4 fw-bold text-danger"
+          >{{@model.summary.approvedBulls}}</div>
+          <small class="text-muted">Approved Bulls</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div class="fs-4 fw-bold text-success">{{this.batchesNeeded}}</div>
+          <small class="text-muted">Batches Needed</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div
+            class="fs-4 fw-bold text-warning"
+          >{{@model.summary.bullsQueued}}</div>
+          <small class="text-muted">Bulls Queued</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div
+            class="fs-4 fw-bold text-info"
+          >{{@model.summary.qualifiedPlayers}}</div>
+          <small class="text-muted">Qualified</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2 col-6">
+      <div class="card text-center">
+        <div class="card-body py-2">
+          <div
+            class="fs-4 fw-bold text-secondary"
+          >{{@model.summary.totalFouls}}</div>
+          <small class="text-muted">Fouls</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{! Tab Navigation }}
+  <div class="tab-nav mb-4">
+    <button
+      class="tab-btn {{if (eq this.activeTab 'overview') 'active'}}"
+      type="button"
+      {{on "click" (fn this.setTab "overview")}}
+    >
+      <i class="bi bi-grid-3x3-gap"></i>
+      Batches
+    </button>
+    <button
+      class="tab-btn {{if (eq this.activeTab 'bulls') 'active'}}"
+      type="button"
+      {{on "click" (fn this.setTab "bulls")}}
+    >
+      <i class="bi bi-list-ol"></i>
+      Bull Queue
+    </button>
+    <button
+      class="tab-btn {{if (eq this.activeTab 'rounds') 'active'}}"
+      type="button"
+      {{on "click" (fn this.setTab "rounds")}}
+    >
+      <i class="bi bi-gear"></i>
+      Round Config
+    </button>
+    <button
+      class="tab-btn {{if (eq this.activeTab 'advance') 'active'}}"
+      type="button"
+      {{on "click" (fn this.setTab "advance")}}
+    >
+      <i class="bi bi-arrow-up-circle"></i>
+      Advance
+    </button>
+    <button
+      class="tab-btn {{if (eq this.activeTab 'fouls') 'active'}}"
+      type="button"
+      {{on "click" (fn this.setTab "fouls")}}
+    >
+      <i class="bi bi-exclamation-triangle"></i>
+      Fouls
+    </button>
+  </div>
+
+  {{! ═══════════════════════════════════════ }}
+  {{! ═══════ BATCHES TAB ═══════ }}
+  {{! ═══════════════════════════════════════ }}
+  {{#if (eq this.activeTab "overview")}}
+
+    <div class="card mb-3">
+      <div class="card-body d-flex align-items-center gap-3">
+        <button
+          class="btn btn-primary btn-sm"
+          type="button"
+          {{on "click" this.autoAssign}}
+        >
+          <i class="bi bi-shuffle"></i>
+          Auto-Assign Batches
+        </button>
+        <small class="text-muted">
+          Distributes
+          {{@model.summary.approvedPlayers}}
+          approved Round 1 players into batches of
+          {{@model.match.arena_capacity}}
+        </small>
+      </div>
+    </div>
+
+    {{#each this.playersByRound as |round|}}
+      <h6 class="fw-bold mt-3 mb-2"><i class="bi bi-flag-fill text-primary"></i>
+        {{round.roundName}}</h6>
+      <div class="row g-3">
+        {{#each round.batches as |batch|}}
+          <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+              <div class="card-header py-2 d-flex justify-content-between">
+                <span class="fw-bold">Batch {{batch.batchName}}</span>
+                <span class="badge bg-secondary">{{batch.players.length}}
+                  players</span>
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                  <thead class="table-light">
+                    <tr><th>Player</th><th class="text-center">Caught</th><th
+                        class="text-center"
+                      >Pen</th><th class="text-center">Net</th><th
+                      >Status</th></tr>
+                  </thead>
+                  <tbody>
+                    {{#each batch.players as |p|}}
+                      <tr
+                        class="{{if
+                            (eq p.advancement_status 'qualified')
+                            'table-success'
+                            (if
+                              (eq p.advancement_status 'eliminated')
+                              'table-danger'
+                              ''
+                            )
+                          }}"
+                      >
+                        <td class="small">{{p.player_name}}</td>
+                        <td class="text-center small">{{p.bull_caught}}</td>
+                        <td class="text-center small">{{p.penalties}}</td>
+                        <td class="text-center small fw-bold">{{add
+                            p.bull_caught
+                            (mult p.penalties -1)
+                          }}</td>
+                        <td>
+                          {{#if (eq p.advancement_status "qualified")}}
+                            <span class="badge bg-success">Q</span>
+                          {{else if (eq p.advancement_status "eliminated")}}
+                            <span class="badge bg-danger">E</span>
+                          {{else}}
+                            <span class="badge bg-secondary">-</span>
+                          {{/if}}
+                        </td>
+                      </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="card"><div class="card-body"><div class="empty-state py-3"><i
+              class="bi bi-inbox"
+            ></i><p>No players assigned yet. Approve player registrations first,
+              then click Auto-Assign.</p></div></div></div>
+    {{/each}}
+
+  {{/if}}
+
+  {{! ═══════════════════════════════════════ }}
+  {{! ═══════ BULL QUEUE TAB ═══════ }}
+  {{! ═══════════════════════════════════════ }}
+  {{#if (eq this.activeTab "bulls")}}
+
+    <div class="card mb-3">
+      <div class="card-body d-flex align-items-center gap-3">
+        <button
+          class="btn btn-danger btn-sm"
+          type="button"
+          {{on "click" this.assignBullQueue}}
+        >
+          <i class="bi bi-list-ol"></i>
+          Assign Bull Queue
+        </button>
+        <small class="text-muted">
+          Assigns sequential release order to all
+          {{@model.summary.approvedBulls}}
+          approved bulls
+        </small>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th class="text-center">#</th><th>Bull</th><th>Owner</th><th
+              >Round</th><th>Tamer</th><th class="text-center">Agg</th><th
+                class="text-center"
+              >Area</th><th class="text-center">Diff</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {{#each this.sortedBulls as |b|}}
+              <tr>
+                <td class="text-center fw-bold">{{if
+                    b.release_order
+                    b.release_order
+                    "—"
+                  }}</td>
+                <td class="fw-semibold">{{b.bull_name}}</td>
+                <td class="small">{{b.owner_name}}</td>
+                <td><span
+                    class="badge bg-secondary"
+                  >{{b.round_name}}</span></td>
+                <td class="small">{{if b.player_name b.player_name "—"}}</td>
+                <td class="text-center">{{if
+                    b.aggression
+                    b.aggression
+                    "—"
+                  }}</td>
+                <td class="text-center">{{if b.play_area b.play_area "—"}}</td>
+                <td class="text-center">{{if
+                    b.difficulty
+                    b.difficulty
+                    "—"
+                  }}</td>
+                <td>
+                  <span
+                    class="status-badge
+                      {{if
+                        (eq b.status 'approved')
+                        'approved'
+                        (if (eq b.status 'disqualified') 'dq' 'pending')
+                      }}"
+                  >
+                    {{b.status}}
+                  </span>
+                </td>
+              </tr>
+            {{else}}
+              <tr><td colspan="9"><div class="empty-state py-3"><i
+                      class="bi bi-inbox"
+                    ></i><p>No bulls registered</p></div></td></tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {{/if}}
+
+  {{! ═══════════════════════════════════════ }}
+  {{! ═══════ ROUND CONFIG TAB ═══════ }}
+  {{! ═══════════════════════════════════════ }}
+  {{#if (eq this.activeTab "rounds")}}
+
+    {{! Existing configs }}
+    <div class="card mb-4">
+      <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Round</th><th class="text-center">Advance Count</th><th
+                class="text-center"
+              >Bull Start</th><th class="text-center">Bull End</th></tr>
+          </thead>
+          <tbody>
+            {{#each @model.roundConfigs as |rc|}}
+              <tr>
+                <td class="fw-semibold">{{rc.round_name}}</td>
+                <td class="text-center">{{if
+                    rc.advance_count
+                    rc.advance_count
+                    "—"
+                  }}</td>
+                <td class="text-center">{{if
+                    rc.bull_start
+                    rc.bull_start
+                    "—"
+                  }}</td>
+                <td class="text-center">{{if rc.bull_end rc.bull_end "—"}}</td>
+              </tr>
+            {{else}}
+              <tr><td colspan="4"><div class="empty-state py-3"><p>No round
+                      configs yet</p></div></td></tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{! Add/Update config }}
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3"><i class="bi bi-gear text-primary"></i>
+          Add / Update Round Config</h6>
+        <form {{on "submit" this.saveRoundConfig}}>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Round
+                <span class="text-danger">*</span></label>
+              <select
+                name="round_type_id"
+                class="form-select form-select-sm"
+                required
+              >
+                <option value="">Select...</option>
+                <option value="1">Qualifying (Round 1)</option>
+                <option value="2">Semi-Finals (Round 2)</option>
+                <option value="3">Finals (Round 3)</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Advance Count</label>
+              <input
+                type="number"
+                name="advance_count"
+                class="form-control form-control-sm"
+                min="1"
+                placeholder="Top N per batch"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Bull Start #</label>
+              <input
+                type="number"
+                name="bull_start"
+                class="form-control form-control-sm"
+                min="1"
+                placeholder="Queue start"
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Bull End #</label>
+              <input
+                type="number"
+                name="bull_end"
+                class="form-control form-control-sm"
+                min="1"
+                placeholder="Queue end"
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm mt-3"><i
+              class="bi bi-save"
+            ></i>
+            Save Config</button>
+        </form>
+      </div>
+    </div>
+
+  {{/if}}
+
+  {{! ═══════════════════════════════════════ }}
+  {{! ═══════ ADVANCE TAB ═══════ }}
+  {{! ═══════════════════════════════════════ }}
+  {{#if (eq this.activeTab "advance")}}
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3"><i
+            class="bi bi-arrow-up-circle text-success"
+          ></i>
+          Advance Players to Next Round</h6>
+        <p class="text-muted small mb-3">
+          This will rank players in each batch by net score (bull_caught -
+          penalties), mark the top N as "qualified" and the rest as
+          "eliminated", then create next-round entries for qualified players.
+        </p>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Advance From Round</label>
+            <select
+              class="form-select form-select-sm"
+              {{on "change" this.setAdvanceRound}}
+            >
+              <option value="">Select round...</option>
+              {{#each @model.roundConfigs as |rc|}}
+                {{#if rc.advance_count}}
+                  <option value={{rc.round_type_id}}>{{rc.round_name}}
+                    (top
+                    {{rc.advance_count}}
+                    per batch)</option>
+                {{/if}}
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <button
+              class="btn btn-success btn-sm"
+              type="button"
+              {{on "click" this.advancePlayers}}
+            >
+              <i class="bi bi-arrow-up-circle"></i>
+              Advance Players
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{! Show advancement results per round }}
+    {{#each this.playersByRound as |round|}}
+      <h6 class="fw-bold mt-4 mb-2"><i class="bi bi-flag-fill text-primary"></i>
+        {{round.roundName}}</h6>
+      {{#each round.batches as |batch|}}
+        <div class="card mb-2">
+          <div class="card-header py-1 small fw-bold">Batch
+            {{batch.batchName}}</div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr><th>Player</th><th class="text-center">Caught</th><th
+                    class="text-center"
+                  >Pen</th><th class="text-center">Net</th><th
+                  >Advancement</th></tr>
+              </thead>
+              <tbody>
+                {{#each batch.players as |p|}}
+                  <tr
+                    class="{{if
+                        (eq p.advancement_status 'qualified')
+                        'table-success'
+                        (if
+                          (eq p.advancement_status 'eliminated')
+                          'table-danger'
+                          ''
+                        )
+                      }}"
+                  >
+                    <td>{{p.player_name}}</td>
+                    <td class="text-center">{{p.bull_caught}}</td>
+                    <td class="text-center">{{p.penalties}}</td>
+                    <td class="text-center fw-bold">{{add
+                        p.bull_caught
+                        (mult p.penalties -1)
+                      }}</td>
+                    <td>
+                      {{#if (eq p.advancement_status "qualified")}}
+                        <span class="badge bg-success"><i
+                            class="bi bi-check-lg"
+                          ></i>
+                          Qualified</span>
+                      {{else if (eq p.advancement_status "eliminated")}}
+                        <span class="badge bg-danger"><i class="bi bi-x-lg"></i>
+                          Eliminated</span>
+                      {{else}}
+                        <span class="badge bg-secondary">Pending</span>
+                      {{/if}}
+                    </td>
+                  </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {{/each}}
+    {{/each}}
+
+  {{/if}}
+
+  {{! ═══════════════════════════════════════ }}
+  {{! ═══════ FOULS TAB ═══════ }}
+  {{! ═══════════════════════════════════════ }}
+  {{#if (eq this.activeTab "fouls")}}
+
+    {{! Record Foul Form }}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h6 class="fw-bold mb-3"><i
+            class="bi bi-exclamation-triangle text-warning"
+          ></i>
+          Record Foul</h6>
+        <form {{on "submit" this.recordFoul}}>
+          <div class="row g-3">
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold">Round
+                <span class="text-danger">*</span></label>
+              <select
+                name="round_type_id"
+                class="form-select form-select-sm"
+                required
+              >
+                <option value="">Select...</option>
+                <option value="1">Qualifying</option>
+                <option value="2">Semi-Finals</option>
+                <option value="3">Finals</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold">Bull
+                <span class="text-danger">*</span></label>
+              <select
+                name="bull_id"
+                class="form-select form-select-sm"
+                required
+              >
+                <option value="">Select...</option>
+                {{#each @model.bulls as |b|}}
+                  <option value={{b.bull_id}}>{{b.bull_name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold">Player (blank=bull
+                foul)</label>
+              <select name="player_id" class="form-select form-select-sm">
+                <option value="">Bull foul</option>
+                {{#each @model.players as |p|}}
+                  <option value={{p.player_id}}>{{p.player_name}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Foul Type
+                <span class="text-danger">*</span></label>
+              <select
+                name="foul_type"
+                class="form-select form-select-sm"
+                required
+              >
+                <option value="">Select...</option>
+                {{#each this.foulTypes as |ft|}}
+                  <option value={{ft.value}}>{{ft.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold">Notes</label>
+              <input
+                type="text"
+                name="notes"
+                class="form-control form-control-sm"
+                placeholder="Optional details"
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-warning btn-sm mt-3"><i
+              class="bi bi-exclamation-triangle"
+            ></i>
+            Record Foul</button>
+        </form>
+      </div>
+    </div>
+
+    {{! Fouls List }}
+    <div class="card">
+      <div class="card-body p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Time</th><th>Round</th><th>Bull</th><th>Player</th><th
+              >Type</th><th>Notes</th><th class="text-end">Action</th></tr>
+          </thead>
+          <tbody>
+            {{#each @model.fouls as |f|}}
+              <tr>
+                <td class="small">{{f.recorded_time}}</td>
+                <td><span
+                    class="badge bg-secondary"
+                  >{{f.round_name}}</span></td>
+                <td class="fw-semibold">{{f.bull_name}}</td>
+                <td>{{if f.player_name f.player_name "— (Bull foul)"}}</td>
+                <td><span
+                    class="badge bg-warning text-dark"
+                  >{{f.foul_type}}</span></td>
+                <td class="small">{{f.notes}}</td>
+                <td class="text-end">
+                  <button
+                    class="btn btn-outline-danger btn-sm"
+                    type="button"
+                    {{on "click" (fn this.deleteFoul f.foul_id)}}
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            {{else}}
+              <tr><td colspan="7"><div class="empty-state py-3"><i
+                      class="bi bi-check-circle"
+                    ></i><p>No fouls recorded</p></div></td></tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {{/if}}
+
+{{/if}}

@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { PUBLIC } from 'jallikattu-frontend/constants/api-paths';
 
 export default class ScoreboardController extends Controller {
   @service auth;
@@ -42,8 +43,8 @@ export default class ScoreboardController extends Controller {
     try {
       const base = this.auth.apiBase;
       const [scoresResp, spotResp] = await Promise.all([
-        fetch(`${base}/public/matches/${this.selectedMatchId}/scores`),
-        fetch(`${base}/public/matches/${this.selectedMatchId}/spot-prizes`),
+        fetch(`${base}${PUBLIC.MATCH_SCORES(this.selectedMatchId)}`),
+        fetch(`${base}${PUBLIC.MATCH_SPOTS(this.selectedMatchId)}`),
       ]);
       this.scores = await scoresResp.json();
       this.spotPrizes = await spotResp.json();

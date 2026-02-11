@@ -50,6 +50,7 @@ public class PlayerApiServlet extends BaseRestServlet {
                     sendJson(resp, result);
                 }
                 case "history" -> sendJson(resp, StatsDAO.getPlayerMatchHistory(playerId));
+                case "registrations" -> sendJson(resp, StatsDAO.getPlayerRegistrations(playerId));
                 case "matches" -> {
                     // Available scheduled matches with capacity
                     List<Map<String, Object>> matches = StatsDAO.getMatchesPublic("Scheduled");
@@ -131,6 +132,12 @@ public class PlayerApiServlet extends BaseRestServlet {
             String batchId = str(body, "batch_id");
             if (batchId == null) batchId = "1";
 
+            // Check deadline
+            if (!StatsDAO.isRegistrationOpen(matchId)) {
+                sendError(resp, "Registration deadline has passed for this match", 409);
+                return;
+            }
+
             // Check capacity
             if (!StatsDAO.canRegisterPlayer(matchId)) {
                 sendError(resp, "Match has reached its player limit", 409);
@@ -138,13 +145,11 @@ public class PlayerApiServlet extends BaseRestServlet {
             }
 
             // Insert registration with status=registered (pending approval)
-            String sql = "INSERT INTO player_match_history (match_id, round_type_id, batch_id, player_id, bull_caught, penalties, status) VALUES (?, ?, ?, ?, 0, 0, 'registered')";
+            String sql = "INSERT INTO player_match_history (match_id, round_type_id, batch_id, player_id, bull_caught, penalties, status, advancement_status) VALUES (?, 1, 1, ?, 0, 0, 'registered', 'pending')";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, Integer.parseInt(matchId));
-                ps.setInt(2, Integer.parseInt(roundTypeId));
-                ps.setInt(3, Integer.parseInt(batchId));
-                ps.setInt(4, Integer.parseInt(playerId));
+                ps.setInt(2, Integer.parseInt(playerId));
                 ps.executeUpdate();
             }
 

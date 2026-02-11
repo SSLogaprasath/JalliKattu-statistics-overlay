@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { PLAYER } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MyMatchesController extends Controller {
   @service auth;
@@ -22,7 +23,7 @@ export default class MyMatchesController extends Controller {
     this.message = null;
 
     try {
-      const result = await this.auth.apiPost('/player/register-match', {
+      const result = await this.auth.apiPost(PLAYER.REGISTER_MATCH, {
         match_id: match.match_id,
       });
       this.message = result.message || 'Successfully registered! Pending approval.';

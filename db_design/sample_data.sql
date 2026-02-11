@@ -5,14 +5,44 @@
 USE `mydb`;
 SET FOREIGN_KEY_CHECKS=0;
 
+-- Clean existing data (order doesn't matter with FK checks off)
+TRUNCATE TABLE `spot_prize_award`;
+TRUNCATE TABLE `spot_prize`;
+TRUNCATE TABLE `spot_prize_type`;
+TRUNCATE TABLE `bull_player_interaction`;
+TRUNCATE TABLE `bull_match_history`;
+TRUNCATE TABLE `Player_Match_History`;
+TRUNCATE TABLE `bull_table`;
+TRUNCATE TABLE `owner`;
+TRUNCATE TABLE `Match`;
+TRUNCATE TABLE `player`;
+TRUNCATE TABLE `prize`;
+TRUNCATE TABLE `round_type`;
+TRUNCATE TABLE `batch`;
+TRUNCATE TABLE `bull_breed`;
+TRUNCATE TABLE `organizer`;
+TRUNCATE TABLE `location`;
+TRUNCATE TABLE `app_user`;
+
 -- =====================================================
 -- 1. APP USERS (admin already inserted, add more roles)
 -- =====================================================
 -- Password: admin123 → SHA-256 hash
 INSERT INTO `app_user` (`username`, `pass_hash`, `full_name`, `role`) VALUES
-('admin',     SHA2('admin123', 256), 'Administrator',   'admin'),
-('ravi_reg',  SHA2('ravi123', 256),  'Ravi Kumar',      'registrar'),
-('scorer1',   SHA2('score123', 256), 'Murugan S',       'scorer');
+('superadmin',  SHA2('superadmin123', 256), 'Super Admin',       'super_admin'),
+('admin',       SHA2('admin123', 256),      'Administrator',     'admin'),
+('ravi_reg',    SHA2('ravi123', 256),       'Ravi Kumar',        'registrar'),
+('scorer1',     SHA2('score123', 256),      'Murugan S',         'scorer'),
+('sk_tamer',    SHA2('player123', 256),     'Senthil Kumar',     'player'),
+('velu_bull',   SHA2('player123', 256),     'Velu Nachiyar',     'player'),
+('muthu_king',  SHA2('player123', 256),     'Muthu Ramalingam',  'player'),
+('kp_fighter',  SHA2('player123', 256),     'Karthik Pandian',   'player'),
+('arjun_brave', SHA2('player123', 256),     'Arjun Thevar',      'player'),
+('ramu_farm',   SHA2('owner123', 256),      'Ramu Thevar',       'owner'),
+('selvam_bulls',SHA2('owner123', 256),      'Selvam Nadar',      'owner'),
+('mpillai',     SHA2('owner123', 256),      'Murugesan Pillai',  'owner'),
+('kannan_kc',   SHA2('owner123', 256),      'Kannan Chettiar',   'owner'),
+('tg_gounder',  SHA2('owner123', 256),      'Thangavel Gounder', 'owner');
 
 -- =====================================================
 -- 2. LOOKUP TABLES
@@ -279,6 +309,48 @@ INSERT INTO `bull_match_history` (`match_id`, `bull_id`, `player_id`, `aggressio
 (3, 8,  8, 0, 0, 0, 0, 0, 1, 1, 0, 'registered'),
 (3, 10, 10,0, 0, 0, 0, 0, 1, 1, 0, 'registered'),
 (3, 12, 10,0, 0, 0, 0, 0, 1, 1, 0, 'registered');
+
+-- =====================================================
+-- 10. SPOT PRIZES
+-- =====================================================
+
+-- Spot Prize Types
+INSERT INTO `spot_prize_type` (`spot_prize_type_id`, `spot_prize_type_name`) VALUES
+(1, 'Best Tamer'),
+(2, 'Longest Hold'),
+(3, 'Most Aggressive Bull'),
+(4, 'Crowd Favourite'),
+(5, 'Bravery Award');
+
+-- Spot Prizes for Match 1 (Completed)
+INSERT INTO `spot_prize` (`match_id`, `spot_type_id`, `sponsor_name`, `prize_title`, `quantity`, `created_time`) VALUES
+(1, 1, 'Saravana Stores',    'Gold Ring 4g',          1, '2026-01-15 10:30:00'),
+(1, 2, 'Pothys Silks',       'Silk Dhoti Set',        1, '2026-01-15 11:00:00'),
+(1, 3, 'Local MLA Fund',     'Cash ₹5,000',           1, '2026-01-15 11:30:00'),
+(1, 4, 'Jeyachandran Textiles','Shirt Voucher ₹2,000',2, '2026-01-15 12:00:00');
+
+-- Spot Prizes for Match 2 (Live)
+INSERT INTO `spot_prize` (`match_id`, `spot_type_id`, `sponsor_name`, `prize_title`, `quantity`, `created_time`) VALUES
+(2, 1, 'GRT Jewellers',      'Silver Bracelet',       1, '2026-01-17 09:15:00'),
+(2, 5, 'District SP Office', 'Bravery Shield',        1, '2026-01-17 10:00:00'),
+(2, 2, 'RMKV Silks',         'Silk Veshti Set',       1, '2026-01-17 10:30:00');
+
+-- Spot Prize Awards (Match 1 - all awarded)
+INSERT INTO `spot_prize_award` (`player_id`, `spot_prize_id`, `bull_id`, `awarded_time`) VALUES
+(5, 1, 1, '2026-01-15 14:30:00'),   -- Arjun: Best Tamer with Veera Maadan
+(8, 2, 8, '2026-01-15 15:00:00'),   -- Surya: Longest Hold with Thunder Bull
+(1, 3, 1, '2026-01-15 15:30:00'),   -- Senthil: Most Aggressive Bull (Veera Maadan)
+(3, 4, 3, '2026-01-15 16:00:00');   -- Muthu: Crowd Favourite with Semma Bull
+
+-- Spot Prize Awards (Match 2 - one awarded so far)
+INSERT INTO `spot_prize_award` (`player_id`, `spot_prize_id`, `bull_id`, `awarded_time`) VALUES
+(5, 5, 5, '2026-01-17 11:00:00');   -- Arjun: Bravery Award with Kodai Maan
+
+-- =====================================================
+-- 11. LINK OWNERS & PLAYERS TO APP_USER ACCOUNTS
+-- =====================================================
+UPDATE owner o JOIN app_user u ON o.name = u.full_name AND u.role = 'owner' SET o.user_id = u.user_id;
+UPDATE player p JOIN app_user u ON p.player_name = u.full_name AND u.role = 'player' SET p.user_id = u.user_id;
 
 SET FOREIGN_KEY_CHECKS=1;
 

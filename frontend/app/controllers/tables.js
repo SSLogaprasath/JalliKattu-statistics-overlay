@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { TABLES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class TablesController extends Controller {
   @service auth;
@@ -34,7 +35,7 @@ export default class TablesController extends Controller {
     this.showAddForm = false;
     this.isLoading = true;
     try {
-      this.tableData = await this.auth.apiGet(`/tables/${tableName}`);
+      this.tableData = await this.auth.apiGet(TABLES.GET(tableName));
     } catch (e) {
       this.statusMessage = 'Error loading table';
     } finally {
@@ -60,7 +61,7 @@ export default class TablesController extends Controller {
       }
     }
     try {
-      await this.auth.apiPost(`/tables/${this.selectedTable}`, data);
+      await this.auth.apiPost(TABLES.CREATE(this.selectedTable), data);
       this.statusMessage = 'Row added successfully';
       this.showAddForm = false;
       await this.loadTable(this.selectedTable);
@@ -77,7 +78,7 @@ export default class TablesController extends Controller {
       .map((pk) => `${pk}=${encodeURIComponent(row[pk])}`)
       .join('&');
     try {
-      await this.auth.apiDelete(`/tables/${this.selectedTable}?${params}`);
+      await this.auth.apiDelete(TABLES.DELETE(this.selectedTable, params));
       this.statusMessage = 'Row deleted';
       await this.loadTable(this.selectedTable);
     } catch (e) {
@@ -111,7 +112,7 @@ export default class TablesController extends Controller {
       }
     }
     try {
-      await this.auth.apiPut(`/tables/${this.selectedTable}`, { pkValues, values });
+      await this.auth.apiPut(TABLES.UPDATE(this.selectedTable), { pkValues, values });
       this.statusMessage = 'Row updated';
       this.editRow = null;
       await this.loadTable(this.selectedTable);

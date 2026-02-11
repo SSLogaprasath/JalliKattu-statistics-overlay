@@ -23,6 +23,16 @@
             <span><i class="bi bi-calendar3"></i> {{@model.match.match_date}}</span>
             <span><i class="bi bi-geo-alt-fill"></i> {{@model.match.district}} — {{@model.match.area}}</span>
             <span><i class="bi bi-building"></i> {{@model.match.organizer_name}}</span>
+            {{#if @model.match.registration_deadline}}
+              <span>
+                <i class="bi bi-clock-fill"></i> Reg. deadline: {{@model.match.registration_deadline}}
+                {{#if (is-past-deadline @model.match.registration_deadline)}}
+                  <span class="badge bg-danger">Closed</span>
+                {{else}}
+                  <span class="badge bg-success">Open</span>
+                {{/if}}
+              </span>
+            {{/if}}
           </div>
         </div>
         <span class="status-badge {{if (eq @model.match.status 'Completed') 'completed' (if (eq @model.match.status 'Live') 'live' 'scheduled')}}">

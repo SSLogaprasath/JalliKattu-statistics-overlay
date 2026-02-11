@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { PUBLIC } from 'jallikattu-frontend/constants/api-paths';
 
 export default class SignupController extends Controller {
   @service auth;
@@ -46,7 +47,7 @@ export default class SignupController extends Controller {
     this.isLoading = true;
     try {
       const base = this.auth.apiBase;
-      const resp = await fetch(`${base}/public/register/player`, {
+      const resp = await fetch(`${base}${PUBLIC.REGISTER_PLAYER}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -80,7 +81,7 @@ export default class SignupController extends Controller {
     this.isLoading = true;
     try {
       const base = this.auth.apiBase;
-      const resp = await fetch(`${base}/public/register/owner`, {
+      const resp = await fetch(`${base}${PUBLIC.REGISTER_OWNER}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

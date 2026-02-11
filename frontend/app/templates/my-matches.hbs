@@ -30,6 +30,17 @@
               {{#if match.organizer_name}}
                 <div><i class="bi bi-building"></i> {{match.organizer_name}}</div>
               {{/if}}
+              {{#if match.registration_deadline}}
+                <div>
+                  <i class="bi bi-clock-fill"></i>
+                  Reg. closes: {{match.registration_deadline}}
+                  {{#if (is-past-deadline match.registration_deadline)}}
+                    <span class="badge bg-danger ms-1">Closed</span>
+                  {{else}}
+                    <span class="badge bg-success ms-1">Open</span>
+                  {{/if}}
+                </div>
+              {{/if}}
             </div>
             <div class="d-flex gap-2 flex-wrap mb-3">
               <span class="badge {{if (eq match.capacity.playerSlotsRemaining 0) 'bg-danger' 'bg-secondary'}}">
@@ -41,7 +52,11 @@
                 {{match.capacity.registeredBulls}}/{{match.bull_limit}} bulls
               </span>
             </div>
-            {{#if (eq match.capacity.playerSlotsRemaining 0)}}
+            {{#if (is-past-deadline match.registration_deadline)}}
+              <button class="btn btn-secondary btn-sm w-100" disabled>
+                <i class="bi bi-clock-history"></i> Registration Closed
+              </button>
+            {{else if (eq match.capacity.playerSlotsRemaining 0)}}
               <button class="btn btn-secondary btn-sm w-100" disabled>
                 <i class="bi bi-x-circle"></i> Player Slots Full
               </button>

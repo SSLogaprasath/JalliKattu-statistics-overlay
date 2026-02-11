@@ -111,7 +111,7 @@ public class StatsDAO {
                    ROUND(AVG(bmh.aggression), 1) AS avg_aggression,
                    ROUND(AVG(bmh.play_area), 1) AS avg_play_area,
                    ROUND(AVG(bmh.difficulty), 1) AS avg_difficulty,
-                   COALESCE(SUM(bmh.release_count), 0) AS total_releases
+                   COALESCE(SUM(bmh.release_order), 0) AS total_releases
             FROM bull_table bt
             LEFT JOIN bull_breed bb ON bt.breed_id = bb.bull_breed_id
             LEFT JOIN owner o ON bt.owner_id = o.owner_id
@@ -137,7 +137,7 @@ public class StatsDAO {
             SELECT m.match_id, m.match_name, m.match_date, m.status AS match_status,
                    l.district AS location, rt.round_name,
                    bmh.aggression, bmh.play_area, bmh.difficulty,
-                   bmh.release_count, bmh.winner,
+                   bmh.release_order, bmh.winner,
                    p.player_name AS tamer_name
             FROM bull_match_history bmh
             JOIN `match` m ON bmh.match_id = m.match_id
@@ -181,7 +181,7 @@ public class StatsDAO {
                    COUNT(DISTINCT bmh.match_id) AS matches_played,
                    ROUND(AVG(bmh.difficulty), 1) AS avg_difficulty,
                    ROUND(AVG(bmh.aggression), 1) AS avg_aggression,
-                   COALESCE(SUM(bmh.release_count), 0) AS total_releases
+                   COALESCE(SUM(bmh.release_order), 0) AS total_releases
             FROM bull_table bt
             JOIN bull_match_history bmh ON bt.bull_id = bmh.bull_id AND bmh.status = 'approved'
             LEFT JOIN owner o ON bt.owner_id = o.owner_id
@@ -198,6 +198,42 @@ public class StatsDAO {
     }
 
     // ───────────── MATCH CAPACITY ─────────────
+
+    /** Get all registrations (any status) for a player. */
+    public static List<Map<String, Object>> getPlayerRegistrations(String playerId) throws SQLException {
+        String sql = """
+            SELECT pmh.match_id, pmh.round_type_id, pmh.batch_id, pmh.status AS registration_status,
+                   m.match_name, m.match_date, m.status AS match_status,
+                   l.district AS location, l.area,
+                   rt.round_name, b.batch_name
+            FROM player_match_history pmh
+            JOIN `match` m ON pmh.match_id = m.match_id
+            JOIN location l ON m.location_id = l.location_id
+            JOIN round_type rt ON pmh.round_type_id = rt.round_type_id
+            JOIN batch b ON pmh.batch_id = b.batch_id
+            WHERE pmh.player_id = ?
+            ORDER BY m.match_date DESC, rt.round_name
+            """;
+        return queryList(sql, playerId);
+    }
+
+    /** Get all bull registrations for an owner's bulls (any status). */
+    public static List<Map<String, Object>> getOwnerBullRegistrations(String ownerId) throws SQLException {
+        String sql = """
+            SELECT bmh.match_id, bmh.bull_id, bmh.round_type_id, bmh.status AS registration_status,
+                   bt.bull_name, m.match_name, m.match_date, m.status AS match_status,
+                   l.district AS location, l.area,
+                   rt.round_name
+            FROM bull_match_history bmh
+            JOIN bull_table bt ON bmh.bull_id = bt.bull_id
+            JOIN `match` m ON bmh.match_id = m.match_id
+            JOIN location l ON m.location_id = l.location_id
+            JOIN round_type rt ON bmh.round_type_id = rt.round_type_id
+            WHERE bt.owner_id = ?
+            ORDER BY m.match_date DESC, bt.bull_name
+            """;
+        return queryList(sql, ownerId);
+    }
 
     /** Get live registration count and capacity for a match. */
     public static Map<String, Object> getMatchCapacity(String matchId) throws SQLException {
@@ -240,6 +276,23 @@ public class StatsDAO {
     public static boolean canRegisterBull(String matchId) throws SQLException {
         Map<String, Object> cap = getMatchCapacity(matchId);
         return ((Number) cap.get("bullSlotsRemaining")).intValue() > 0;
+    }
+
+    /** Check if registration is still open (deadline not passed). Returns true if no deadline set. */
+    public static boolean isRegistrationOpen(String matchId) throws SQLException {
+        String sql = "SELECT registration_deadline FROM `match` WHERE match_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(matchId));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    java.sql.Timestamp deadline = rs.getTimestamp("registration_deadline");
+                    if (deadline == null) return true; // no deadline = always open
+                    return new java.sql.Timestamp(System.currentTimeMillis()).before(deadline);
+                }
+            }
+        }
+        return false; // match not found
     }
 
     private static int countForMatch(Connection conn, String sql, String matchId) throws SQLException {
@@ -340,7 +393,7 @@ public class StatsDAO {
     /** All matches with location + organizer details (public read). */
     public static List<Map<String, Object>> getMatchesPublic(String statusFilter) throws SQLException {
         String sql = """
-            SELECT m.match_id, m.match_name, m.match_date, m.status,
+            SELECT m.match_id, m.match_name, m.match_date, m.registration_deadline, m.status,
                    m.player_limit, m.bull_limit,
                    l.district AS location, l.area,
                    o.organizer_name
@@ -443,5 +496,267 @@ public class StatsDAO {
             row.put(md.getColumnLabel(i), rs.getObject(i));
         }
         return row;
+    }
+
+    // ───────────── DASHBOARD — ROLE-SPECIFIC STATS ─────────────
+
+    /** Player leaderboard rank (1-based). Returns 0 if not ranked. */
+    public static int getPlayerLeaderboardRank(String playerId) throws SQLException {
+        String sql = """
+            SELECT rank_pos FROM (
+                SELECT p.player_id,
+                       RANK() OVER (ORDER BY (COALESCE(SUM(pmh.bull_caught),0) - COALESCE(SUM(pmh.penalties),0)) DESC) AS rank_pos
+                FROM player p
+                JOIN player_match_history pmh ON p.player_id = pmh.player_id AND pmh.status = 'approved'
+                GROUP BY p.player_id
+            ) ranked WHERE player_id = ?
+            """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(playerId));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("rank_pos") : 0;
+            }
+        }
+    }
+
+    /** Count of spot prizes won by a player. */
+    public static int getPlayerSpotPrizesWon(String playerId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM spot_prize_award WHERE player_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(playerId));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /** Aggregate player career numbers for dashboard. */
+    public static Map<String, Object> getPlayerCareerSummary(String playerId) throws SQLException {
+        String sql = """
+            SELECT COALESCE(SUM(bull_caught), 0) AS total_caught,
+                   COALESCE(SUM(penalties), 0) AS total_penalties,
+                   COUNT(*) AS total_rounds,
+                   COUNT(DISTINCT match_id) AS matches_played
+            FROM player_match_history
+            WHERE player_id = ? AND status = 'approved'
+            """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(playerId));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rowToMap(rs);
+            }
+        }
+        Map<String, Object> empty = new LinkedHashMap<>();
+        empty.put("total_caught", 0); empty.put("total_penalties", 0);
+        empty.put("total_rounds", 0); empty.put("matches_played", 0);
+        return empty;
+    }
+
+    /** Last N match results for a player. */
+    public static List<Map<String, Object>> getPlayerRecentMatches(String playerId, int limit) throws SQLException {
+        String sql = """
+            SELECT m.match_id, m.match_name, m.match_date, m.status AS match_status,
+                   l.district AS location,
+                   pmh.bull_caught, pmh.penalties,
+                   (COALESCE(pmh.bull_caught,0) - COALESCE(pmh.penalties,0)) AS net_score,
+                   rt.round_name
+            FROM player_match_history pmh
+            JOIN `match` m ON pmh.match_id = m.match_id
+            JOIN location l ON m.location_id = l.location_id
+            JOIN round_type rt ON pmh.round_type_id = rt.round_type_id
+            WHERE pmh.player_id = ? AND pmh.status = 'approved'
+            ORDER BY m.match_date DESC, rt.round_type_id DESC
+            LIMIT ?
+            """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(playerId));
+            ps.setInt(2, limit);
+            return resultSetToList(ps.executeQuery());
+        }
+    }
+
+    /** Per-match aggregated net scores for a player (for bar chart). */
+    public static List<Map<String, Object>> getPlayerMatchScores(String playerId) throws SQLException {
+        String sql = """
+            SELECT m.match_id, m.match_name,
+                   COALESCE(SUM(pmh.bull_caught),0) AS total_caught,
+                   COALESCE(SUM(pmh.penalties),0) AS total_penalties,
+                   COALESCE(SUM(pmh.bull_caught),0) - COALESCE(SUM(pmh.penalties),0) AS net_score
+            FROM player_match_history pmh
+            JOIN `match` m ON pmh.match_id = m.match_id
+            WHERE pmh.player_id = ? AND pmh.status = 'approved'
+            GROUP BY m.match_id
+            ORDER BY m.match_date
+            """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(playerId));
+            return resultSetToList(ps.executeQuery());
+        }
+    }
+
+    /** Owner aggregate dashboard stats. */
+    public static Map<String, Object> getOwnerDashboardStats(String ownerId) throws SQLException {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            // Total bulls
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM bull_table WHERE owner_id = ?")) {
+                ps.setInt(1, Integer.parseInt(ownerId));
+                try (ResultSet rs = ps.executeQuery()) { rs.next(); stats.put("totalBulls", rs.getInt(1)); }
+            }
+            // Match appearances, wins, avg stats
+            String sql = """
+                SELECT COUNT(DISTINCT CONCAT(bmh.match_id,'-',bmh.bull_id)) AS match_appearances,
+                       COALESCE(SUM(bmh.winner), 0) AS total_wins,
+                       ROUND(AVG(bmh.difficulty), 1) AS avg_difficulty,
+                       ROUND(AVG(bmh.aggression), 1) AS avg_aggression,
+                       ROUND(AVG(bmh.play_area), 1) AS avg_play_area,
+                       COUNT(DISTINCT bmh.match_id) AS distinct_matches
+                FROM bull_match_history bmh
+                JOIN bull_table bt ON bmh.bull_id = bt.bull_id
+                WHERE bt.owner_id = ? AND bmh.status = 'approved'
+                """;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, Integer.parseInt(ownerId));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        stats.put("matchAppearances", rs.getInt("match_appearances"));
+                        stats.put("totalWins", rs.getInt("total_wins"));
+                        stats.put("avgDifficulty", rs.getObject("avg_difficulty"));
+                        stats.put("avgAggression", rs.getObject("avg_aggression"));
+                        stats.put("avgPlayArea", rs.getObject("avg_play_area"));
+                        stats.put("distinctMatches", rs.getInt("distinct_matches"));
+                    }
+                }
+            }
+            // Best bull by avg difficulty
+            String bestSql = """
+                SELECT bt.bull_id, bt.bull_name, ROUND(AVG(bmh.difficulty), 1) AS avg_diff
+                FROM bull_match_history bmh
+                JOIN bull_table bt ON bmh.bull_id = bt.bull_id
+                WHERE bt.owner_id = ? AND bmh.status = 'approved'
+                GROUP BY bt.bull_id
+                ORDER BY avg_diff DESC
+                LIMIT 1
+                """;
+            try (PreparedStatement ps = conn.prepareStatement(bestSql)) {
+                ps.setInt(1, Integer.parseInt(ownerId));
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        Map<String, Object> best = new LinkedHashMap<>();
+                        best.put("bull_id", rs.getInt("bull_id"));
+                        best.put("bull_name", rs.getString("bull_name"));
+                        best.put("avg_difficulty", rs.getObject("avg_diff"));
+                        stats.put("bestBull", best);
+                    }
+                }
+            }
+            // Spot prizes won by owner's bulls
+            String spotSql = "SELECT COUNT(*) FROM spot_prize_award spa JOIN bull_table bt ON spa.bull_id = bt.bull_id WHERE bt.owner_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(spotSql)) {
+                ps.setInt(1, Integer.parseInt(ownerId));
+                try (ResultSet rs = ps.executeQuery()) { rs.next(); stats.put("spotPrizesWon", rs.getInt(1)); }
+            }
+        }
+        return stats;
+    }
+
+    /** Recent bull match results for an owner's bulls. */
+    public static List<Map<String, Object>> getOwnerRecentBullMatches(String ownerId, int limit) throws SQLException {
+        String sql = """
+            SELECT m.match_name, m.match_date, bt.bull_name, bt.bull_id,
+                   bmh.aggression, bmh.difficulty, bmh.play_area, bmh.winner,
+                   p.player_name AS tamer, rt.round_name
+            FROM bull_match_history bmh
+            JOIN bull_table bt ON bmh.bull_id = bt.bull_id
+            JOIN `match` m ON bmh.match_id = m.match_id
+            JOIN player p ON bmh.player_id = p.player_id
+            JOIN round_type rt ON bmh.round_type_id = rt.round_type_id
+            WHERE bt.owner_id = ? AND bmh.status = 'approved'
+            ORDER BY m.match_date DESC, rt.round_type_id DESC
+            LIMIT ?
+            """;
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(ownerId));
+            ps.setInt(2, limit);
+            return resultSetToList(ps.executeQuery());
+        }
+    }
+
+    /** Match status breakdown: { Scheduled: n, Live: n, Completed: n }. */
+    public static Map<String, Integer> getMatchStatusBreakdown() throws SQLException {
+        Map<String, Integer> breakdown = new LinkedHashMap<>();
+        breakdown.put("Scheduled", 0);
+        breakdown.put("Live", 0);
+        breakdown.put("Completed", 0);
+        String sql = "SELECT status, COUNT(*) AS cnt FROM `match` GROUP BY status";
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                breakdown.put(rs.getString("status"), rs.getInt("cnt"));
+            }
+        }
+        return breakdown;
+    }
+
+    /** User breakdown by role. */
+    public static Map<String, Integer> getUserBreakdownByRole() throws SQLException {
+        Map<String, Integer> breakdown = new LinkedHashMap<>();
+        String sql = "SELECT role, COUNT(*) AS cnt FROM app_user GROUP BY role ORDER BY cnt DESC";
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                breakdown.put(rs.getString("role"), rs.getInt("cnt"));
+            }
+        }
+        return breakdown;
+    }
+
+    /** Count pending (status='registered') registrations. */
+    public static Map<String, Integer> getPendingRegistrations() throws SQLException {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM player_match_history WHERE status = 'registered'")) {
+                rs.next(); counts.put("pendingPlayers", rs.getInt(1));
+            }
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM bull_match_history WHERE status = 'registered'")) {
+                rs.next(); counts.put("pendingBulls", rs.getInt(1));
+            }
+        }
+        counts.put("total", counts.get("pendingPlayers") + counts.get("pendingBulls"));
+        return counts;
+    }
+
+    /** Live matches list. */
+    public static List<Map<String, Object>> getLiveMatches() throws SQLException {
+        return getMatchesPublic("Live");
+    }
+
+    /** Scheduled matches list with capacity info. */
+    public static List<Map<String, Object>> getScheduledMatchesWithCapacity() throws SQLException {
+        List<Map<String, Object>> matches = getMatchesPublic("Scheduled");
+        for (Map<String, Object> m : matches) {
+            String matchId = String.valueOf(m.get("match_id"));
+            m.put("capacity", getMatchCapacity(matchId));
+        }
+        return matches;
+    }
+
+    /** Total users count. */
+    public static int getTotalUsers() throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM app_user")) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
     }
 }

@@ -1,0 +1,564 @@
+{{page-title "Match Control v3"}}
+
+{{! SOS BANNER }}
+{{#if this.sosMessage}}
+  <div
+    class="mcv3-sos-banner d-flex align-items-center justify-content-between px-4 py-2"
+  >
+    <span class="fw-bold">{{this.sosMessage}}</span>
+    <button
+      class="btn btn-sm btn-outline-light"
+      type="button"
+      {{on "click" this.dismissSOS}}
+    >DISMISS</button>
+  </div>
+{{/if}}
+
+{{! STATUS TOAST }}
+{{#if this.statusMessage}}
+  <div
+    class="mcv3-toast mcv3-toast-{{this.statusType}}"
+  >{{this.statusMessage}}</div>
+{{/if}}
+
+<div class="mcv3-root">
+  {{! ══════════ GLOBAL HEADER ══════════ }}
+  <div class="mcv3-header d-flex align-items-center px-3">
+    {{! Back button }}
+    <LinkTo @route="dashboard" class="mcv3-back-link me-3">
+      <i class="bi bi-arrow-left"></i>
+      Dashboard
+    </LinkTo>
+
+    {{! Left: Match + Round selector }}
+    <div class="d-flex align-items-center gap-2">
+      <select
+        class="form-select form-select-sm mcv3-select"
+        {{on "change" this.selectMatch}}
+      >
+        <option value="">Select Match</option>
+        {{#each this.model.matches as |m|}}
+          <option
+            value="{{m.match_id}}"
+            selected={{eq m.match_id this.matchId}}
+          >
+            #{{m.match_id}}
+            —
+            {{m.location_name}}
+            ({{m.status}})
+          </option>
+        {{/each}}
+      </select>
+
+      {{#if this.matchId}}
+        <select
+          class="form-select form-select-sm mcv3-select"
+          {{on "change" this.setRound}}
+        >
+          {{#each this.roundTypes as |r|}}
+            <option
+              value="{{r.round_type_id}}"
+              selected={{eq r.round_type_id this.currentRoundId}}
+            >
+              {{r.round_name}}
+            </option>
+          {{/each}}
+        </select>
+      {{/if}}
+    </div>
+
+    {{! Center: Round controls }}
+    <div class="d-flex align-items-center gap-2 mx-auto">
+      {{#if this.matchId}}
+        <button
+          class="btn btn-sm mcv3-btn-begin
+            {{if (eq this.roundStatus 'running') 'disabled'}}"
+          type="button"
+          {{on "click" this.beginRound}}
+          disabled={{not-eq this.roundStatus "idle"}}
+        >
+          <i class="bi bi-play-fill"></i>
+          Begin Round
+        </button>
+        <button
+          class="btn btn-sm mcv3-btn-pause"
+          type="button"
+          {{on "click" this.pauseRound}}
+          disabled={{not-eq this.roundStatus "running"}}
+        >
+          <i class="bi bi-pause-fill"></i>
+          Pause
+        </button>
+        <button
+          class="btn btn-sm mcv3-btn-end"
+          type="button"
+          {{on "click" this.endRound}}
+          disabled={{eq this.roundStatus "idle"}}
+        >
+          <i class="bi bi-stop-fill"></i>
+          End Round
+        </button>
+      {{/if}}
+    </div>
+
+    {{! Right: Clock + Status }}
+    <div class="d-flex align-items-center gap-3">
+      {{#if this.matchId}}
+        <span
+          class="mcv3-clock-badge
+            {{if (eq this.roundStatus 'running') 'mcv3-clock-live'}}"
+        >
+          <i class="bi bi-stopwatch"></i>
+          {{this.matchClockFormatted}}
+        </span>
+        <span
+          class="mcv3-mode-badge
+            {{if this.commandMode 'mcv3-mode-cmd' 'mcv3-mode-type'}}"
+        >
+          {{if this.commandMode "KEYS" "TYPE"}}
+        </span>
+      {{/if}}
+    </div>
+  </div>
+
+  {{! ══════════ LOADING ══════════ }}
+  {{#if this.isLoading}}
+    <div
+      class="d-flex justify-content-center align-items-center"
+      style="height:80vh"
+    >
+      <div class="spinner-border mcv3-spinner" role="status"><span
+          class="visually-hidden"
+        >Loading…</span></div>
+    </div>
+  {{else if (not this.matchId)}}
+    <div
+      class="d-flex flex-column justify-content-center align-items-center mcv3-empty"
+    >
+      <i class="bi bi-controller" style="font-size:4rem;opacity:.3"></i>
+      <p class="mt-3 text-muted">Select a match to begin scoring</p>
+    </div>
+  {{else}}
+    {{! ══════════ 3-COLUMN LAYOUT ══════════ }}
+    <div class="mcv3-body">
+
+      {{! ╔═══ LEFT: TAMER MANAGEMENT ═══╗ }}
+      <div class="mcv3-col-left">
+        <div class="mcv3-panel">
+          <div
+            class="mcv3-panel-header d-flex justify-content-between align-items-center"
+          >
+            <span><i class="bi bi-people-fill"></i>
+              Tamers —
+              {{this.currentBatchName}}</span>
+            <span class="badge bg-secondary">{{this.batchPlayers.length}}</span>
+          </div>
+          <div class="mcv3-player-list">
+            {{#each this.batchPlayers as |p|}}
+              <div
+                class="mcv3-player-row d-flex align-items-center gap-2
+                  {{if (eq p.is_disqualified true) 'mcv3-player-dq'}}"
+              >
+                <span
+                  class="mcv3-dot
+                    {{if (eq p.is_disqualified true) 'bg-danger' 'bg-success'}}"
+                ></span>
+                <span class="mcv3-player-name flex-grow-1">
+                  #{{p.player_id}}
+                  —
+                  {{p.player_name}}
+                  {{#if p.bull_caught}}<span
+                      class="text-muted small"
+                    >({{p.bull_caught}})</span>{{/if}}
+                </span>
+                <button
+                  class="btn btn-sm mcv3-btn-dq"
+                  title="Disqualify [D]"
+                  type="button"
+                  {{on "click" (fn this.disqualifyPlayer p.player_id)}}
+                >
+                  <i class="bi bi-x-circle"></i>
+                </button>
+                <button
+                  class="btn btn-sm mcv3-btn-sos"
+                  title="SOS — Medical"
+                  type="button"
+                  {{on "click" (fn this.triggerSOS p.player_id p.player_name)}}
+                >
+                  SOS
+                </button>
+              </div>
+            {{else}}
+              <p class="text-muted p-3 mb-0">No players in this batch</p>
+            {{/each}}
+          </div>
+          <div class="mcv3-panel-footer d-flex gap-2">
+            <button
+              class="btn btn-sm mcv3-btn-secondary flex-grow-1"
+              type="button"
+              {{on "click" this.nextBatch}}
+            >
+              Bring Next Batch &rarr;
+            </button>
+            <span class="badge bg-dark align-self-center">
+              {{this.currentBatchIndex}}/{{this.totalBatches}}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {{! ╔═══ CENTER: ACTIVE ZONE ═══╗ }}
+      <div class="mcv3-col-center">
+        <div class="mcv3-panel mcv3-active-zone">
+
+          {{! Bull Header }}
+          <div
+            class="mcv3-bull-header d-flex align-items-center justify-content-between px-3 py-2"
+          >
+            <div>
+              {{#if this.activeBull}}
+                <span class="mcv3-bull-id">Bull #{{this.activeBull.bull_id}}</span>
+                {{#if this.activeBull.bull_name}}
+                  <span
+                    class="mcv3-bull-name ms-2"
+                  >{{this.activeBull.bull_name}}</span>
+                {{/if}}
+                {{#if this.activeBull.owner_name}}
+                  <span
+                    class="badge mcv3-badge-owner ms-2"
+                  >{{this.activeBull.owner_name}}</span>
+                {{/if}}
+              {{else}}
+                <span class="text-muted">No bull selected</span>
+              {{/if}}
+            </div>
+            <div>
+              <button
+                class="btn btn-sm mcv3-btn-ai-detect
+                  {{if this.aiDetecting 'disabled'}}"
+                type="button"
+                id="mcv3-btn-ai"
+                {{on "click" this.applySuggestion}}
+              >
+                {{#if this.aiDetecting}}
+                  <span
+                    class="spinner-border spinner-border-sm me-1"
+                    role="status"
+                  ></span>
+                  Detecting…
+                {{else}}
+                  <i class="bi bi-eye"></i>
+                  AI Detect [A]
+                {{/if}}
+              </button>
+
+              {{#if this.suggestedPlayer.ai_source}}
+                <span class="badge mcv3-badge-ai ms-2">
+                  #{{this.suggestedPlayer.player_id}}
+                  —
+                  {{this.suggestedPlayer.player_name}}
+                  <small>({{mult
+                      this.suggestedPlayer.ai_confidence
+                      100
+                    }}%)</small>
+                </span>
+              {{/if}}
+
+              {{#if this.aiDetections.length}}
+                <span class="mcv3-ai-results ms-2">
+                  {{#each this.aiDetections as |det|}}
+                    <span class="badge bg-secondary me-1">
+                      #{{det.player_id}}
+                      <small>({{mult det.confidence 100}}%)</small>
+                    </span>
+                  {{/each}}
+                </span>
+              {{/if}}
+
+              {{#if this.aiError}}
+                <span class="text-danger ms-2 small">{{this.aiError}}</span>
+              {{/if}}
+            </div>
+          </div>
+
+          {{! Timer }}
+          <div class="mcv3-timer-zone text-center py-4">
+            <div class="mcv3-timer {{if this.isHolding 'mcv3-timer-active'}}">
+              {{this.holdTimerFormatted}}
+            </div>
+            <div class="mcv3-timer-hint mt-2">
+              {{#if this.isHolding}}
+                <span class="mcv3-pulse">HOLDING — Release to stop</span>
+              {{else if (gt this.holdTimerMs 0)}}
+                <span>Hold recorded: {{this.holdTimerFormatted}}s</span>
+                <button
+                  class="btn btn-sm btn-link p-0 ms-2"
+                  type="button"
+                  {{on "click" this.newHold}}
+                >Reset</button>
+              {{else}}
+                <span>Press &amp; hold <kbd>SPACE</kbd> to time</span>
+              {{/if}}
+            </div>
+          </div>
+
+          {{! Player ID input with autocomplete }}
+          <div class="mcv3-input-row d-flex align-items-center gap-2 px-3 pb-2">
+            <label class="fw-bold text-nowrap">Player ID:</label>
+            <div class="mcv3-autocomplete-wrap flex-grow-1">
+              <input
+                type="text"
+                class="form-control mcv3-player-input"
+                placeholder="Enter player ID…"
+                value={{this.playerIdInput}}
+                {{on "input" this.setPlayerInput}}
+                {{on "keydown" this.onPlayerInputKeydown}}
+                {{on "focus" this.onPlayerInputFocus}}
+                {{on "blur" this.onPlayerInputBlur}}
+              />
+              {{#if this.showSuggestions}}
+                {{#if this.playerSuggestions.length}}
+                  <ul class="mcv3-suggestions">
+                    {{#each this.playerSuggestions as |p idx|}}
+                      <li
+                        class="mcv3-suggestion-item
+                          {{if
+                            (eq idx this.suggestionIndex)
+                            'mcv3-suggestion-active'
+                          }}"
+                        {{on "mousedown" (fn this.selectSuggestion p)}}
+                      >
+                        <span class="fw-bold">{{p.player_name}}</span>
+                        <span class="text-muted ms-1">(#{{p.player_id}})</span>
+                      </li>
+                    {{/each}}
+                  </ul>
+                {{/if}}
+              {{/if}}
+            </div>
+          </div>
+
+          {{! Quality tags }}
+          <div class="mcv3-tags d-flex gap-2 px-3 pb-3">
+            <button
+              class="btn btn-sm mcv3-tag
+                {{if this.tagAggressive 'mcv3-tag-active'}}"
+              type="button"
+              {{on "click" (fn this.toggleTag "aggressive")}}
+            >
+              <i class="bi bi-fire"></i>
+              Aggressive
+            </button>
+            <button
+              class="btn btn-sm mcv3-tag {{if this.tagFast 'mcv3-tag-active'}}"
+              type="button"
+              {{on "click" (fn this.toggleTag "fast")}}
+            >
+              <i class="bi bi-lightning-fill"></i>
+              Fast
+            </button>
+            <button
+              class="btn btn-sm mcv3-tag
+                {{if this.tagDefensive 'mcv3-tag-active'}}"
+              type="button"
+              {{on "click" (fn this.toggleTag "defensive")}}
+            >
+              <i class="bi bi-shield-fill"></i>
+              Defensive
+            </button>
+          </div>
+
+          {{! Action bar }}
+          <div class="mcv3-action-bar d-flex gap-2 px-3 pb-3">
+            <button
+              class="btn mcv3-btn-submit flex-grow-1"
+              id="mcv3-btn-submit"
+              type="button"
+              {{on "click" this.submitScore}}
+              disabled={{this.isSaving}}
+            >
+              {{#if this.isSaving}}
+                <span class="spinner-border spinner-border-sm"></span>
+              {{else}}
+                <i class="bi bi-check-circle-fill"></i>
+                Submit
+                <kbd>ENTER</kbd>
+              {{/if}}
+            </button>
+            <button
+              class="btn mcv3-btn-next"
+              id="mcv3-btn-next"
+              type="button"
+              {{on "click" this.nextBull}}
+            >
+              Next Bull
+              <kbd>&rarr;</kbd>
+            </button>
+            {{#if this.activeBull}}
+              <button
+                class="btn mcv3-btn-dq-bull"
+                type="button"
+                {{on "click" (fn this.disqualifyBull this.activeBull.bull_id)}}
+              >
+                <i class="bi bi-x-octagon-fill"></i>
+                DQ Bull
+              </button>
+            {{/if}}
+            <button
+              class="btn mcv3-btn-undo"
+              id="mcv3-btn-undo"
+              type="button"
+              {{on "click" this.undo}}
+              disabled={{not this.canUndo}}
+              title="Undo (Ctrl+Z)"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+              Undo
+            </button>
+          </div>
+
+        </div>
+
+        {{! ══════ DISQUALIFIED LIST ══════ }}
+        {{#if
+          (or this.disqualifiedPlayers.length this.disqualifiedBulls.length)
+        }}
+          <div class="mcv3-panel mcv3-dq-section mt-3">
+            <div class="mcv3-panel-header mcv3-dq-header">
+              <i class="bi bi-slash-circle"></i>
+              Disqualified
+            </div>
+
+            {{#if this.disqualifiedPlayers.length}}
+              <div class="mcv3-dq-group px-3 pt-2 pb-1">
+                <div class="mcv3-dq-label mb-1">Players</div>
+                {{#each this.disqualifiedPlayers as |p|}}
+                  <div class="mcv3-dq-row d-flex align-items-center gap-2">
+                    <i class="bi bi-person-fill text-danger"></i>
+                    <span class="flex-grow-1">#{{p.player_id}}
+                      —
+                      {{p.player_name}}</span>
+                    <button
+                      class="btn btn-sm mcv3-btn-reinstate"
+                      type="button"
+                      {{on "click" (fn this.reinstatePlayer p.player_id)}}
+                    >
+                      <i class="bi bi-arrow-repeat"></i>
+                      Reinstate
+                    </button>
+                  </div>
+                {{/each}}
+              </div>
+            {{/if}}
+
+            {{#if this.disqualifiedBulls.length}}
+              <div class="mcv3-dq-group px-3 pt-2 pb-2">
+                <div class="mcv3-dq-label mb-1">Bulls</div>
+                {{#each this.disqualifiedBulls as |b|}}
+                  <div class="mcv3-dq-row d-flex align-items-center gap-2">
+                    <i class="bi bi-emoji-angry-fill text-danger"></i>
+                    <span class="flex-grow-1">
+                      #{{b.bull_id}}
+                      {{#if b.bull_name}} — {{b.bull_name}}{{/if}}
+                    </span>
+                    <button
+                      class="btn btn-sm mcv3-btn-reinstate"
+                      type="button"
+                      {{on "click" (fn this.reinstateBull b.bull_id)}}
+                    >
+                      <i class="bi bi-arrow-repeat"></i>
+                      Reinstate
+                    </button>
+                  </div>
+                {{/each}}
+              </div>
+            {{/if}}
+          </div>
+        {{/if}}
+
+      </div>
+
+      {{! ╔═══ RIGHT: STATS & LOGS ═══╗ }}
+      <div class="mcv3-col-right">
+        {{! Progress }}
+        <div class="mcv3-panel mcv3-panel-sm mb-3">
+          <div class="mcv3-panel-header"><i class="bi bi-bar-chart-fill"></i>
+            Progress</div>
+          <div class="text-center py-2">
+            <div class="mcv3-big-stat">{{this.bullsRemaining}}</div>
+            <div class="small text-muted">bulls remaining of
+              {{this.bullsTotal}}</div>
+            <div class="progress mcv3-progress mt-2">
+              <div
+                class="progress-bar mcv3-progress-bar"
+                role="progressbar"
+                style="width:{{this.progressPercent}}%"
+                aria-valuenow="{{this.progressPercent}}"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                {{this.progressPercent}}%
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{! Next Bulls }}
+        <div class="mcv3-panel mcv3-panel-sm mb-3">
+          <div class="mcv3-panel-header"><i class="bi bi-list-ol"></i>
+            Next Up</div>
+          <div class="mcv3-bull-queue">
+            {{#each this.nextBulls as |b|}}
+              <div
+                class="mcv3-queue-item d-flex align-items-center gap-2 px-2 py-1"
+              >
+                <span class="badge bg-dark">#{{b.release_order}}</span>
+                <span>Bull #{{b.bull_id}}</span>
+                {{#if b.bull_name}}<span
+                    class="text-muted small"
+                  >{{b.bull_name}}</span>{{/if}}
+              </div>
+            {{else}}
+              <p class="text-muted p-2 mb-0 small">No more bulls</p>
+            {{/each}}
+          </div>
+        </div>
+
+        {{! Top 3 Leaderboard }}
+        <div class="mcv3-panel mcv3-panel-sm">
+          <div class="mcv3-panel-header"><i class="bi bi-trophy-fill"></i>
+            Top 3</div>
+          <div class="mcv3-leaderboard">
+            {{#each this.topPlayers as |p index|}}
+              <div
+                class="mcv3-lb-row d-flex align-items-center gap-2 px-2 py-1"
+              >
+                <span class="mcv3-lb-rank">{{add index 1}}</span>
+                <span class="flex-grow-1">#{{p.player_id}}
+                  —
+                  {{p.player_name}}</span>
+                <span class="fw-bold">{{p.total_score}}</span>
+              </div>
+            {{else}}
+              <p class="text-muted p-2 mb-0 small">No scores yet</p>
+            {{/each}}
+          </div>
+        </div>
+
+        {{! Shortcut legend }}
+        <div class="mcv3-legend mt-3 px-2">
+          <div class="small text-muted fw-bold mb-1">Shortcuts</div>
+          <div class="d-flex flex-wrap gap-1">
+            <span class="mcv3-key-hint"><kbd>SPACE</kbd> Hold</span>
+            <span class="mcv3-key-hint"><kbd>ENTER</kbd> Submit</span>
+            <span class="mcv3-key-hint"><kbd>&rarr;</kbd> Next Bull</span>
+            <span class="mcv3-key-hint"><kbd>A</kbd> AI Suggest</span>
+            <span class="mcv3-key-hint"><kbd>D</kbd> Disqualify</span>
+            <span class="mcv3-key-hint"><kbd>Ctrl+Z</kbd> Undo</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  {{/if}}
+</div>

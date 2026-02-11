@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class PrizesRoute extends Route {
   @service auth;
@@ -17,7 +18,7 @@ export default class PrizesRoute extends Route {
 
   async model() {
     try {
-      const data = await this.auth.apiGet('/tables/prize');
+      const data = await this.auth.apiGet(PRIZES.LIST);
       return data.rows || [];
     } catch {
       return [];

@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { SCORES, MATCHES, PUBLIC, SPOT_PRIZES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MatchControlController extends Controller {
   @service auth;
@@ -19,6 +20,12 @@ export default class MatchControlController extends Controller {
   @tracked newSpotPrizeId = '';
   @tracked newSpotPlayerId = '';
   @tracked newSpotBullId = '';
+
+  // Filters
+  @tracked filterRound = '';
+  @tracked filterBatch = '';
+  @tracked filterPlayer = '';
+
   _timerStart = null;
   _timerInterval = null;
 
@@ -53,6 +60,69 @@ export default class MatchControlController extends Controller {
     return (this.model?.matches || []).filter((m) => m.status === 'Completed').length;
   }
 
+  // === Filter options (unique values from scoring data) ===
+
+  get roundOptions() {
+    const scores = this.scoringData?.playerScores || [];
+    const seen = new Set();
+    return scores.reduce((acc, p) => {
+      const key = String(p.round_type_id);
+      if (!seen.has(key)) { seen.add(key); acc.push({ id: key, name: p.round_name }); }
+      return acc;
+    }, []);
+  }
+
+  get batchOptions() {
+    const scores = this.scoringData?.playerScores || [];
+    const seen = new Set();
+    return scores.reduce((acc, p) => {
+      const key = String(p.batch_id);
+      if (!seen.has(key)) { seen.add(key); acc.push({ id: key, name: p.batch_name }); }
+      return acc;
+    }, []);
+  }
+
+  get playerOptions() {
+    return this.scoringData?.approvedPlayers || [];
+  }
+
+  get bullRoundOptions() {
+    const scores = this.scoringData?.bullScores || [];
+    const seen = new Set();
+    return scores.reduce((acc, b) => {
+      const key = String(b.round_type_id);
+      if (!seen.has(key)) { seen.add(key); acc.push({ id: key, name: b.round_name }); }
+      return acc;
+    }, []);
+  }
+
+  // === Filtered lists ===
+
+  get filteredPlayerScores() {
+    let list = this.scoringData?.playerScores || [];
+    if (this.filterRound) list = list.filter(p => String(p.round_type_id) === this.filterRound);
+    if (this.filterBatch) list = list.filter(p => String(p.batch_id) === this.filterBatch);
+    if (this.filterPlayer) list = list.filter(p => String(p.player_id) === this.filterPlayer);
+    return list;
+  }
+
+  get filteredBullScores() {
+    let list = this.scoringData?.bullScores || [];
+    if (this.filterRound) list = list.filter(b => String(b.round_type_id) === this.filterRound);
+    return list;
+  }
+
+  get filteredInteractions() {
+    let list = this.scoringData?.interactions || [];
+    if (this.filterRound) list = list.filter(i => String(i.round_type_id) === this.filterRound);
+    if (this.filterPlayer) list = list.filter(i => String(i.player_id) === this.filterPlayer);
+    return list;
+  }
+
+  get activeFilterCount() {
+    return (this.filterRound ? 1 : 0) + (this.filterBatch ? 1 : 0) + (this.filterPlayer ? 1 : 0);
+  }
+
   get matchSpotPrizes() {
     if (!this.selectedMatchId) return [];
     return (this.model?.spotPrizes || []).filter(
@@ -84,6 +154,7 @@ export default class MatchControlController extends Controller {
       return;
     }
     this.activeTab = 'players';
+    this.clearFilters();
     await this.fetchScores();
     this.fetchSpotAwards();
   }
@@ -92,16 +163,22 @@ export default class MatchControlController extends Controller {
   async selectMatchDirect(matchId) {
     this.selectedMatchId = String(matchId);
     this.activeTab = 'players';
+    this.clearFilters();
     await this.fetchScores();
     this.fetchSpotAwards();
   }
+
+  @action setFilterRound(event) { this.filterRound = event.target.value; }
+  @action setFilterBatch(event) { this.filterBatch = event.target.value; }
+  @action setFilterPlayer(event) { this.filterPlayer = event.target.value; }
+  @action clearFilters() { this.filterRound = ''; this.filterBatch = ''; this.filterPlayer = ''; }
 
   async fetchScores() {
     if (!this.selectedMatchId) return;
     this.isLoading = true;
     try {
       this.scoringData = await this.auth.apiGet(
-        `/scores/${this.selectedMatchId}`,
+        SCORES.GET(this.selectedMatchId),
       );
     } catch (e) {
       this.showMessage('Failed to load scoring data', 'danger');
@@ -113,7 +190,7 @@ export default class MatchControlController extends Controller {
   @action
   async updateMatchStatus(newStatus) {
     try {
-      await this.auth.apiPut(`/matches/${this.selectedMatchId}`, {
+      await this.auth.apiPut(MATCHES.UPDATE(this.selectedMatchId), {
         status: newStatus,
       });
       const match = this.model.matches.find(
@@ -142,7 +219,7 @@ export default class MatchControlController extends Controller {
           const newPen = parseInt(penInput.value, 10) || 0;
           if (newBc !== p.bull_caught || newPen !== p.penalties) {
             promises.push(
-              this.auth.apiPost(`/scores/${this.selectedMatchId}/player`, {
+              this.auth.apiPost(SCORES.PLAYER(this.selectedMatchId), {
                 player_id: p.player_id,
                 round_type_id: p.round_type_id,
                 bull_caught: bcInput.value,
@@ -166,7 +243,7 @@ export default class MatchControlController extends Controller {
           const newDiff = parseInt(diffInput.value, 10) || 0;
           if (newAgg !== b.aggression || newPa !== b.play_area || newDiff !== b.difficulty) {
             promises.push(
-              this.auth.apiPost(`/scores/${this.selectedMatchId}/bull`, {
+              this.auth.apiPost(SCORES.BULL(this.selectedMatchId), {
                 bull_id: b.bull_id,
                 round_type_id: b.round_type_id,
                 aggression: aggInput.value,
@@ -246,7 +323,7 @@ export default class MatchControlController extends Controller {
     };
     try {
       await this.auth.apiPost(
-        `/scores/${this.selectedMatchId}/interaction`,
+        SCORES.INTERACTION(this.selectedMatchId),
         payload,
       );
       form.reset();
@@ -264,7 +341,7 @@ export default class MatchControlController extends Controller {
     try {
       const base = this.auth.apiBase;
       const resp = await fetch(
-        `${base}/public/matches/${this.selectedMatchId}/spot-prizes`
+        `${base}${PUBLIC.MATCH_SPOTS(this.selectedMatchId)}`
       );
       this.spotAwards = await resp.json();
     } catch {
@@ -289,7 +366,7 @@ export default class MatchControlController extends Controller {
         spot_prize_id: this.newSpotPrizeId,
       };
       if (this.newSpotBullId) body.bull_id = this.newSpotBullId;
-      await this.auth.apiPost('/tables/spot_prize_award', body);
+      await this.auth.apiPost(SPOT_PRIZES.AWARD_CREATE, body);
       this.showMessage('Spot prize awarded!');
       this.newSpotPrizeId = '';
       this.newSpotPlayerId = '';
@@ -304,11 +381,77 @@ export default class MatchControlController extends Controller {
   async deleteSpotAward(awardId) {
     if (!confirm('Remove this spot prize award?')) return;
     try {
-      await this.auth.apiDelete(`/tables/spot_prize_award?spot_prize_award_id=${awardId}`);
+      await this.auth.apiDelete(SPOT_PRIZES.AWARD_DELETE(awardId));
       this.showMessage('Award removed');
       await this.fetchSpotAwards();
     } catch (e) {
       this.showMessage(e.message || 'Failed to remove award', 'danger');
+    }
+  }
+
+  /* ═══════ DISQUALIFICATION ═══════ */
+
+  @action
+  async disqualifyPlayer(playerId) {
+    if (!confirm('Disqualify this player from the entire match? Their scores in all rounds will be excluded from rankings.')) return;
+    try {
+      await this.auth.apiPost(SCORES.DISQUALIFY(this.selectedMatchId), {
+        type: 'player',
+        player_id: playerId,
+        disqualify: true,
+      });
+      this.showMessage('Player disqualified from match');
+      await this.fetchScores();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to disqualify player', 'danger');
+    }
+  }
+
+  @action
+  async reinstatePlayer(playerId) {
+    if (!confirm('Reinstate this player? They will be allowed to participate again in this match.')) return;
+    try {
+      await this.auth.apiPost(SCORES.DISQUALIFY(this.selectedMatchId), {
+        type: 'player',
+        player_id: playerId,
+        disqualify: false,
+      });
+      this.showMessage('Player reinstated');
+      await this.fetchScores();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to reinstate player', 'danger');
+    }
+  }
+
+  @action
+  async disqualifyBull(bullId) {
+    if (!confirm('Disqualify this bull from the entire match? Its scores in all rounds will be excluded from rankings.')) return;
+    try {
+      await this.auth.apiPost(SCORES.DISQUALIFY(this.selectedMatchId), {
+        type: 'bull',
+        bull_id: bullId,
+        disqualify: true,
+      });
+      this.showMessage('Bull disqualified from match');
+      await this.fetchScores();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to disqualify bull', 'danger');
+    }
+  }
+
+  @action
+  async reinstateBull(bullId) {
+    if (!confirm('Reinstate this bull? It will be allowed to participate again in this match.')) return;
+    try {
+      await this.auth.apiPost(SCORES.DISQUALIFY(this.selectedMatchId), {
+        type: 'bull',
+        bull_id: bullId,
+        disqualify: false,
+      });
+      this.showMessage('Bull reinstated');
+      await this.fetchScores();
+    } catch (e) {
+      this.showMessage(e.message || 'Failed to reinstate bull', 'danger');
     }
   }
 }

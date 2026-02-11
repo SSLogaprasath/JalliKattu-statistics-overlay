@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { PLAYER } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MyHistoryRoute extends Route {
   @service auth;
@@ -13,9 +14,13 @@ export default class MyHistoryRoute extends Route {
 
   async model() {
     try {
-      return await this.auth.apiGet('/player/history');
+      const [history, registrations] = await Promise.all([
+        this.auth.apiGet(PLAYER.HISTORY),
+        this.auth.apiGet(PLAYER.REGISTRATIONS),
+      ]);
+      return { history, registrations };
     } catch (e) {
-      return { error: e.message, matches: [] };
+      return { history: [], registrations: [], error: e.message };
     }
   }
 }

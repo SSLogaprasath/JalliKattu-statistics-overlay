@@ -2,6 +2,7 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
+import { OWNER } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MyBullsController extends Controller {
   @service auth;
@@ -39,7 +40,7 @@ export default class MyBullsController extends Controller {
     this.message = null;
     this.isAddingBull = true;
     try {
-      const result = await this.auth.apiPost('/owner/bulls', {
+      const result = await this.auth.apiPost(OWNER.BULLS, {
         bull_name: this.newBullName.trim(),
         age: this.newBullAge,
         breed_id: this.newBreedId,
@@ -73,7 +74,7 @@ export default class MyBullsController extends Controller {
     this.message = null;
 
     try {
-      const result = await this.auth.apiPost('/owner/register-match', {
+      const result = await this.auth.apiPost(OWNER.REGISTER_MATCH, {
         bull_id: bullId,
         match_id: matchId,
       });

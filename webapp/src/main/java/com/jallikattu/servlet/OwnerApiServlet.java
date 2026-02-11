@@ -75,6 +75,8 @@ public class OwnerApiServlet extends BaseRestServlet {
                     sendJson(resp, matches);
                 }
 
+                case "registrations" -> sendJson(resp, StatsDAO.getOwnerBullRegistrations(ownerId));
+
                 default -> sendError(resp, "Unknown: " + seg0, 404);
             }
         } catch (Exception e) {
@@ -202,11 +204,9 @@ public class OwnerApiServlet extends BaseRestServlet {
                 return;
             }
 
-            // Default round_type_id=1 (Qualifying), batch_id=1
-            String sql = "INSERT INTO bull_match_history (match_id, bull_id, round_type_id, player_id, " +
-                         "aggression, play_area, difficulty, penalties, release_count, prize_id, winner, status) " +
-                         "VALUES (?, ?, 1, (SELECT MIN(player_id) FROM player), 0, 0, 0, 0, 0, " +
-                         "(SELECT MIN(prize_id) FROM prize), 0, 'registered')";
+            // Simplified: Bull PK is (match_id, bull_id), other fields filled during scoring
+            String sql = "INSERT INTO bull_match_history (match_id, bull_id, round_type_id, status) " +
+                         "VALUES (?, ?, 1, 'registered')";
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, Integer.parseInt(matchId));

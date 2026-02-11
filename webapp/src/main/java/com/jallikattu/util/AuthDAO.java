@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,19 +64,77 @@ public class AuthDAO {
     }
 
     /**
-     * Create a new user.
+     * Create a new user. For player/owner roles, also creates the linked entity record.
+     * @param extras optional role-specific fields: dob, aadhaar, phone (player); aadhaar (owner)
      */
-    public static void createUser(String username, String password, String fullName, String role) throws SQLException {
+    public static Map<String, Object> createUser(String username, String password, String fullName,
+                                                   String role, Map<String, String> extras) throws SQLException {
         String hash = hashPassword(password);
-        String sql = "INSERT INTO app_user (username, pass_hash, full_name, role) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setString(2, hash);
-            ps.setString(3, fullName);
-            ps.setString(4, role);
-            ps.executeUpdate();
+        Map<String, Object> result = new HashMap<>();
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 1. Insert app_user
+                String userSql = "INSERT INTO app_user (username, pass_hash, full_name, role) VALUES (?, ?, ?, ?)";
+                int userId;
+                try (PreparedStatement ps = conn.prepareStatement(userSql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                    ps.setString(1, username);
+                    ps.setString(2, hash);
+                    ps.setString(3, fullName);
+                    ps.setString(4, role);
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        keys.next();
+                        userId = keys.getInt(1);
+                    }
+                }
+                result.put("user_id", userId);
+
+                // 2. Role-specific entity creation
+                if ("player".equals(role) && extras != null) {
+                    int nextId;
+                    try (Statement st = conn.createStatement();
+                         ResultSet rs = st.executeQuery("SELECT COALESCE(MAX(player_id),0)+1 FROM player")) {
+                        rs.next();
+                        nextId = rs.getInt(1);
+                    }
+                    String pSql = "INSERT INTO player (player_id, player_name, DOB, Aadhaar, Phone_number) VALUES (?, ?, ?, ?, ?)";
+                    try (PreparedStatement ps = conn.prepareStatement(pSql)) {
+                        ps.setInt(1, nextId);
+                        ps.setString(2, fullName);
+                        ps.setString(3, extras.getOrDefault("dob", null));
+                        ps.setString(4, extras.getOrDefault("aadhaar", ""));
+                        ps.setString(5, extras.getOrDefault("phone", ""));
+                        ps.executeUpdate();
+                    }
+                    result.put("player_id", nextId);
+                } else if ("owner".equals(role) && extras != null) {
+                    int nextId;
+                    try (Statement st = conn.createStatement();
+                         ResultSet rs = st.executeQuery("SELECT COALESCE(MAX(owner_id),0)+1 FROM owner")) {
+                        rs.next();
+                        nextId = rs.getInt(1);
+                    }
+                    String oSql = "INSERT INTO owner (owner_id, name, Aadhaar) VALUES (?, ?, ?)";
+                    try (PreparedStatement ps = conn.prepareStatement(oSql)) {
+                        ps.setInt(1, nextId);
+                        ps.setString(2, fullName);
+                        ps.setString(3, extras.getOrDefault("aadhaar", ""));
+                        ps.executeUpdate();
+                    }
+                    result.put("owner_id", nextId);
+                }
+
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e instanceof SQLException ? (SQLException) e : new SQLException(e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
         }
+        return result;
     }
 
     /**

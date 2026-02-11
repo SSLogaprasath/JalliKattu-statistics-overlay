@@ -1,158 +1,900 @@
 {{page-title "Dashboard"}}
 
-{{!-- Welcome banner --}}
-<div class="card bg-dark text-white mb-4">
-  <div class="card-body d-flex align-items-center justify-content-between py-3">
+{{!-- ═══════════════════════════════════════════════════════
+     WELCOME BANNER  (all roles)
+     ═══════════════════════════════════════════════════════ --}}
+<div class="dash-welcome">
+  <div class="d-flex align-items-center justify-content-between position-relative" style="z-index:1">
     <div>
-      <h4 class="fw-bold mb-1">Welcome, {{this.auth.user.full_name}}</h4>
-      <p class="mb-0 opacity-75">Here's your overview for today</p>
+      <h4 class="fw-bold mb-1">Welcome back, {{this.auth.user.full_name}}!</h4>
+      <p class="mb-0 opacity-75">
+        {{#if this.isPlayer}}Here's your career overview{{/if}}
+        {{#if this.isOwner}}Your bulls are performing great{{/if}}
+        {{#if this.isScorer}}Ready to score some matches{{/if}}
+        {{#if this.isRegistrar}}Manage registrations &amp; events{{/if}}
+        {{#if this.isAdmin}}System overview at a glance{{/if}}
+        {{#if this.isSuperAdmin}}Full system administration{{/if}}
+      </p>
     </div>
-    <span class="role-tag {{this.auth.role}}" style="font-size:0.8rem; padding:0.3rem 0.8rem;">{{this.auth.role}}</span>
+    <span class="role-tag {{this.auth.role}}" style="font-size:0.85rem; padding:0.4rem 1rem;">{{this.auth.role}}</span>
   </div>
 </div>
 
-{{!-- Stats row (admin/registrar/scorer only — players/owners don't need table counts) --}}
-{{#if this.auth.isAdmin}}
-<div class="row g-3 mb-4">
-  {{#each-in @model.stats as |key value|}}
-    <div class="col-6 col-md-3">
-      <div class="card stat-card {{if (eq key 'player') 'accent' (if (eq key 'bull_table') 'green' (if (eq key 'match_table') 'blue' 'saffron'))}}">
-        <div class="d-flex justify-content-between align-items-start">
+
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  PLAYER DASHBOARD                                     ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if this.isPlayer}}
+
+  {{!-- Stat Cards --}}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--accent)"><i class="bi bi-calendar-check-fill"></i></div>
+        <div class="dash-stat-value">{{this.matchesPlayed}}</div>
+        <div class="dash-stat-label">Matches Played</div>
+        <div class="dash-stat-bg" style="background:var(--accent)"></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--green)"><i class="bi bi-hand-thumbs-up-fill"></i></div>
+        <div class="dash-stat-value">{{this.totalCaught}}</div>
+        <div class="dash-stat-label">Bulls Caught</div>
+        <div class="dash-stat-bg" style="background:var(--green)"></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--saffron)"><i class="bi bi-trophy-fill"></i></div>
+        <div class="dash-stat-value">{{this.netScore}}</div>
+        <div class="dash-stat-label">Career Net Score</div>
+        <div class="dash-stat-bg" style="background:var(--saffron)"></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--blue)"><i class="bi bi-bar-chart-line-fill"></i></div>
+        <div class="dash-stat-value">#{{this.leaderboardRank}}</div>
+        <div class="dash-stat-label">Leaderboard Rank</div>
+        <div class="dash-stat-bg" style="background:var(--blue)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    {{!-- Left: Infographic ring + stats --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-accent me-1"></i> Performance</h6>
+        <div class="d-flex flex-column align-items-center mb-3">
+          <div class="circle-progress" style="--pct:{{this.catchRatePct}};--clr:var(--accent)">
+            <span class="circle-value">{{this.catchRate}}</span>
+          </div>
+          <div class="text-muted mt-2" style="font-size:0.75rem">AVG CATCHES / ROUND</div>
+        </div>
+        <div class="d-flex justify-content-around text-center">
           <div>
-            <div class="stat-value">{{value}}</div>
-            <div class="stat-label">{{key}}</div>
+            <div class="fw-bold text-success fs-5">{{this.totalCaught}}</div>
+            <div class="text-muted" style="font-size:0.7rem">CAUGHT</div>
+          </div>
+          <div>
+            <div class="fw-bold text-danger fs-5">{{this.totalPenalties}}</div>
+            <div class="text-muted" style="font-size:0.7rem">PENALTIES</div>
+          </div>
+          <div>
+            <div class="fw-bold text-warning fs-5">{{this.spotPrizesWon}}</div>
+            <div class="text-muted" style="font-size:0.7rem">SPOT PRIZES</div>
           </div>
         </div>
       </div>
     </div>
-  {{/each-in}}
-</div>
+
+    {{!-- Right: Score trend bar chart --}}
+    <div class="col-lg-8">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-graph-up text-success me-1"></i> Match-by-Match Score</h6>
+        {{#if this.matchScoreBars.length}}
+          <div class="mini-chart-container">
+            <div class="mini-chart">
+              {{#each this.matchScoreBars as |bar|}}
+                <div class="mini-chart-col">
+                  <div class="mini-chart-bar {{if bar.isPositive 'positive' 'negative'}}" style="height:{{bar.heightPct}}%">
+                    <span class="mini-chart-val">{{bar.net_score}}</span>
+                  </div>
+                  <div class="mini-chart-label" title="{{bar.match_name}}">{{bar.match_name}}</div>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{else}}
+          <div class="empty-state py-4"><i class="bi bi-graph-up d-block"></i>No match data yet</div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+
+  {{!-- Recent Matches Table --}}
+  <div class="card mb-4">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+      <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-1"></i> Recent Matches</h6>
+      <LinkTo @route="my-history" class="btn btn-sm btn-outline-accent">View All</LinkTo>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr>
+          <th>Match</th><th>Location</th><th>Round</th>
+          <th class="text-center">Caught</th><th class="text-center">Penalties</th>
+          <th class="text-center">Net</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          {{#each this.playerRecentMatches as |m|}}
+            <tr>
+              <td class="fw-semibold">{{m.match_name}}</td>
+              <td><i class="bi bi-geo-alt text-muted me-1"></i>{{m.location}}</td>
+              <td><span class="badge bg-light text-dark">{{m.round_name}}</span></td>
+              <td class="text-center fw-bold text-success">{{m.bull_caught}}</td>
+              <td class="text-center fw-bold text-danger">{{m.penalties}}</td>
+              <td class="text-center fw-bold">{{m.net_score}}</td>
+              <td><span class="status-badge {{m.match_status}}">{{m.match_status}}</span></td>
+            </tr>
+          {{else}}
+            <tr><td colspan="7" class="text-center text-muted py-3">No match records yet</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="my-matches" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-flag-fill"></i></div>
+          <h6>Join Match</h6><p>Register for upcoming events</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="my-profile" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-primary"><i class="bi bi-person-circle"></i></div>
+          <h6>My Profile</h6><p>View full career stats</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="leaderboard" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-warning"><i class="bi bi-bar-chart-fill"></i></div>
+          <h6>Leaderboard</h6><p>See top tamers &amp; bulls</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="scoreboard" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-danger"><i class="bi bi-broadcast"></i></div>
+          <h6>Live Scores</h6><p>Watch live results</p></div>
+      </LinkTo>
+    </div>
+  </div>
+
 {{/if}}
 
-{{!-- Role-specific actions --}}
-<div class="section-header">
-  <h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5>
-</div>
 
-<div class="row g-3 mb-4">
-  {{!-- Common --}}
-  <div class="col-6 col-md-4 col-lg-3">
-    <LinkTo @route="scoreboard" class="text-decoration-none">
-      <div class="card action-card">
-        <div class="action-icon bg-danger"><i class="bi bi-broadcast"></i></div>
-        <h6>Live Scoreboard</h6>
-        <p>View live match scores</p>
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  OWNER DASHBOARD                                      ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if this.isOwner}}
+
+  {{!-- Stat Cards --}}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:#20c997"><i class="bi bi-shield-fill"></i></div>
+        <div class="dash-stat-value">{{this.ownerTotalBulls}}</div>
+        <div class="dash-stat-label">My Bulls</div>
+        <div class="dash-stat-bg" style="background:#20c997"></div>
       </div>
-    </LinkTo>
-  </div>
-  <div class="col-6 col-md-4 col-lg-3">
-    <LinkTo @route="leaderboard" class="text-decoration-none">
-      <div class="card action-card">
-        <div class="action-icon bg-warning"><i class="bi bi-bar-chart-fill"></i></div>
-        <h6>Leaderboard</h6>
-        <p>Top players &amp; bulls</p>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--blue)"><i class="bi bi-calendar-event-fill"></i></div>
+        <div class="dash-stat-value">{{this.ownerMatchAppearances}}</div>
+        <div class="dash-stat-label">Match Appearances</div>
+        <div class="dash-stat-bg" style="background:var(--blue)"></div>
       </div>
-    </LinkTo>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--saffron)"><i class="bi bi-trophy-fill"></i></div>
+        <div class="dash-stat-value">{{this.ownerTotalWins}}</div>
+        <div class="dash-stat-label">Total Wins</div>
+        <div class="dash-stat-bg" style="background:var(--saffron)"></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--accent)"><i class="bi bi-star-fill"></i></div>
+        <div class="dash-stat-value">{{this.ownerSpotPrizes}}</div>
+        <div class="dash-stat-label">Spot Prizes</div>
+        <div class="dash-stat-bg" style="background:var(--accent)"></div>
+      </div>
+    </div>
   </div>
 
-  {{!-- Scorer --}}
-  {{#if this.auth.isScorer}}
+  <div class="row g-4 mb-4">
+    {{!-- Performance Gauges --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-speedometer2 text-danger me-1"></i> Bull Ratings (Avg)</h6>
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-semibold" style="font-size:0.8rem">Aggression</span>
+              <span class="fw-bold" style="font-size:0.8rem">{{this.ownerAvgAggression}}/10</span>
+            </div>
+            <div class="rating-bar"><div class="fill" style="width:{{mult this.ownerAvgAggression 10}}%;background:#dc3545"></div></div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-semibold" style="font-size:0.8rem">Difficulty</span>
+              <span class="fw-bold" style="font-size:0.8rem">{{this.ownerAvgDifficulty}}/10</span>
+            </div>
+            <div class="rating-bar"><div class="fill" style="width:{{mult this.ownerAvgDifficulty 10}}%;background:var(--saffron)"></div></div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-semibold" style="font-size:0.8rem">Play Area</span>
+              <span class="fw-bold" style="font-size:0.8rem">{{this.ownerStats.avgPlayArea}}/10</span>
+            </div>
+            <div class="rating-bar"><div class="fill" style="width:{{mult (or this.ownerStats.avgPlayArea 0) 10}}%;background:var(--blue)"></div></div>
+          </div>
+        </div>
+        {{#if this.bestBull}}
+          <div class="mt-4 p-3 rounded" style="background:linear-gradient(135deg,#fff8e1,#fff3cd)">
+            <div class="text-muted" style="font-size:0.65rem;letter-spacing:1px">⭐ BEST PERFORMER</div>
+            <div class="fw-bold">{{this.bestBull.bull_name}}</div>
+            <div style="font-size:0.8rem;color:#666">Avg Difficulty: <strong>{{this.bestBull.avg_difficulty}}</strong></div>
+          </div>
+        {{/if}}
+        <div class="mt-3 text-center">
+          <div class="circle-progress circle-progress-sm" style="--pct:{{this.ownerWinRate}};--clr:var(--saffron)">
+            <span class="circle-value" style="font-size:1rem">{{this.ownerWinRate}}%</span>
+          </div>
+          <div class="text-muted mt-1" style="font-size:0.7rem">WIN RATE</div>
+        </div>
+      </div>
+    </div>
+
+    {{!-- My Bulls List --}}
+    <div class="col-lg-8">
+      <div class="card p-4 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h6 class="fw-bold mb-0"><i class="bi bi-shield-fill" style="color:#20c997"></i> My Bulls</h6>
+          <LinkTo @route="my-bulls" class="btn btn-sm btn-outline-accent">Manage</LinkTo>
+        </div>
+        <div class="row g-3">
+          {{#each this.ownerBulls as |bull|}}
+            <div class="col-md-6">
+              <div class="bull-mini-card">
+                <div class="bull-avatar"><i class="bi bi-shield-fill"></i></div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold">{{bull.bull_name}}</div>
+                  <div style="font-size:0.75rem;color:#888">{{bull.breed}} &middot; Age {{bull.age}}</div>
+                  <div style="font-size:0.7rem;color:#aaa">{{bull.fitness_certificate}}</div>
+                </div>
+              </div>
+            </div>
+          {{else}}
+            <div class="col-12"><div class="empty-state py-3"><i class="bi bi-shield d-block"></i>No bulls registered</div></div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Recent Bull Match Activity --}}
+  <div class="card mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-1"></i> Recent Bull Activity</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead><tr>
+          <th>Bull</th><th>Match</th><th>Round</th>
+          <th class="text-center">Aggr.</th><th class="text-center">Diff.</th>
+          <th class="text-center">Area</th><th>Tamer</th><th>Won?</th>
+        </tr></thead>
+        <tbody>
+          {{#each this.ownerRecent as |r|}}
+            <tr>
+              <td class="fw-semibold">{{r.bull_name}}</td>
+              <td>{{r.match_name}}</td>
+              <td><span class="badge bg-light text-dark">{{r.round_name}}</span></td>
+              <td class="text-center">{{r.aggression}}</td>
+              <td class="text-center">{{r.difficulty}}</td>
+              <td class="text-center">{{r.play_area}}</td>
+              <td>{{r.tamer}}</td>
+              <td>{{#if (eq r.winner 1)}}<span class="badge bg-success">🏆 Yes</span>{{else}}<span class="badge bg-light text-muted">No</span>{{/if}}</td>
+            </tr>
+          {{else}}
+            <tr><td colspan="8" class="text-center text-muted py-3">No match activity yet</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="my-bulls" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon" style="background:#20c997"><i class="bi bi-plus-circle-fill"></i></div>
+          <h6>Register Bull</h6><p>Add a new bull</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="leaderboard" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-warning"><i class="bi bi-bar-chart-fill"></i></div>
+          <h6>Leaderboard</h6><p>See top bulls</p></div>
+      </LinkTo>
+    </div>
+  </div>
+
+{{/if}}
+
+
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  SCORER DASHBOARD                                     ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if (eq this.auth.role "scorer")}}
+
+  {{!-- Live Alert --}}
+  {{#if this.scorerLiveMatches.length}}
+    <div class="alert alert-danger d-flex align-items-center gap-3 mb-4 border-0 shadow-sm" style="background:linear-gradient(135deg,#fff5f5,#ffe0e0)">
+      <div class="pending-count" style="background:#dc3545;width:48px;height:48px;font-size:1.3rem">{{this.scorerLiveMatches.length}}</div>
+      <div>
+        <div class="fw-bold text-danger">Live Matches Right Now!</div>
+        <div style="font-size:0.8rem;color:#666">These matches need active scoring</div>
+      </div>
+    </div>
+  {{/if}}
+
+  {{!-- Match Breakdown --}}
+  <div class="row g-3 mb-4">
+    {{#each this.matchBreakdownBars as |bar|}}
+      <div class="col-4">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-value" style="color:{{bar.color}}">{{bar.count}}</div>
+          <div class="dash-stat-label">{{bar.label}}</div>
+          <div class="mt-2"><div class="hbar-track mx-auto" style="max-width:120px"><div class="hbar-fill" style="width:{{bar.pct}}%;background:{{bar.color}}"></div></div></div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  {{!-- Live Matches Cards --}}
+  {{#if this.scorerLiveMatches.length}}
+    <div class="section-header"><h5><i class="bi bi-broadcast text-danger"></i> Live Matches</h5></div>
+    <div class="row g-3 mb-4">
+      {{#each this.scorerLiveMatches as |m|}}
+        <div class="col-md-6">
+          <div class="match-card border-start border-danger border-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-bold mb-0">{{m.match_name}}</h6>
+              <span class="status-badge live"><i class="bi bi-broadcast me-1"></i>LIVE</span>
+            </div>
+            <div class="match-venue mb-2"><i class="bi bi-geo-alt-fill"></i> {{m.location}}</div>
+            <LinkTo @route="match-control" class="btn btn-sm btn-accent"><i class="bi bi-sliders2 me-1"></i> Score Now</LinkTo>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  {{/if}}
+
+  {{!-- Top Players --}}
+  <div class="card p-4 mb-4">
+    <h6 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning me-1"></i> Top 5 Players</h6>
+    <div class="mini-leaderboard">
+      {{#each this.scorerTopPlayers as |p index|}}
+        <div class="lb-row">
+          <div class="lb-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">{{add index 1}}</div>
+          <div class="lb-name">{{p.player_name}}</div>
+          <div class="lb-extra">{{p.matches_played}} matches</div>
+          <div class="lb-score">{{p.net_score}}</div>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="match-control" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
-          <h6>Match Control</h6>
-          <p>Enter &amp; edit scores</p>
-        </div>
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
+          <h6>Match Control</h6><p>Enter &amp; edit scores</p></div>
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="winners" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon" style="background:#6f42c1;"><i class="bi bi-award-fill"></i></div>
-          <h6>Winners</h6>
-          <p>Declare match winners</p>
-        </div>
+        <div class="card action-card"><div class="action-icon" style="background:#6f42c1"><i class="bi bi-award-fill"></i></div>
+          <h6>Winners</h6><p>Declare match winners</p></div>
       </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="overlay-control" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-info"><i class="bi bi-broadcast-pin"></i></div>
+          <h6>Overlay Control</h6><p>Manage live overlay</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="spot-prizes" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-warning"><i class="bi bi-gift-fill"></i></div>
+          <h6>Spot Prizes</h6><p>Manage spot awards</p></div>
+      </LinkTo>
+    </div>
+  </div>
+
+{{/if}}
+
+
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  REGISTRAR DASHBOARD                                  ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if (eq this.auth.role "registrar")}}
+
+  {{!-- Pending Alert --}}
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="dash-stat text-center" style="border:2px dashed var(--accent)">
+        <div class="pending-count mx-auto mb-2">{{this.registrarPending.total}}</div>
+        <div class="dash-stat-label" style="font-size:0.85rem">Total Pending</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:var(--saffron)"><i class="bi bi-people-fill"></i></div>
+        <div class="dash-stat-value">{{this.registrarPending.pendingPlayers}}</div>
+        <div class="dash-stat-label">Pending Players</div>
+        <div class="dash-stat-bg" style="background:var(--saffron)"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="dash-stat">
+        <div class="dash-stat-icon" style="background:#20c997"><i class="bi bi-shield-fill"></i></div>
+        <div class="dash-stat-value">{{this.registrarPending.pendingBulls}}</div>
+        <div class="dash-stat-label">Pending Bulls</div>
+        <div class="dash-stat-bg" style="background:#20c997"></div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Match Breakdown --}}
+  <div class="card p-4 mb-4">
+    <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-primary me-1"></i> Match Status Breakdown</h6>
+    <div class="hbar">
+      {{#each this.matchBreakdownBars as |bar|}}
+        <div class="hbar-row">
+          <div class="hbar-label">{{bar.label}}</div>
+          <div class="hbar-track">
+            <div class="hbar-fill" style="width:{{bar.pct}}%;background:{{bar.color}}">{{bar.count}}</div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Upcoming Matches with Capacity --}}
+  {{#if this.upcomingMatches.length}}
+    <div class="section-header"><h5><i class="bi bi-calendar-event text-primary"></i> Upcoming Matches</h5></div>
+    <div class="row g-3 mb-4">
+      {{#each this.upcomingMatches as |m|}}
+        <div class="col-md-6">
+          <div class="match-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-bold mb-0">{{m.match_name}}</h6>
+              <span class="status-badge scheduled">Scheduled</span>
+            </div>
+            <div class="match-venue mb-1"><i class="bi bi-geo-alt-fill"></i> {{m.location}}</div>
+            <div class="match-date mb-2"><i class="bi bi-calendar3"></i> {{m.match_date}}</div>
+            {{#if m.capacity}}
+              <div style="font-size:0.75rem;color:#666" class="mb-1">
+                Players: {{m.capacity.registeredPlayers}} / {{m.capacity.playerLimit}}
+              </div>
+              <div class="capacity-meter mb-2">
+                <div class="fill {{if (gt (div m.capacity.registeredPlayers (or m.capacity.playerLimit 1)) 0.8) 'high' (if (gt (div m.capacity.registeredPlayers (or m.capacity.playerLimit 1)) 0.5) 'medium' 'low')}}"
+                     style="width:{{mult (div m.capacity.registeredPlayers (or m.capacity.playerLimit 1)) 100}}%"></div>
+              </div>
+              <div style="font-size:0.75rem;color:#666" class="mb-1">
+                Bulls: {{m.capacity.registeredBulls}} / {{m.capacity.bullLimit}}
+              </div>
+              <div class="capacity-meter">
+                <div class="fill {{if (gt (div m.capacity.registeredBulls (or m.capacity.bullLimit 1)) 0.8) 'high' (if (gt (div m.capacity.registeredBulls (or m.capacity.bullLimit 1)) 0.5) 'medium' 'low')}}"
+                     style="width:{{mult (div m.capacity.registeredBulls (or m.capacity.bullLimit 1)) 100}}%"></div>
+              </div>
+            {{/if}}
+          </div>
+        </div>
+      {{/each}}
     </div>
   {{/if}}
 
-  {{!-- Registrar --}}
-  {{#if this.auth.isRegistrar}}
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="registration" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-info"><i class="bi bi-person-plus-fill"></i></div>
+          <h6>Registration</h6><p>Approve registrations</p></div>
+      </LinkTo>
+    </div>
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="events" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon bg-primary"><i class="bi bi-calendar-check"></i></div>
-          <h6>Events</h6>
-          <p>Manage events &amp; batches</p>
+        <div class="card action-card"><div class="action-icon bg-primary"><i class="bi bi-calendar-check"></i></div>
+          <h6>Events</h6><p>Manage events &amp; batches</p></div>
+      </LinkTo>
+    </div>
+  </div>
+
+{{/if}}
+
+
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  ADMIN DASHBOARD                                      ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if (eq this.auth.role "admin")}}
+
+  {{!-- System Stats --}}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="player"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--saffron)"><i class="bi bi-people-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalPlayers}}</div>
+          <div class="dash-stat-label">Players</div>
         </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="bull_table"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:#20c997"><i class="bi bi-shield-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalBulls}}</div>
+          <div class="dash-stat-label">Bulls</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="owner"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--blue)"><i class="bi bi-person-badge-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalOwners}}</div>
+          <div class="dash-stat-label">Owners</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="matches" class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--accent)"><i class="bi bi-calendar-event-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalMatches}}</div>
+          <div class="dash-stat-label">Matches</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="organizer"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:#6f42c1"><i class="bi bi-building"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalOrganizers}}</div>
+          <div class="dash-stat-label">Organizers</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="location"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--cyan)"><i class="bi bi-geo-alt-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalLocations}}</div>
+          <div class="dash-stat-label">Locations</div>
+        </div>
+      </LinkTo>
+    </div>
+  </div>
+
+  {{!-- Live Alert --}}
+  {{#if this.liveMatches.length}}
+    <div class="alert alert-danger d-flex align-items-center gap-3 mb-4 border-0 shadow-sm" style="background:linear-gradient(135deg,#fff5f5,#ffe0e0)">
+      <div class="pending-count" style="background:#dc3545;width:48px;height:48px;font-size:1.3rem">{{this.liveMatches.length}}</div>
+      <div>
+        <div class="fw-bold text-danger">{{this.liveMatches.length}} Live Match{{#if (gt this.liveMatches.length 1)}}es{{/if}}</div>
+        <div style="font-size:0.8rem;color:#666">Currently being scored in real-time</div>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="row g-4 mb-4">
+    {{!-- Match Breakdown --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-primary me-1"></i> Match Status</h6>
+        <div class="hbar">
+          {{#each this.matchBreakdownBars as |bar|}}
+            <div class="hbar-row">
+              <div class="hbar-label">{{bar.label}}</div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:{{bar.pct}}%;background:{{bar.color}}">{{bar.count}}</div></div>
+            </div>
+          {{/each}}
+        </div>
+        {{#if this.pendingRegs.total}}
+          <div class="mt-3 p-2 rounded text-center" style="background:#fff3cd">
+            <span class="fw-bold text-warning">{{this.pendingRegs.total}}</span>
+            <span style="font-size:0.8rem;color:#856404"> pending registrations</span>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+
+    {{!-- Top Players --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning me-1"></i> Top Players</h6>
+        <div class="mini-leaderboard">
+          {{#each this.topPlayers as |p index|}}
+            <div class="lb-row">
+              <div class="lb-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">{{add index 1}}</div>
+              <div class="lb-name">{{p.player_name}}</div>
+              <div class="lb-extra">{{p.matches_played}}m</div>
+              <div class="lb-score">{{p.net_score}}</div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+
+    {{!-- Top Bulls --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill" style="color:#20c997"></i> Top Bulls</h6>
+        <div class="mini-leaderboard">
+          {{#each this.topBulls as |b index|}}
+            <div class="lb-row">
+              <div class="lb-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">{{add index 1}}</div>
+              <div class="lb-name">{{b.bull_name}}</div>
+              <div class="lb-extra">{{b.owner_name}}</div>
+              <div class="lb-score">{{b.avg_difficulty}}</div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="match-control" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
+          <h6>Match Control</h6><p>Score live matches</p></div>
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="registration" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon bg-info"><i class="bi bi-person-plus-fill"></i></div>
-          <h6>Registration</h6>
-          <p>Approve registrations</p>
-        </div>
+        <div class="card action-card"><div class="action-icon bg-info"><i class="bi bi-person-plus-fill"></i></div>
+          <h6>Registration</h6><p>Approve registrations</p></div>
       </LinkTo>
     </div>
-  {{/if}}
-
-  {{!-- Admin --}}
-  {{#if this.auth.isAdmin}}
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="tables" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon" style="background:#0d6efd;"><i class="bi bi-database-fill"></i></div>
-          <h6>Data Tables</h6>
-          <p>Manage master data</p>
+        <div class="card action-card"><div class="action-icon bg-primary"><i class="bi bi-database-fill"></i></div>
+          <h6>Data Tables</h6><p>Manage master data</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="prizes" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-warning"><i class="bi bi-trophy-fill"></i></div>
+          <h6>Prizes</h6><p>Manage prizes</p></div>
+      </LinkTo>
+    </div>
+  </div>
+
+{{/if}}
+
+
+{{!-- ╔═══════════════════════════════════════════════════════╗
+     ║  SUPER ADMIN DASHBOARD                                ║
+     ╚═══════════════════════════════════════════════════════╝ --}}
+{{#if this.isSuperAdmin}}
+
+  {{!-- System Stats --}}
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="player"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--saffron)"><i class="bi bi-people-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalPlayers}}</div>
+          <div class="dash-stat-label">Players</div>
         </div>
       </LinkTo>
     </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="bull_table"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:#20c997"><i class="bi bi-shield-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalBulls}}</div>
+          <div class="dash-stat-label">Bulls</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="tables" @query={{hash table="owner"}} class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--blue)"><i class="bi bi-person-badge-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalOwners}}</div>
+          <div class="dash-stat-label">Owners</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="matches" class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--accent)"><i class="bi bi-calendar-event-fill"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalMatches}}</div>
+          <div class="dash-stat-label">Matches</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="users" class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:#6f42c1"><i class="bi bi-person-fill-gear"></i></div>
+          <div class="dash-stat-value">{{this.totalUsers}}</div>
+          <div class="dash-stat-label">App Users</div>
+        </div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-lg-2">
+      <LinkTo @route="match-control-v2" class="dash-stat-link">
+        <div class="dash-stat text-center">
+          <div class="dash-stat-icon mx-auto" style="background:var(--cyan)"><i class="bi bi-activity"></i></div>
+          <div class="dash-stat-value">{{this.systemStats.totalInteractions}}</div>
+          <div class="dash-stat-label">Interactions</div>
+        </div>
+      </LinkTo>
+    </div>
+  </div>
+
+  {{!-- Live Alert --}}
+  {{#if this.liveMatches.length}}
+    <div class="alert alert-danger d-flex align-items-center gap-3 mb-4 border-0 shadow-sm" style="background:linear-gradient(135deg,#fff5f5,#ffe0e0)">
+      <div class="pending-count" style="background:#dc3545;width:48px;height:48px;font-size:1.3rem">{{this.liveMatches.length}}</div>
+      <div>
+        <div class="fw-bold text-danger">{{this.liveMatches.length}} Live Match{{#if (gt this.liveMatches.length 1)}}es{{/if}}</div>
+        <div style="font-size:0.8rem;color:#666">Currently being scored</div>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="row g-4 mb-4">
+    {{!-- User Breakdown --}}
+    <div class="col-lg-5">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-person-fill-gear text-primary me-1"></i> Users by Role</h6>
+        <div class="hbar">
+          {{#each this.userBreakdownBars as |bar|}}
+            <div class="hbar-row">
+              <div class="hbar-label"><span class="role-tag {{bar.role}}" style="font-size:0.65rem;padding:0.15rem 0.5rem">{{bar.role}}</span></div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:{{bar.pct}}%;background:{{bar.color}}">{{bar.count}}</div></div>
+            </div>
+          {{/each}}
+        </div>
+        <div class="text-center mt-3" style="font-size:0.8rem;color:#888">Total: <strong>{{this.totalUsers}}</strong> users</div>
+      </div>
+    </div>
+
+    {{!-- Match Status --}}
+    <div class="col-lg-3">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill text-success me-1"></i> Matches</h6>
+        <div class="hbar">
+          {{#each this.matchBreakdownBars as |bar|}}
+            <div class="hbar-row">
+              <div class="hbar-label">{{bar.label}}</div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:{{bar.pct}}%;background:{{bar.color}}">{{bar.count}}</div></div>
+            </div>
+          {{/each}}
+        </div>
+        {{#if this.pendingRegs.total}}
+          <div class="mt-3 p-2 rounded text-center" style="background:#fff3cd">
+            <span class="fw-bold text-warning">{{this.pendingRegs.total}}</span>
+            <span style="font-size:0.8rem;color:#856404"> pending</span>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+
+    {{!-- DB Tables --}}
+    <div class="col-lg-4">
+      <div class="card p-4 h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-database-fill text-info me-1"></i> Database Tables</h6>
+        <div class="table-responsive" style="max-height:220px;overflow-y:auto">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Table</th><th class="text-end">Rows</th></tr></thead>
+            <tbody>
+              {{#each this.tableList as |t|}}
+                <tr>
+                  <td style="font-size:0.8rem"><code>{{t.name}}</code></td>
+                  <td class="text-end fw-bold" style="font-size:0.8rem">{{t.count}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Leaderboards --}}
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning me-1"></i> Top Players</h6>
+        <div class="mini-leaderboard">
+          {{#each this.topPlayers as |p index|}}
+            <div class="lb-row">
+              <div class="lb-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">{{add index 1}}</div>
+              <div class="lb-name">{{p.player_name}}</div>
+              <div class="lb-extra">{{p.matches_played}} matches &middot; {{p.total_caught}} caught</div>
+              <div class="lb-score">{{p.net_score}}</div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card p-4">
+        <h6 class="fw-bold mb-3"><i class="bi bi-shield-fill" style="color:#20c997"></i> Top Bulls</h6>
+        <div class="mini-leaderboard">
+          {{#each this.topBulls as |b index|}}
+            <div class="lb-row">
+              <div class="lb-rank {{if (eq index 0) 'gold' (if (eq index 1) 'silver' (if (eq index 2) 'bronze' 'default'))}}">{{add index 1}}</div>
+              <div class="lb-name">{{b.bull_name}}</div>
+              <div class="lb-extra">{{b.owner_name}} &middot; {{b.breed}}</div>
+              <div class="lb-score">{{b.avg_difficulty}} diff</div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Quick Actions --}}
+  <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
+  <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-3">
       <LinkTo @route="users" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon" style="background:#dc3545;"><i class="bi bi-people-fill"></i></div>
-          <h6>Users</h6>
-          <p>Manage user accounts</p>
-        </div>
+        <div class="card action-card"><div class="action-icon" style="background:#dc3545"><i class="bi bi-shield-fill-check"></i></div>
+          <h6>User Management</h6><p>Manage all accounts</p></div>
       </LinkTo>
     </div>
-  {{/if}}
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="match-control" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
+          <h6>Match Control</h6><p>Score live matches</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="tables" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-primary"><i class="bi bi-database-fill"></i></div>
+          <h6>Data Tables</h6><p>Master data management</p></div>
+      </LinkTo>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <LinkTo @route="registration" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-info"><i class="bi bi-person-plus-fill"></i></div>
+          <h6>Registration</h6><p>Approve registrations</p></div>
+      </LinkTo>
+    </div>
+  </div>
 
-  {{!-- Player --}}
-  {{#if (eq this.auth.role "player")}}
-    <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="my-profile" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon bg-primary"><i class="bi bi-person-circle"></i></div>
-          <h6>My Profile</h6>
-          <p>View career stats</p>
-        </div>
-      </LinkTo>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="my-matches" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon bg-success"><i class="bi bi-flag-fill"></i></div>
-          <h6>Join Match</h6>
-          <p>Register for events</p>
-        </div>
-      </LinkTo>
-    </div>
-  {{/if}}
-
-  {{!-- Owner --}}
-  {{#if (eq this.auth.role "owner")}}
-    <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="my-bulls" class="text-decoration-none">
-        <div class="card action-card">
-          <div class="action-icon" style="background:#20c997;"><i class="bi bi-shield-fill"></i></div>
-          <h6>My Bulls</h6>
-          <p>Manage your bulls</p>
-        </div>
-      </LinkTo>
-    </div>
-  {{/if}}
-</div>
+{{/if}}

@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { PLAYER } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MyMatchesRoute extends Route {
   @service auth;
@@ -13,7 +14,7 @@ export default class MyMatchesRoute extends Route {
 
   async model() {
     try {
-      return await this.auth.apiGet('/player/matches');
+      return await this.auth.apiGet(PLAYER.MATCHES);
     } catch (e) {
       return [];
     }

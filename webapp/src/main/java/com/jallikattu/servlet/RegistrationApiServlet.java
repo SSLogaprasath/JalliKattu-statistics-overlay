@@ -14,6 +14,7 @@ import java.util.Map;
 
 import com.jallikattu.util.DBConnection;
 import com.jallikattu.util.GenericDAO;
+import com.jallikattu.util.MatchDrawDAO;
 import com.jallikattu.util.StatsDAO;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -67,30 +68,45 @@ public class RegistrationApiServlet extends BaseRestServlet {
             switch (action) {
                 case "player" -> {
                     String mId = str(body, "match_id");
+                    if (!StatsDAO.isRegistrationOpen(mId)) {
+                        sendError(resp, "Registration deadline has passed", 409);
+                        return;
+                    }
                     if (!StatsDAO.canRegisterPlayer(mId)) {
                         sendError(resp, "Match has reached its player limit", 409);
                         return;
                     }
-                    registerPlayerForMatch(mId, str(body, "player_id"),
-                            str(body, "round_type_id"), str(body, "batch_id"));
+                    registerPlayerForMatch(mId, str(body, "player_id"));
                     sendSuccess(resp, "Player registered");
                 }
                 case "bull" -> {
                     String mId = str(body, "match_id");
+                    if (!StatsDAO.isRegistrationOpen(mId)) {
+                        sendError(resp, "Registration deadline has passed", 409);
+                        return;
+                    }
                     if (!StatsDAO.canRegisterBull(mId)) {
                         sendError(resp, "Match has reached its bull limit", 409);
                         return;
                     }
-                    registerBullForMatch(mId, str(body, "bull_id"),
-                            str(body, "round_type_id"));
+                    registerBullForMatch(mId, str(body, "bull_id"));
                     sendSuccess(resp, "Bull registered");
                 }
                 case "match" -> {
-                    scheduleMatch(str(body, "match_id"), str(body, "match_name"),
+                    int newMatchId = scheduleMatch(str(body, "match_name"),
                             str(body, "location_id"), str(body, "match_date"),
                             str(body, "player_limit"), str(body, "bull_limit"),
-                            str(body, "organizer_id"));
-                    sendSuccess(resp, "Match scheduled");
+                            str(body, "organizer_id"), str(body, "registration_deadline"));
+                    // Save round configs if provided
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> roundConfigs = (List<Map<String, Object>>) body.get("round_configs");
+                    if (roundConfigs != null && !roundConfigs.isEmpty()) {
+                        MatchDrawDAO.saveRoundConfigs(String.valueOf(newMatchId), roundConfigs);
+                    }
+                    Map<String, Object> result = new java.util.LinkedHashMap<>();
+                    result.put("message", "Match scheduled");
+                    result.put("match_id", newMatchId);
+                    sendJson(resp, result);
                 }
                 case "approve-player" -> {
                     approvePlayerRegistration(str(body, "match_id"), str(body, "player_id"),
@@ -131,45 +147,52 @@ public class RegistrationApiServlet extends BaseRestServlet {
         }
     }
 
-    private void registerPlayerForMatch(String matchId, String playerId, String roundTypeId, String batchId) throws SQLException {
-        String sql = "INSERT INTO player_match_history (match_id, round_type_id, batch_id, player_id, bull_caught, penalties, status) VALUES (?, ?, ?, ?, 0, 0, 'registered')";
+    private void registerPlayerForMatch(String matchId, String playerId) throws SQLException {
+        // Default to Round 1, Batch A (batch_id=1). Batch will be reassigned by auto-assign.
+        String sql = "INSERT INTO player_match_history (match_id, round_type_id, batch_id, player_id, bull_caught, penalties, status, advancement_status) VALUES (?, 1, 1, ?, 0, 0, 'registered', 'pending')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, Integer.parseInt(matchId));
-            ps.setInt(2, Integer.parseInt(roundTypeId));
-            ps.setInt(3, Integer.parseInt(batchId));
-            ps.setInt(4, Integer.parseInt(playerId));
+            ps.setInt(2, Integer.parseInt(playerId));
             ps.executeUpdate();
         }
     }
 
-    private void registerBullForMatch(String matchId, String bullId, String roundTypeId) throws SQLException {
-        String sql = "INSERT INTO bull_match_history (match_id, bull_id, round_type_id, player_id, aggression, play_area, difficulty, penalties, release_count, prize_id, winner, status) " +
-                     "VALUES (?, ?, ?, (SELECT MIN(player_id) FROM player), 0, 0, 0, 0, 0, (SELECT MIN(prize_id) FROM prize), 0, 'registered')";
+    private void registerBullForMatch(String matchId, String bullId) throws SQLException {
+        // Bull PK is now (match_id, bull_id). Other fields filled during live scoring.
+        String sql = "INSERT INTO bull_match_history (match_id, bull_id, round_type_id, status) VALUES (?, ?, 1, 'registered')";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, Integer.parseInt(matchId));
             ps.setInt(2, Integer.parseInt(bullId));
-            ps.setInt(3, Integer.parseInt(roundTypeId));
             ps.executeUpdate();
         }
     }
 
-    private void scheduleMatch(String matchId, String matchName, String locationId, String matchDate,
-                                String playerLimit, String bullLimit, String organizerId) throws SQLException {
-        String sql = "INSERT INTO `match` (match_id, match_name, location_id, match_date, player_limit, bull_limit, registered_player_count, registered_bull_count, organizer_id, status) " +
+    private int scheduleMatch(String matchName, String locationId, String matchDate,
+                                String playerLimit, String bullLimit, String organizerId,
+                                String registrationDeadline) throws SQLException {
+        String sql = "INSERT INTO `match` (match_name, location_id, match_date, registration_deadline, player_limit, bull_limit, registered_player_count, registered_bull_count, organizer_id, status) " +
                      "VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, 'Scheduled')";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, Integer.parseInt(matchId));
-            ps.setString(2, matchName);
-            ps.setInt(3, Integer.parseInt(locationId));
-            ps.setString(4, matchDate);
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, matchName);
+            ps.setInt(2, Integer.parseInt(locationId));
+            ps.setString(3, matchDate);
+            if (registrationDeadline != null && !registrationDeadline.isEmpty()) {
+                ps.setString(4, registrationDeadline.replace("T", " "));
+            } else {
+                ps.setNull(4, java.sql.Types.TIMESTAMP);
+            }
             ps.setInt(5, Integer.parseInt(playerLimit));
             ps.setInt(6, Integer.parseInt(bullLimit));
             ps.setInt(7, Integer.parseInt(organizerId));
             ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) return keys.getInt(1);
+            }
         }
+        return -1;
     }
 
     private void approvePlayerRegistration(String matchId, String playerId, String roundTypeId) throws SQLException {
@@ -184,12 +207,12 @@ public class RegistrationApiServlet extends BaseRestServlet {
     }
 
     private void approveBullRegistration(String matchId, String bullId, String roundTypeId) throws SQLException {
-        String sql = "UPDATE bull_match_history SET status = 'approved' WHERE match_id = ? AND bull_id = ? AND round_type_id = ?";
+        // Bull PK is (match_id, bull_id) — round_type_id kept for backward compat but not used in WHERE
+        String sql = "UPDATE bull_match_history SET status = 'approved' WHERE match_id = ? AND bull_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, Integer.parseInt(matchId));
             ps.setInt(2, Integer.parseInt(bullId));
-            ps.setInt(3, Integer.parseInt(roundTypeId));
             ps.executeUpdate();
         }
     }

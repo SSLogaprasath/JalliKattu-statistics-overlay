@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { PUBLIC } from 'jallikattu-frontend/constants/api-paths';
 
 export default class MatchesRoute extends Route {
   @service auth;
@@ -7,7 +8,7 @@ export default class MatchesRoute extends Route {
   async model() {
     const base = this.auth.apiBase;
     try {
-      const matches = await fetch(`${base}/public/matches`).then((r) =>
+      const matches = await fetch(`${base}${PUBLIC.MATCHES}`).then((r) =>
         r.json()
       );
       return { matches };

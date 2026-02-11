@@ -1,5 +1,6 @@
 # Build output
 webapp/target/
+frontend/dist/
 
 # IDE files
 .idea/
@@ -10,3 +11,34 @@ webapp/target/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+ai-service/__pycache__/
+ai-service/crops/
+
+# ML models (large binaries)
+*.pt
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Sensitive / temp files
+cookies.txt
+cookies_tmp.txt
+db_design/pass.txt
+*.tmp
+
+# Generated crops
+pictures/crops/
+
+# Test artifacts
+api_test.txt
+login_test.txt

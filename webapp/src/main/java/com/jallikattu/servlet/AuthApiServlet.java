@@ -1,6 +1,7 @@
 package com.jallikattu.servlet;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.jallikattu.util.AuthDAO;
@@ -107,9 +108,20 @@ public class AuthApiServlet extends BaseRestServlet {
             }
             try {
                 Map<String, String> body = readBody(req, Map.class);
-                AuthDAO.createUser(body.get("username"), body.get("password"),
-                                   body.get("full_name"), body.get("role"));
-                sendSuccess(resp, "User created");
+                String userRole = body.get("role");
+                // Collect role-specific extras
+                Map<String, String> extras = new HashMap<>();
+                if ("player".equals(userRole)) {
+                    extras.put("dob", body.get("dob"));
+                    extras.put("aadhaar", body.get("aadhaar"));
+                    extras.put("phone", body.get("phone"));
+                } else if ("owner".equals(userRole)) {
+                    extras.put("aadhaar", body.get("aadhaar"));
+                }
+                Map<String, Object> result = AuthDAO.createUser(
+                    body.get("username"), body.get("password"),
+                    body.get("full_name"), userRole, extras);
+                sendJson(resp, Map.of("status", "ok", "message", "User created", "data", result));
             } catch (Exception e) {
                 sendError(resp, e.getMessage(), 500);
             }

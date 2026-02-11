@@ -1,5 +1,6 @@
 import Route from '@ember/routing/route';
 import { service } from '@ember/service';
+import { TABLES } from 'jallikattu-frontend/constants/api-paths';
 
 export default class TablesRoute extends Route {
   @service auth;
@@ -21,7 +22,7 @@ export default class TablesRoute extends Route {
 
   async model() {
     try {
-      return await this.auth.apiGet('/tables');
+      return await this.auth.apiGet(TABLES.LIST);
     } catch {
       return [];
     }

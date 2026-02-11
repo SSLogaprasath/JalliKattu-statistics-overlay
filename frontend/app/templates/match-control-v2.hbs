@@ -1,0 +1,634 @@
+{{page-title "Match Control v2"}}
+
+<div class="mcv2-root">
+
+  {{! ═══════ TOP BAR ═══════ }}
+  <div class="mcv2-topbar">
+    <div class="mcv2-topbar-left">
+      <i class="bi bi-controller"></i>
+      <span class="mcv2-title">Match Control
+        <sup class="mcv2-v2-badge">v2</sup></span>
+    </div>
+
+    <div class="mcv2-topbar-center">
+      {{#if this.matchStatus}}
+        <span
+          class="mcv2-status-pill
+            {{if
+              (eq this.matchStatus 'Live')
+              'mcv2-status-live'
+              (if
+                (eq this.matchStatus 'Completed')
+                'mcv2-status-completed'
+                'mcv2-status-scheduled'
+              )
+            }}"
+        >
+          {{#if (eq this.matchStatus "Live")}}<span
+              class="mcv2-pulse"
+            ></span>{{/if}}
+          {{this.matchStatus}}
+        </span>
+        {{#if (eq this.matchStatus "Scheduled")}}
+          <button
+            class="mcv2-action-btn mcv2-go-live"
+            type="button"
+            {{on "click" (fn this.updateMatchStatus "Live")}}
+          >
+            <i class="bi bi-play-circle-fill"></i>
+            GO LIVE
+          </button>
+        {{/if}}
+        {{#if (eq this.matchStatus "Live")}}
+          <button
+            class="mcv2-action-btn mcv2-end-match"
+            type="button"
+            {{on "click" (fn this.updateMatchStatus "Completed")}}
+          >
+            <i class="bi bi-stop-circle-fill"></i>
+            END
+          </button>
+        {{/if}}
+      {{/if}}
+    </div>
+
+    <div class="mcv2-topbar-right">
+      {{#if this.isLive}}
+        {{#if this.undoAvailable}}
+          <button
+            class="mcv2-icon-btn"
+            type="button"
+            title="Undo: {{this.lastUndoLabel}} (Ctrl+Z)"
+            {{on "click" this.undoLast}}
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        {{/if}}
+        <button
+          class="mcv2-save-btn {{if this.hasUnsaved 'mcv2-save-pulse'}}"
+          type="button"
+          disabled={{this.isSaving}}
+          title="Ctrl+S"
+          {{on "click" this.saveAllScores}}
+        >
+          {{#if this.isSaving}}
+            <span class="spinner-border spinner-border-sm"></span>
+          {{else}}
+            <i class="bi bi-floppy-fill"></i>
+          {{/if}}
+          Save{{#if this.hasUnsaved}} *{{/if}}
+        </button>
+      {{/if}}
+    </div>
+  </div>
+
+  {{! Toast }}
+  {{#if this.statusMessage}}
+    <div class="mcv2-toast mcv2-toast-{{this.statusType}}" role="alert">
+      <i
+        class="bi
+          {{if
+            (eq this.statusType 'success')
+            'bi-check-circle-fill'
+            (if
+              (eq this.statusType 'info')
+              'bi-info-circle-fill'
+              'bi-exclamation-triangle-fill'
+            )
+          }}"
+      ></i>
+      {{this.statusMessage}}
+    </div>
+  {{/if}}
+
+  {{! ═══════ MATCH SELECTOR ═══════ }}
+  <div class="mcv2-match-selector">
+    <select class="mcv2-match-dropdown" {{on "change" this.loadMatch}}>
+      <option value="">-- Select Match --</option>
+      {{#each this.liveMatches as |m|}}
+        <option
+          value={{m.match_id}}
+          selected={{eq
+            (to-string m.match_id)
+            (to-string this.selectedMatchId)
+          }}
+        >
+          🔴
+          {{m.match_name}}
+        </option>
+      {{/each}}
+      {{#each this.scheduledMatches as |m|}}
+        <option
+          value={{m.match_id}}
+          selected={{eq
+            (to-string m.match_id)
+            (to-string this.selectedMatchId)
+          }}
+        >
+          🟡
+          {{m.match_name}}
+        </option>
+      {{/each}}
+      {{#each this.completedMatches as |m|}}
+        <option
+          value={{m.match_id}}
+          selected={{eq
+            (to-string m.match_id)
+            (to-string this.selectedMatchId)
+          }}
+        >
+          ✅
+          {{m.match_name}}
+        </option>
+      {{/each}}
+    </select>
+    {{#if this.selectedMatch}}
+      <div class="mcv2-match-meta">
+        <span><i class="bi bi-geo-alt-fill"></i>
+          {{this.selectedMatch.location}}</span>
+        <span><i class="bi bi-calendar3"></i>
+          {{this.selectedMatch.match_date}}</span>
+      </div>
+    {{/if}}
+  </div>
+
+  {{! ═══════ LOADING ═══════ }}
+  {{#if this.isLoading}}
+    <div class="mcv2-loading">
+      <div class="spinner-border mcv2-spinner" role="status"></div>
+      <p>Loading match data...</p>
+    </div>
+
+  {{else if this.scoringData}}
+    {{! ═══════ TAB NAVIGATION ═══════ }}
+    <div class="mcv2-tab-nav">
+      <button
+        class="mcv2-tab {{if (eq this.activeTab 'players') 'mcv2-tab-active'}}"
+        type="button"
+        {{on "click" (fn this.switchTab "players")}}
+      >
+        <i class="bi bi-person-arms-up"></i>
+        Players
+        <span class="mcv2-tab-count">{{this.playerCount}}</span>
+      </button>
+      <button
+        class="mcv2-tab {{if (eq this.activeTab 'bulls') 'mcv2-tab-active'}}"
+        type="button"
+        {{on "click" (fn this.switchTab "bulls")}}
+      >
+        <i class="bi bi-shield-fill"></i>
+        Bulls
+        <span class="mcv2-tab-count">{{this.bullCount}}</span>
+      </button>
+    </div>
+
+    {{! ═══════ PLAYERS TAB ═══════ }}
+    {{#if (eq this.activeTab "players")}}
+      {{! Round Pills }}
+      {{#if (gt this.roundOptions.length 1)}}
+        <div class="mcv2-batch-pills">
+          <button
+            class="mcv2-pill {{unless this.filterRound 'mcv2-pill-active'}}"
+            type="button"
+            {{on "click" (fn this.setRoundFilter "")}}
+          >
+            All Rounds
+          </button>
+          {{#each this.roundOptions as |r|}}
+            <button
+              class="mcv2-pill
+                {{if (eq r.id this.filterRound) 'mcv2-pill-active'}}"
+              type="button"
+              {{on "click" (fn this.setRoundFilter r.id)}}
+            >
+              {{r.name}}
+            </button>
+          {{/each}}
+        </div>
+      {{/if}}
+
+      {{! Batch Pills }}
+      {{#if (gt this.batchOptions.length 1)}}
+        <div class="mcv2-batch-pills">
+          <button
+            class="mcv2-pill {{unless this.filterBatch 'mcv2-pill-active'}}"
+            type="button"
+            {{on "click" (fn this.setBatchFilter "")}}
+          >
+            All Batches
+          </button>
+          {{#each this.batchOptions as |b|}}
+            <button
+              class="mcv2-pill
+                {{if (eq b.id this.filterBatch) 'mcv2-pill-active'}}"
+              type="button"
+              {{on "click" (fn this.setBatchFilter b.id)}}
+            >
+              {{b.name}}
+            </button>
+          {{/each}}
+        </div>
+      {{/if}}
+
+      {{! ═══════ KEYBOARD HINT ═══════ }}
+      {{#if this.isLive}}
+        <div class="mcv2-kb-hint">
+          <span><kbd>←</kbd><kbd>→</kbd> Navigate</span>
+          <span><kbd>↑</kbd> +Bull</span>
+          <span><kbd>↓</kbd> +Foul</span>
+          <span><kbd>X</kbd> DQ</span>
+          <span><kbd>Ctrl+Z</kbd> Undo</span>
+          <span><kbd>Ctrl+S</kbd> Save</span>
+        </div>
+      {{/if}}
+
+      {{! ═══════ PLAYER CARD GRID ═══════ }}
+      <div class="mcv2-card-grid">
+        {{#each this.playerCards as |player index|}}
+          <div
+            class="mcv2-card
+              {{if (eq player.status 'disqualified') 'mcv2-card-dq'}}
+              {{if (eq index this.focusedCardIndex) 'mcv2-card-focused'}}
+              {{if
+                (eq player.player_id this.leadingPlayerId)
+                'mcv2-card-leader'
+              }}
+              {{if (eq this.flashBullId player.player_id) 'mcv2-flash-bull'}}
+              {{if (eq this.flashFoulId player.player_id) 'mcv2-flash-foul'}}"
+            role="button"
+            {{on "click" (fn this.focusCard index)}}
+          >
+
+            {{! DQ KILL SWITCH (top-right) }}
+            {{#if this.isLive}}
+              {{#if (eq player.status "disqualified")}}
+                {{#if this.auth.isAdmin}}
+                  <button
+                    class="mcv2-dq-btn mcv2-dq-restore"
+                    type="button"
+                    title="Reinstate"
+                    {{on "click" (fn this.reinstatePlayer player.player_id)}}
+                  >
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                  </button>
+                {{/if}}
+              {{else}}
+                <button
+                  class="mcv2-dq-btn"
+                  type="button"
+                  title="Disqualify (X)"
+                  {{on "click" (fn this.disqualifyPlayer player.player_id)}}
+                >
+                  <i class="bi bi-x-octagon-fill"></i>
+                </button>
+              {{/if}}
+            {{/if}}
+
+            {{! Leader fire icon }}
+            {{#if (eq player.player_id this.leadingPlayerId)}}
+              <span class="mcv2-fire">🔥</span>
+            {{/if}}
+
+            {{! Player info }}
+            <div class="mcv2-card-name">{{player.player_name}}</div>
+            <div class="mcv2-card-meta">
+              <span class="mcv2-badge-round">{{player.round_name}}</span>
+              <span class="mcv2-badge-batch">{{player.batch_name}}</span>
+            </div>
+
+            {{! DQ overlay }}
+            {{#if (eq player.status "disqualified")}}
+              <div class="mcv2-dq-overlay">
+                <i class="bi bi-x-octagon-fill"></i>
+                <span>DISQUALIFIED</span>
+              </div>
+            {{else}}
+              {{! NET SCORE (huge) }}
+              <div
+                class="mcv2-net-score
+                  {{if player._dirty 'mcv2-score-dirty'}}
+                  {{if
+                    (gt player.net_score 10)
+                    'mcv2-score-gold'
+                    (if
+                      (gt player.net_score 5)
+                      'mcv2-score-green'
+                      (if
+                        (gt player.net_score 0)
+                        'mcv2-score-positive'
+                        'mcv2-score-neutral'
+                      )
+                    )
+                  }}"
+              >
+                {{player.net_score}}
+              </div>
+
+              {{! Breakdown }}
+              <div class="mcv2-score-breakdown">
+                <span class="mcv2-bc"><i class="bi bi-check-circle-fill"></i>
+                  {{player.bull_caught}}</span>
+                <span class="mcv2-pen"><i
+                    class="bi bi-exclamation-triangle-fill"
+                  ></i>
+                  {{player.penalties}}</span>
+              </div>
+
+              {{! STEPPER BUTTONS }}
+              {{#if this.isLive}}
+                <div class="mcv2-stepper-row">
+                  <button
+                    class="mcv2-stepper mcv2-stepper-bull"
+                    type="button"
+                    title="+1 Bull (↑)"
+                    {{on "click" (fn this.incrementBull player)}}
+                  >
+                    <i class="bi bi-plus-lg"></i>
+                    BULL
+                  </button>
+                  <button
+                    class="mcv2-stepper mcv2-stepper-foul"
+                    type="button"
+                    title="+1 Foul (↓)"
+                    {{on "click" (fn this.incrementFoul player)}}
+                  >
+                    <i class="bi bi-plus-lg"></i>
+                    FOUL
+                  </button>
+                </div>
+              {{/if}}
+            {{/if}}
+          </div>
+        {{else}}
+          <div class="mcv2-empty">
+            <i class="bi bi-person-x" style="font-size:3rem;opacity:0.3"></i>
+            <p>No players found{{#if this.filterRound}} for this round{{else if
+                this.filterBatch
+              }} for this batch{{/if}}</p>
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+    {{! ═══════ BULLS TAB ═══════ }}
+    {{#if (eq this.activeTab "bulls")}}
+      <div class="mcv2-card-grid">
+        {{#each this.bullCards as |bull|}}
+          <div
+            class="mcv2-card mcv2-bull-card
+              {{if (eq bull.status 'disqualified') 'mcv2-card-dq'}}
+              {{if bull._dirty 'mcv2-card-dirty-border'}}"
+          >
+            {{! DQ button }}
+            {{#if this.isLive}}
+              {{#if (eq bull.status "disqualified")}}
+                {{#if this.auth.isAdmin}}
+                  <button
+                    class="mcv2-dq-btn mcv2-dq-restore"
+                    type="button"
+                    title="Reinstate"
+                    {{on "click" (fn this.reinstateBull bull.bull_id)}}
+                  >
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                  </button>
+                {{/if}}
+              {{else}}
+                <button
+                  class="mcv2-dq-btn"
+                  type="button"
+                  title="Disqualify"
+                  {{on "click" (fn this.disqualifyBull bull.bull_id)}}
+                >
+                  <i class="bi bi-x-octagon-fill"></i>
+                </button>
+              {{/if}}
+            {{/if}}
+
+            <div class="mcv2-card-name"><i
+                class="bi bi-shield-fill mcv2-bull-icon"
+              ></i>
+              {{bull.bull_name}}</div>
+            <div class="mcv2-card-meta">
+              <span class="mcv2-badge-round">{{bull.round_name}}</span>
+              <span class="mcv2-badge-batch"><i class="bi bi-person-fill"></i>
+                {{bull.tamer_name}}</span>
+            </div>
+
+            {{#if (eq bull.status "disqualified")}}
+              <div class="mcv2-dq-overlay">
+                <i class="bi bi-x-octagon-fill"></i>
+                <span>DISQUALIFIED</span>
+              </div>
+            {{else}}
+
+              {{! Caught By (player who caught this bull) }}
+              <div class="mcv2-bull-catcher">
+                <label class="mcv2-catcher-label"><i
+                    class="bi bi-hand-index-thumb-fill"
+                  ></i>
+                  Caught By</label>
+                {{#if this.isLive}}
+                  <select
+                    class="mcv2-catcher-select
+                      {{if bull._dirty 'mcv2-stat-dirty'}}"
+                    {{on "change" (fn this.setBullCatcher bull)}}
+                  >
+                    <option value="0" selected={{not bull.player_id}}>— Not
+                      caught —</option>
+                    {{#each this.approvedPlayers as |p|}}
+                      <option
+                        value={{p.player_id}}
+                        selected={{eq
+                          (to-string p.player_id)
+                          (to-string bull.player_id)
+                        }}
+                      >{{p.player_name}}</option>
+                    {{/each}}
+                  </select>
+                {{else}}
+                  <span class="mcv2-catcher-display">
+                    {{#if bull.player_name}}
+                      <i class="bi bi-person-check-fill text-success"></i>
+                      {{bull.player_name}}
+                    {{else}}
+                      <span class="text-muted">Not caught</span>
+                    {{/if}}
+                  </span>
+                {{/if}}
+              </div>
+
+              {{! Stats grid: AGG / AREA / DIFF }}
+              <div class="mcv2-bull-stats">
+                <div class="mcv2-bull-stat">
+                  <span class="mcv2-bull-stat-label">AGG</span>
+                  <div class="mcv2-bull-stat-row">
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-minus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.decrementBullStat bull "aggression")
+                        }}
+                      >−</button>
+                    {{/if}}
+                    <span
+                      class="mcv2-bull-stat-val
+                        {{if bull._dirty 'mcv2-stat-dirty'}}"
+                    >{{bull.aggression}}</span>
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-plus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.incrementBullStat bull "aggression")
+                        }}
+                      >+</button>
+                    {{/if}}
+                  </div>
+                </div>
+                <div class="mcv2-bull-stat">
+                  <span class="mcv2-bull-stat-label">AREA</span>
+                  <div class="mcv2-bull-stat-row">
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-minus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.decrementBullStat bull "play_area")
+                        }}
+                      >−</button>
+                    {{/if}}
+                    <span
+                      class="mcv2-bull-stat-val
+                        {{if bull._dirty 'mcv2-stat-dirty'}}"
+                    >{{bull.play_area}}</span>
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-plus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.incrementBullStat bull "play_area")
+                        }}
+                      >+</button>
+                    {{/if}}
+                  </div>
+                </div>
+                <div class="mcv2-bull-stat">
+                  <span class="mcv2-bull-stat-label">DIFF</span>
+                  <div class="mcv2-bull-stat-row">
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-minus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.decrementBullStat bull "difficulty")
+                        }}
+                      >−</button>
+                    {{/if}}
+                    <span
+                      class="mcv2-bull-stat-val
+                        {{if bull._dirty 'mcv2-stat-dirty'}}"
+                    >{{bull.difficulty}}</span>
+                    {{#if this.isLive}}
+                      <button
+                        class="mcv2-mini-btn mcv2-mini-plus"
+                        type="button"
+                        {{on
+                          "click"
+                          (fn this.incrementBullStat bull "difficulty")
+                        }}
+                      >+</button>
+                    {{/if}}
+                  </div>
+                </div>
+              </div>
+
+              {{! Release count stepper }}
+              <div class="mcv2-bull-releases-row">
+                <span class="mcv2-releases-label"><i
+                    class="bi bi-arrow-repeat"
+                  ></i>
+                  Releases</span>
+                {{#if this.isLive}}
+                  <div class="mcv2-releases-stepper">
+                    <button
+                      class="mcv2-mini-btn mcv2-mini-minus"
+                      type="button"
+                      {{on
+                        "click"
+                        (fn this.decrementBullStat bull "release_order")
+                      }}
+                    >−</button>
+                    <span
+                      class="mcv2-releases-val
+                        {{if bull._dirty 'mcv2-stat-dirty'}}"
+                    >{{bull.release_order}}</span>
+                    <button
+                      class="mcv2-mini-btn mcv2-mini-plus"
+                      type="button"
+                      {{on
+                        "click"
+                        (fn this.incrementBullStat bull "release_order")
+                      }}
+                    >+</button>
+                  </div>
+                {{else}}
+                  <span class="mcv2-releases-val">{{bull.release_order}}</span>
+                {{/if}}
+              </div>
+
+              {{! Composite score }}
+              <div class="mcv2-bull-composite">
+                Score:
+                <strong>{{add
+                    (add bull.aggression bull.play_area)
+                    bull.difficulty
+                  }}</strong><span class="text-muted">/30</span>
+              </div>
+            {{/if}}
+          </div>
+        {{else}}
+          <div class="mcv2-empty">
+            <i class="bi bi-shield-x" style="font-size:3rem;opacity:0.3"></i>
+            <p>No bulls found for this match</p>
+          </div>
+        {{/each}}
+      </div>
+    {{/if}}
+
+  {{else}}
+    {{! No match selected }}
+    <div class="mcv2-empty-state">
+      <i class="bi bi-controller" style="font-size:4rem;opacity:0.2"></i>
+      <h4>Select a Match to Begin</h4>
+      <p>Choose a match from above to load the player scoring grid.</p>
+      <div class="mcv2-quick-matches">
+        {{#each this.liveMatches as |m|}}
+          <button
+            class="mcv2-quick-btn mcv2-quick-live"
+            type="button"
+            {{on "click" (fn this.selectMatchDirect m.match_id)}}
+          >
+            <span class="mcv2-pulse-sm"></span>
+            {{m.match_name}}
+          </button>
+        {{/each}}
+        {{#each this.scheduledMatches as |m|}}
+          <button
+            class="mcv2-quick-btn mcv2-quick-scheduled"
+            type="button"
+            {{on "click" (fn this.selectMatchDirect m.match_id)}}
+          >
+            {{m.match_name}}
+          </button>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+</div>
