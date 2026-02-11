@@ -36,6 +36,10 @@ cookies_tmp.txt
 db_design/pass.txt
 *.tmp
 
+# Database dumps (contain data/passwords)
+deploy/mydb_dump.sql
+deploy/mydb_dump_tidb.sql
+
 # Generated crops
 pictures/crops/
 

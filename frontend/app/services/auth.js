@@ -8,7 +8,7 @@ export default class AuthService extends Service {
   @tracked isAuthenticated = false;
 
   get apiBase() {
-    const host = config.APP.API_HOST || '';
+    const host = config.APP.API_HOST || "";
     return `${host}/${config.APP.API_NAMESPACE}`;
   }
 
