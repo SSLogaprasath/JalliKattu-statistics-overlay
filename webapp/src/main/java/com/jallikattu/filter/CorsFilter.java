@@ -1,6 +1,7 @@
 package com.jallikattu.filter;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -40,5 +41,22 @@ public class CorsFilter implements Filter {
         }
 
         chain.doFilter(req, res);
+
+        // Add SameSite=None to session cookie for cross-domain requests
+        Collection<String> setCookieHeaders = response.getHeaders("Set-Cookie");
+        if (setCookieHeaders != null && !setCookieHeaders.isEmpty()) {
+            boolean first = true;
+            for (String header : setCookieHeaders) {
+                if (!header.contains("SameSite")) {
+                    header = header + "; SameSite=None";
+                }
+                if (first) {
+                    response.setHeader("Set-Cookie", header);
+                    first = false;
+                } else {
+                    response.addHeader("Set-Cookie", header);
+                }
+            }
+        }
     }
 }

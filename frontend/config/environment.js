@@ -30,9 +30,8 @@ module.exports = function (environment) {
 
   if (environment === "production") {
     // In production, the API is on a separate domain (Render)
-    // Set this to your Render service URL, e.g.:
-    // 'https://jallikattu-backend.onrender.com'
-    ENV.APP.API_HOST = process.env.API_HOST || "";
+    ENV.APP.API_HOST =
+      process.env.API_HOST || "https://jallikattu-backend-lpsd.onrender.com";
   }
 
   return ENV;
