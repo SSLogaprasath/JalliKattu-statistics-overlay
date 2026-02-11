@@ -6,7 +6,7 @@ import {
   MATCH_DRAW,
 } from "jallikattu-frontend/constants/api-paths";
 
-export default class MatchControlV3Route extends Route {
+export default class ScoringRoute extends Route {
   @service auth;
   @service router;
 

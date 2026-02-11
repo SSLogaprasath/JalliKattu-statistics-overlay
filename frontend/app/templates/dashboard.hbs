@@ -383,7 +383,7 @@
               <span class="status-badge live"><i class="bi bi-broadcast me-1"></i>LIVE</span>
             </div>
             <div class="match-venue mb-2"><i class="bi bi-geo-alt-fill"></i> {{m.location}}</div>
-            <LinkTo @route="match-control" class="btn btn-sm btn-accent"><i class="bi bi-sliders2 me-1"></i> Score Now</LinkTo>
+            <LinkTo @route="scoring" class="btn btn-sm btn-accent"><i class="bi bi-broadcast me-1"></i> Score Now</LinkTo>
           </div>
         </div>
       {{/each}}
@@ -409,9 +409,9 @@
   <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="match-control" class="text-decoration-none">
-        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
-          <h6>Match Control</h6><p>Enter &amp; edit scores</p></div>
+      <LinkTo @route="scoring" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-broadcast"></i></div>
+          <h6>Scoring</h6><p>Enter &amp; edit scores</p></div>
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
@@ -673,9 +673,9 @@
   <div class="section-header"><h5><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5></div>
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="match-control" class="text-decoration-none">
-        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
-          <h6>Match Control</h6><p>Score live matches</p></div>
+      <LinkTo @route="scoring" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-broadcast"></i></div>
+          <h6>Scoring</h6><p>Score live matches</p></div>
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
@@ -754,7 +754,7 @@
       </LinkTo>
     </div>
     <div class="col-6 col-lg-2">
-      <LinkTo @route="match-control-v2" class="dash-stat-link">
+      <LinkTo @route="scoring" class="dash-stat-link">
         <div class="dash-stat text-center">
           <div class="dash-stat-icon mx-auto" style="background:var(--cyan)"><i class="bi bi-activity"></i></div>
           <div class="dash-stat-value">{{this.systemStats.totalInteractions}}</div>
@@ -878,9 +878,9 @@
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="match-control" class="text-decoration-none">
-        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-sliders2"></i></div>
-          <h6>Match Control</h6><p>Score live matches</p></div>
+      <LinkTo @route="scoring" class="text-decoration-none">
+        <div class="card action-card"><div class="action-icon bg-success"><i class="bi bi-broadcast"></i></div>
+          <h6>Scoring</h6><p>Score live matches</p></div>
       </LinkTo>
     </div>
     <div class="col-6 col-md-4 col-lg-3">

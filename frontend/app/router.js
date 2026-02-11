@@ -26,9 +26,7 @@ Router.map(function () {
   this.route("prizes");
 
   // Scorer / Admin
-  this.route("match-control");
-  this.route("match-control-v2");
-  this.route("match-control-v3");
+  this.route("scoring");
   this.route("winners");
   this.route("spot-prizes");
   this.route("overlay-control");

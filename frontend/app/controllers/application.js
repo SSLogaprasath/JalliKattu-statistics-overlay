@@ -27,7 +27,7 @@ export default class ApplicationController extends Controller {
   get pageTitle() {
     const map = {
       dashboard: "Dashboard",
-      "match-control": "Match Control",
+      scoring: "Scoring",
       winners: "Winners",
       registration: "Registration",
       events: "Event Manager",

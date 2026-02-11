@@ -9,7 +9,7 @@ import {
   AI,
 } from "jallikattu-frontend/constants/api-paths";
 
-export default class MatchControlV3Controller extends Controller {
+export default class ScoringController extends Controller {
   @service auth;
   @service router;
 
