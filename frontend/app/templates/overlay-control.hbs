@@ -3,17 +3,21 @@
 <div class="container-fluid py-4">
   <div class="row g-4">
 
-    {{!-- Left Column: Controls --}}
+    {{! Left Column: Controls }}
     <div class="col-lg-5">
 
-      {{!-- Status Alert --}}
+      {{! Status Alert }}
       {{#if this.statusMsg}}
-        <div class="alert alert-{{this.statusType}} alert-dismissible fade show py-2" role="alert">
+        <div
+          class="alert alert-{{this.statusType}}
+            alert-dismissible fade show py-2"
+          role="alert"
+        >
           {{this.statusMsg}}
         </div>
       {{/if}}
 
-      {{!-- Video URL Card --}}
+      {{! Video URL Card }}
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <i class="bi bi-youtube text-danger"></i>
@@ -21,7 +25,9 @@
         </div>
         <div class="card-body">
           <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+            <span class="input-group-text"><i
+                class="bi bi-link-45deg"
+              ></i></span>
             <input
               type="text"
               class="form-control"
@@ -29,15 +35,21 @@
               value={{this.videoUrl}}
               {{on "input" this.setVideoUrl}}
             />
-            <button class="btn btn-outline-primary" type="button" {{on "click" this.saveVideoUrl}}>
-              <i class="bi bi-check-lg"></i> Set
+            <button
+              class="btn btn-outline-primary"
+              type="button"
+              {{on "click" this.saveVideoUrl}}
+            >
+              <i class="bi bi-check-lg"></i>
+              Set
             </button>
           </div>
-          <small class="text-muted mt-1 d-block">Paste a full YouTube URL or just the video ID</small>
+          <small class="text-muted mt-1 d-block">Paste a full YouTube URL or
+            just the video ID</small>
         </div>
       </div>
 
-      {{!-- Overlay Config Card --}}
+      {{! Overlay Config Card }}
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <i class="bi bi-layers-fill text-primary"></i>
@@ -45,242 +57,495 @@
         </div>
         <div class="card-body">
 
-          {{!-- Display Type --}}
+          {{! Display Type }}
           <div class="mb-3">
             <label class="form-label fw-semibold">Display Type</label>
             <div class="d-flex gap-2 flex-wrap">
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="overlayType" id="typeNone"
-                  value="none" checked={{eq this.overlayType "none"}} {{on "change" this.setOverlayType}} />
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="overlayType"
+                  id="typeNone"
+                  value="none"
+                  checked={{eq this.overlayType "none"}}
+                  {{on "change" this.setOverlayType}}
+                />
                 <label class="form-check-label" for="typeNone">None</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="overlayType" id="typePlayer"
-                  value="player" checked={{eq this.overlayType "player"}} {{on "change" this.setOverlayType}} />
-                <label class="form-check-label" for="typePlayer"><i class="bi bi-person-fill"></i> Player</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="overlayType"
+                  id="typePlayer"
+                  value="player"
+                  checked={{eq this.overlayType "player"}}
+                  {{on "change" this.setOverlayType}}
+                />
+                <label class="form-check-label" for="typePlayer"><i
+                    class="bi bi-person-fill"
+                  ></i>
+                  Player</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="overlayType" id="typeBull"
-                  value="bull" checked={{eq this.overlayType "bull"}} {{on "change" this.setOverlayType}} />
-                <label class="form-check-label" for="typeBull"><i class="bi bi-shield-fill"></i> Bull</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="overlayType"
+                  id="typeBull"
+                  value="bull"
+                  checked={{eq this.overlayType "bull"}}
+                  {{on "change" this.setOverlayType}}
+                />
+                <label class="form-check-label" for="typeBull"><i
+                    class="bi bi-shield-fill"
+                  ></i>
+                  Bull</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="overlayType" id="typeMatch"
-                  value="match" checked={{eq this.overlayType "match"}} {{on "change" this.setOverlayType}} />
-                <label class="form-check-label" for="typeMatch"><i class="bi bi-calendar-event"></i> Match</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="overlayType"
+                  id="typeMatch"
+                  value="match"
+                  checked={{eq this.overlayType "match"}}
+                  {{on "change" this.setOverlayType}}
+                />
+                <label class="form-check-label" for="typeMatch"><i
+                    class="bi bi-calendar-event"
+                  ></i>
+                  Match</label>
               </div>
             </div>
           </div>
 
-          {{!-- Entity Selector --}}
+          {{! Entity Selector }}
           {{#unless (eq this.overlayType "none")}}
             <div class="mb-3">
               <label class="form-label fw-semibold">
-                Select {{this.overlayType}}
+                Select
+                {{this.overlayType}}
               </label>
-              <select class="form-select" value={{this.entityId}} {{on "change" this.setEntityId}}>
+              <select
+                class="form-select"
+                value={{this.entityId}}
+                {{on "change" this.setEntityId}}
+              >
                 <option value="">-- Choose --</option>
                 {{#each this.entityOptions as |opt|}}
-                  <option value={{get opt this.entityIdField}} selected={{eq (get opt this.entityIdField) this.entityId}}>
-                    {{get opt this.entityLabel}} (ID: {{get opt this.entityIdField}})
+                  <option
+                    value={{get opt this.entityIdField}}
+                    selected={{eq (get opt this.entityIdField) this.entityId}}
+                  >
+                    {{get opt this.entityLabel}}
+                    (ID:
+                    {{get opt this.entityIdField}})
                   </option>
                 {{/each}}
               </select>
               <div class="mt-2">
                 <small class="text-muted">Or enter ID directly:</small>
-                <input type="number" class="form-control form-control-sm mt-1" placeholder="Entity ID"
-                  value={{this.entityId}} {{on "input" this.setEntityId}} />
+                <input
+                  type="number"
+                  class="form-control form-control-sm mt-1"
+                  placeholder="Entity ID"
+                  value={{this.entityId}}
+                  {{on "input" this.setEntityId}}
+                />
               </div>
             </div>
           {{/unless}}
 
-          {{!-- Layout --}}
+          {{! Layout }}
           <div class="mb-3">
             <label class="form-label fw-semibold">Layout</label>
-            <select class="form-select" value={{this.layout}} {{on "change" this.setLayout}}>
-              <option value="bottom-bar" selected={{eq this.layout "bottom-bar"}}>Bottom Bar (like cricket)</option>
-              <option value="side-panel" selected={{eq this.layout "side-panel"}}>Side Panel</option>
-              <option value="top-bar" selected={{eq this.layout "top-bar"}}>Top Bar</option>
+            <select
+              class="form-select"
+              value={{this.layout}}
+              {{on "change" this.setLayout}}
+            >
+              <option
+                value="bottom-bar"
+                selected={{eq this.layout "bottom-bar"}}
+              >Bottom Bar (like cricket)</option>
+              <option
+                value="side-panel"
+                selected={{eq this.layout "side-panel"}}
+              >Side Panel</option>
+              <option value="top-bar" selected={{eq this.layout "top-bar"}}>Top
+                Bar</option>
               <option value="vs" selected={{eq this.layout "vs"}}>VS Matchup</option>
-              <option value="ticker" selected={{eq this.layout "ticker"}}>Leaderboard Ticker</option>
+              <option
+                value="ticker"
+                selected={{eq this.layout "ticker"}}
+              >Leaderboard Ticker</option>
             </select>
             {{#if (eq this.layout "vs")}}
               <small class="text-muted d-block mt-1">
-                <i class="bi bi-info-circle"></i> VS layout supports Player vs Bull, Player vs Player, and Bull vs Bull
+                <i class="bi bi-info-circle"></i>
+                VS layout supports Player vs Bull, Player vs Player, and Bull vs
+                Bull
               </small>
             {{/if}}
             {{#if (eq this.layout "ticker")}}
               <small class="text-muted d-block mt-1">
-                <i class="bi bi-info-circle"></i> Ticker shows scrolling top 5 players & bulls leaderboard
+                <i class="bi bi-info-circle"></i>
+                Ticker shows scrolling top 5 players & bulls leaderboard
               </small>
             {{/if}}
           </div>
 
-          {{!-- Overlay Component Toggles --}}
+          {{! Overlay Component Toggles }}
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              <i class="bi bi-toggles text-success"></i> Overlay Components
+              <i class="bi bi-toggles text-success"></i>
+              Overlay Components
             </label>
             <div class="d-flex flex-column gap-2">
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="toggleTicker"
-                  checked={{this.showTicker}} {{on "change" this.toggleTicker}} />
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="toggleTicker"
+                  checked={{this.showTicker}}
+                  {{on "change" this.toggleTicker}}
+                />
                 <label class="form-check-label" for="toggleTicker">
-                  <i class="bi bi-bar-chart-fill"></i> Leaderboard Ticker
-                  <small class="text-muted d-block">Always-on scrolling top 5 players &amp; bulls</small>
+                  <i class="bi bi-bar-chart-fill"></i>
+                  Leaderboard Ticker
+                  <small class="text-muted d-block">Always-on scrolling top 5
+                    players &amp; bulls</small>
                 </label>
               </div>
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="toggleScoreboard"
-                  checked={{this.showScoreboard}} {{on "change" this.toggleScoreboard}} />
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="toggleScoreboard"
+                  checked={{this.showScoreboard}}
+                  {{on "change" this.toggleScoreboard}}
+                />
                 <label class="form-check-label" for="toggleScoreboard">
-                  <i class="bi bi-clipboard2-data-fill"></i> Round Scoreboard
-                  <small class="text-muted d-block">Full player list with scores &amp; bull assignments</small>
+                  <i class="bi bi-clipboard2-data-fill"></i>
+                  Round Scoreboard
+                  <small class="text-muted d-block">Full player list with scores
+                    &amp; bull assignments</small>
                 </label>
               </div>
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="toggleRating"
-                  checked={{this.showRating}} {{on "change" this.toggleRating}} />
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="toggleRating"
+                  checked={{this.showRating}}
+                  {{on "change" this.toggleRating}}
+                />
                 <label class="form-check-label" for="toggleRating">
-                  <i class="bi bi-star-fill text-warning"></i> Performance Rating
-                  <small class="text-muted d-block">Star rating set live by scorer</small>
+                  <i class="bi bi-star-fill text-warning"></i>
+                  Performance Rating
+                  <small class="text-muted d-block">Star rating set live by
+                    scorer</small>
                 </label>
               </div>
               {{#if this.showRating}}
                 <div class="ms-4 ps-2 border-start border-warning">
                   <div class="mb-2">
-                    <label class="form-label small fw-semibold mb-1">Rating Label</label>
-                    <input type="text" class="form-control form-control-sm" placeholder="e.g. Bull Performance"
-                      value={{this.ratingLabelText}} {{on "input" this.setRatingLabel}} />
+                    <label class="form-label small fw-semibold mb-1">Rating
+                      Label</label>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="e.g. Bull Performance"
+                      value={{this.ratingLabelText}}
+                      {{on "input" this.setRatingLabel}}
+                    />
                   </div>
                   <div class="mb-1">
-                    <label class="form-label small fw-semibold mb-1">Stars (click to set)</label>
+                    <label class="form-label small fw-semibold mb-1">Stars
+                      (click to set)</label>
                   </div>
                   <div class="d-flex gap-1 align-items-center">
-                    <button type="button"
-                      class="btn btn-sm p-0 border-0 {{if (gt (add this.rating 0) 0) 'text-warning' 'text-secondary'}}"
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0
+                        {{if
+                          (gt (add this.rating 0) 0)
+                          'text-warning'
+                          'text-secondary'
+                        }}"
                       style="font-size:1.5rem;line-height:1"
-                      {{on "click" (fn this.setRating 1)}}>
-                      <i class="bi {{if (gt (add this.rating 0) 0) 'bi-star-fill' 'bi-star'}}"></i>
+                      {{on "click" (fn this.setRating 1)}}
+                    >
+                      <i
+                        class="bi
+                          {{if
+                            (gt (add this.rating 0) 0)
+                            'bi-star-fill'
+                            'bi-star'
+                          }}"
+                      ></i>
                     </button>
-                    <button type="button"
-                      class="btn btn-sm p-0 border-0 {{if (gt (add this.rating 0) 1) 'text-warning' 'text-secondary'}}"
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0
+                        {{if
+                          (gt (add this.rating 0) 1)
+                          'text-warning'
+                          'text-secondary'
+                        }}"
                       style="font-size:1.5rem;line-height:1"
-                      {{on "click" (fn this.setRating 2)}}>
-                      <i class="bi {{if (gt (add this.rating 0) 1) 'bi-star-fill' 'bi-star'}}"></i>
+                      {{on "click" (fn this.setRating 2)}}
+                    >
+                      <i
+                        class="bi
+                          {{if
+                            (gt (add this.rating 0) 1)
+                            'bi-star-fill'
+                            'bi-star'
+                          }}"
+                      ></i>
                     </button>
-                    <button type="button"
-                      class="btn btn-sm p-0 border-0 {{if (gt (add this.rating 0) 2) 'text-warning' 'text-secondary'}}"
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0
+                        {{if
+                          (gt (add this.rating 0) 2)
+                          'text-warning'
+                          'text-secondary'
+                        }}"
                       style="font-size:1.5rem;line-height:1"
-                      {{on "click" (fn this.setRating 3)}}>
-                      <i class="bi {{if (gt (add this.rating 0) 2) 'bi-star-fill' 'bi-star'}}"></i>
+                      {{on "click" (fn this.setRating 3)}}
+                    >
+                      <i
+                        class="bi
+                          {{if
+                            (gt (add this.rating 0) 2)
+                            'bi-star-fill'
+                            'bi-star'
+                          }}"
+                      ></i>
                     </button>
-                    <button type="button"
-                      class="btn btn-sm p-0 border-0 {{if (gt (add this.rating 0) 3) 'text-warning' 'text-secondary'}}"
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0
+                        {{if
+                          (gt (add this.rating 0) 3)
+                          'text-warning'
+                          'text-secondary'
+                        }}"
                       style="font-size:1.5rem;line-height:1"
-                      {{on "click" (fn this.setRating 4)}}>
-                      <i class="bi {{if (gt (add this.rating 0) 3) 'bi-star-fill' 'bi-star'}}"></i>
+                      {{on "click" (fn this.setRating 4)}}
+                    >
+                      <i
+                        class="bi
+                          {{if
+                            (gt (add this.rating 0) 3)
+                            'bi-star-fill'
+                            'bi-star'
+                          }}"
+                      ></i>
                     </button>
-                    <button type="button"
-                      class="btn btn-sm p-0 border-0 {{if (gt (add this.rating 0) 4) 'text-warning' 'text-secondary'}}"
+                    <button
+                      type="button"
+                      class="btn btn-sm p-0 border-0
+                        {{if
+                          (gt (add this.rating 0) 4)
+                          'text-warning'
+                          'text-secondary'
+                        }}"
                       style="font-size:1.5rem;line-height:1"
-                      {{on "click" (fn this.setRating 5)}}>
-                      <i class="bi {{if (gt (add this.rating 0) 4) 'bi-star-fill' 'bi-star'}}"></i>
+                      {{on "click" (fn this.setRating 5)}}
+                    >
+                      <i
+                        class="bi
+                          {{if
+                            (gt (add this.rating 0) 4)
+                            'bi-star-fill'
+                            'bi-star'
+                          }}"
+                      ></i>
                     </button>
-                    <span class="ms-2 small text-muted">{{this.rating}} / 5</span>
-                    <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" {{on "click" (fn this.setRating 0)}}>
-                      <i class="bi bi-x-lg"></i> Clear
+                    <span class="ms-2 small text-muted">{{this.rating}}
+                      / 5</span>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary ms-auto"
+                      {{on "click" (fn this.setRating 0)}}
+                    >
+                      <i class="bi bi-x-lg"></i>
+                      Clear
                     </button>
                   </div>
                 </div>
               {{/if}}
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="toggleNextBull"
-                  checked={{this.showNextBull}} {{on "change" this.toggleNextBull}} />
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="toggleNextBull"
+                  checked={{this.showNextBull}}
+                  {{on "change" this.toggleNextBull}}
+                />
                 <label class="form-check-label" for="toggleNextBull">
-                  <i class="bi bi-shield-fill text-danger"></i> Next Bull
-                  <small class="text-muted d-block">Shows upcoming bull on overlay</small>
+                  <i class="bi bi-shield-fill text-danger"></i>
+                  Next Bull
+                  <small class="text-muted d-block">Shows upcoming bull on
+                    overlay</small>
                 </label>
               </div>
               {{#if this.showNextBull}}
                 <div class="ms-4 ps-2 border-start border-danger">
-                  <label class="form-label small fw-semibold mb-1">Select Next Bull</label>
-                  <select class="form-select form-select-sm" value={{this.nextBullId}} {{on "change" this.setNextBull}}>
+                  <label class="form-label small fw-semibold mb-1">Select Next
+                    Bull</label>
+                  <select
+                    class="form-select form-select-sm"
+                    value={{this.nextBullId}}
+                    {{on "change" this.setNextBull}}
+                  >
                     <option value="">-- Choose Bull --</option>
                     {{#each this.bulls as |b|}}
-                      <option value={{b.bull_id}} selected={{eq b.bull_id this.nextBullId}}>
-                        {{b.bull_name}} (ID: {{b.bull_id}})
+                      <option
+                        value={{b.bull_id}}
+                        selected={{eq b.bull_id this.nextBullId}}
+                      >
+                        {{b.bull_name}}
+                        (ID:
+                        {{b.bull_id}})
                       </option>
                     {{/each}}
                   </select>
                   {{#if this.nextBullName}}
-                    <div class="mt-1 small"><i class="bi bi-shield-fill text-danger"></i> <strong>{{this.nextBullName}}</strong></div>
+                    <div class="mt-1 small"><i
+                        class="bi bi-shield-fill text-danger"
+                      ></i>
+                      <strong>{{this.nextBullName}}</strong></div>
                   {{/if}}
                 </div>
               {{/if}}
             </div>
           </div>
 
-          {{!-- Active Match for Branding --}}
+          {{! Active Match for Branding }}
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              <i class="bi bi-trophy-fill text-warning"></i> Active Match (Branding)
+              <i class="bi bi-trophy-fill text-warning"></i>
+              Active Match (Branding)
             </label>
-            <select class="form-select" value={{this.activeMatchId}} {{on "change" this.setActiveMatchId}}>
-              <option value="" selected={{eq this.activeMatchId ""}}>-- No branding bar --</option>
+            <select
+              class="form-select"
+              value={{this.activeMatchId}}
+              {{on "change" this.setActiveMatchId}}
+            >
+              <option value="" selected={{eq this.activeMatchId ""}}>-- No
+                branding bar --</option>
               {{#each this.matches as |m|}}
-                <option value={{m.match_id}} selected={{eq m.match_id this.activeMatchId}}>
-                  {{m.match_name}} (ID: {{m.match_id}})
+                <option
+                  value={{m.match_id}}
+                  selected={{eq m.match_id this.activeMatchId}}
+                >
+                  {{m.match_name}}
+                  (ID:
+                  {{m.match_id}})
                 </option>
               {{/each}}
             </select>
-            <small class="text-muted d-block mt-1">Displays match name, location &amp; status in always-visible branding bar</small>
+            <small class="text-muted d-block mt-1">Displays match name, location
+              &amp; status in always-visible branding bar</small>
           </div>
 
-          {{!-- Active Round Filter --}}
+          {{! Active Round Filter }}
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              <i class="bi bi-funnel-fill text-info"></i> Round Filter (Right Panel)
+              <i class="bi bi-funnel-fill text-info"></i>
+              Round Filter (Right Panel)
             </label>
-            <select class="form-select" value={{this.activeRoundId}} {{on "change" this.setActiveRoundId}}>
+            <select
+              class="form-select"
+              value={{this.activeRoundId}}
+              {{on "change" this.setActiveRoundId}}
+            >
               <option value="" selected={{eq this.activeRoundId ""}}>All Rounds</option>
               {{#each this.roundTypes as |rt|}}
-                <option value={{rt.round_type_id}} selected={{eq rt.round_type_id this.activeRoundId}}>
+                <option
+                  value={{rt.round_type_id}}
+                  selected={{eq rt.round_type_id this.activeRoundId}}
+                >
                   {{rt.round_name}}
                 </option>
               {{/each}}
             </select>
-            <small class="text-muted d-block mt-1">Filters the right-panel player roster by round</small>
+            <small class="text-muted d-block mt-1">Filters the right-panel
+              player roster by round</small>
           </div>
 
-          <hr class="my-3">
+          <hr class="my-3" />
 
-          {{!-- ====== SECONDARY OVERLAY (dual mode) ====== --}}
+          {{! ====== SECONDARY OVERLAY (dual mode) ====== }}
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              <i class="bi bi-plus-circle"></i> Secondary Overlay
+              <i class="bi bi-plus-circle"></i>
+              Secondary Overlay
               <small class="text-muted fw-normal ms-1">(show two at once)</small>
             </label>
             <div class="d-flex gap-2 flex-wrap">
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="secType" id="secNone"
-                  value="none" checked={{eq this.secondaryType "none"}} {{on "change" this.setSecondaryType}} />
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="secType"
+                  id="secNone"
+                  value="none"
+                  checked={{eq this.secondaryType "none"}}
+                  {{on "change" this.setSecondaryType}}
+                />
                 <label class="form-check-label" for="secNone">None</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="secType" id="secPlayer"
-                  value="player" checked={{eq this.secondaryType "player"}} {{on "change" this.setSecondaryType}} />
-                <label class="form-check-label" for="secPlayer"><i class="bi bi-person-fill"></i> Player</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="secType"
+                  id="secPlayer"
+                  value="player"
+                  checked={{eq this.secondaryType "player"}}
+                  {{on "change" this.setSecondaryType}}
+                />
+                <label class="form-check-label" for="secPlayer"><i
+                    class="bi bi-person-fill"
+                  ></i>
+                  Player</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="secType" id="secBull"
-                  value="bull" checked={{eq this.secondaryType "bull"}} {{on "change" this.setSecondaryType}} />
-                <label class="form-check-label" for="secBull"><i class="bi bi-shield-fill"></i> Bull</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="secType"
+                  id="secBull"
+                  value="bull"
+                  checked={{eq this.secondaryType "bull"}}
+                  {{on "change" this.setSecondaryType}}
+                />
+                <label class="form-check-label" for="secBull"><i
+                    class="bi bi-shield-fill"
+                  ></i>
+                  Bull</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="secType" id="secMatch"
-                  value="match" checked={{eq this.secondaryType "match"}} {{on "change" this.setSecondaryType}} />
-                <label class="form-check-label" for="secMatch"><i class="bi bi-calendar-event"></i> Match</label>
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="secType"
+                  id="secMatch"
+                  value="match"
+                  checked={{eq this.secondaryType "match"}}
+                  {{on "change" this.setSecondaryType}}
+                />
+                <label class="form-check-label" for="secMatch"><i
+                    class="bi bi-calendar-event"
+                  ></i>
+                  Match</label>
               </div>
             </div>
           </div>
@@ -288,20 +553,39 @@
           {{#unless (eq this.secondaryType "none")}}
             <div class="mb-3">
               <label class="form-label fw-semibold">
-                Select {{this.secondaryType}} (secondary)
+                Select
+                {{this.secondaryType}}
+                (secondary)
               </label>
-              <select class="form-select" value={{this.secondaryEntityId}} {{on "change" this.setSecondaryEntityId}}>
+              <select
+                class="form-select"
+                value={{this.secondaryEntityId}}
+                {{on "change" this.setSecondaryEntityId}}
+              >
                 <option value="">-- Choose --</option>
                 {{#each this.secondaryEntityOptions as |opt|}}
-                  <option value={{get opt this.secondaryEntityIdField}} selected={{eq (get opt this.secondaryEntityIdField) this.secondaryEntityId}}>
-                    {{get opt this.secondaryEntityLabel}} (ID: {{get opt this.secondaryEntityIdField}})
+                  <option
+                    value={{get opt this.secondaryEntityIdField}}
+                    selected={{eq
+                      (get opt this.secondaryEntityIdField)
+                      this.secondaryEntityId
+                    }}
+                  >
+                    {{get opt this.secondaryEntityLabel}}
+                    (ID:
+                    {{get opt this.secondaryEntityIdField}})
                   </option>
                 {{/each}}
               </select>
               <div class="mt-2">
                 <small class="text-muted">Or enter ID directly:</small>
-                <input type="number" class="form-control form-control-sm mt-1" placeholder="Entity ID"
-                  value={{this.secondaryEntityId}} {{on "input" this.setSecondaryEntityId}} />
+                <input
+                  type="number"
+                  class="form-control form-control-sm mt-1"
+                  placeholder="Entity ID"
+                  value={{this.secondaryEntityId}}
+                  {{on "input" this.setSecondaryEntityId}}
+                />
               </div>
             </div>
           {{/unless}}
@@ -309,33 +593,49 @@
           {{#if this.hasDualOverlay}}
             <div class="alert alert-info py-2 mb-3">
               <i class="bi bi-layers-fill"></i>
-              <strong>Dual mode:</strong> Primary {{this.overlayType}} + Secondary {{this.secondaryType}} will show together
+              <strong>Dual mode:</strong>
+              Primary
+              {{this.overlayType}}
+              + Secondary
+              {{this.secondaryType}}
+              will show together
             </div>
           {{/if}}
 
-          {{!-- Apply Button --}}
-          <button class="btn btn-primary w-100"
+          {{! Apply Button }}
+          <button
+            class="btn btn-primary w-100"
             type="button"
             disabled={{this.isSaving}}
-            {{on "click" this.applyOverlay}}>
+            {{on "click" this.applyOverlay}}
+          >
             {{#if this.isSaving}}
-              <span class="spinner-border spinner-border-sm"></span> Saving…
+              <span class="spinner-border spinner-border-sm"></span>
+              Saving…
             {{else}}
-              <i class="bi bi-send-fill"></i> Apply Overlay
+              <i class="bi bi-send-fill"></i>
+              Apply Overlay
             {{/if}}
           </button>
         </div>
       </div>
 
-      {{!-- Bull Clock Control --}}
+      {{! Bull Clock Control }}
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <i class="bi bi-stopwatch-fill text-danger"></i>
           <strong>Bull Clock</strong>
           {{#if (eq this.clockState "running")}}
-            <span class="badge bg-danger ms-auto"><i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Running</span>
+            <span class="badge bg-danger ms-auto"><i
+                class="bi bi-circle-fill"
+                style="font-size:0.5rem"
+              ></i>
+              Running</span>
           {{else if (eq this.clockState "paused")}}
-            <span class="badge bg-warning text-dark ms-auto"><i class="bi bi-pause-fill"></i> Paused</span>
+            <span class="badge bg-warning text-dark ms-auto"><i
+                class="bi bi-pause-fill"
+              ></i>
+              Paused</span>
           {{else}}
             <span class="badge bg-secondary ms-auto">Stopped</span>
           {{/if}}
@@ -343,135 +643,229 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label fw-semibold">Clock Label</label>
-            <input type="text" class="form-control" placeholder="e.g. Bull #12 — Round 1"
-              value={{this.clockLabel}} {{on "input" this.setClockLabel}} />
-            <small class="text-muted d-block mt-1">Shown above the timer on the overlay</small>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="e.g. Bull #12 — Round 1"
+              value={{this.clockLabel}}
+              {{on "input" this.setClockLabel}}
+            />
+            <small class="text-muted d-block mt-1">Shown above the timer on the
+              overlay</small>
           </div>
           <div class="d-flex gap-2">
             {{#if (eq this.clockState "running")}}
-              <button class="btn btn-warning flex-fill" type="button" {{on "click" (fn this.clockAction "pause")}}>
-                <i class="bi bi-pause-fill"></i> Pause
+              <button
+                class="btn btn-warning flex-fill"
+                type="button"
+                {{on "click" (fn this.clockAction "pause")}}
+              >
+                <i class="bi bi-pause-fill"></i>
+                Pause
               </button>
             {{else}}
-              <button class="btn btn-success flex-fill" type="button" {{on "click" (fn this.clockAction "start")}}>
-                <i class="bi bi-play-fill"></i> {{if (eq this.clockState "paused") "Resume" "Start"}}
+              <button
+                class="btn btn-success flex-fill"
+                type="button"
+                {{on "click" (fn this.clockAction "start")}}
+              >
+                <i class="bi bi-play-fill"></i>
+                {{if (eq this.clockState "paused") "Resume" "Start"}}
               </button>
             {{/if}}
-            <button class="btn btn-outline-danger flex-fill" type="button" {{on "click" (fn this.clockAction "reset")}}>
-              <i class="bi bi-arrow-counterclockwise"></i> Reset
+            <button
+              class="btn btn-outline-danger flex-fill"
+              type="button"
+              {{on "click" (fn this.clockAction "reset")}}
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+              Reset
             </button>
           </div>
         </div>
       </div>
 
-      {{!-- Quick Actions Card --}}
+      {{! Quick Actions Card }}
       <div class="card mb-4">
         <div class="card-header d-flex align-items-center gap-2">
           <i class="bi bi-lightning-fill text-warning"></i>
           <strong>Quick Actions</strong>
         </div>
         <div class="card-body d-flex gap-2 flex-wrap">
-          <button class="btn {{if this.visible 'btn-danger' 'btn-success'}}" type="button" {{on "click" this.toggleVisibility}}>
+          <button
+            class="btn {{if this.visible 'btn-danger' 'btn-success'}}"
+            type="button"
+            {{on "click" this.toggleVisibility}}
+          >
             {{#if this.visible}}
-              <i class="bi bi-eye-slash-fill"></i> Hide Overlay
+              <i class="bi bi-eye-slash-fill"></i>
+              Hide Overlay
             {{else}}
-              <i class="bi bi-eye-fill"></i> Show Overlay
+              <i class="bi bi-eye-fill"></i>
+              Show Overlay
             {{/if}}
           </button>
-          <button class="btn btn-outline-secondary" type="button" {{on "click" this.copyViewerUrl}}>
-            <i class="bi bi-clipboard"></i> Copy Viewer URL
+          <button
+            class="btn btn-outline-secondary"
+            type="button"
+            {{on "click" this.copyViewerUrl}}
+          >
+            <i class="bi bi-clipboard"></i>
+            Copy Viewer URL
           </button>
-          <a href={{this.viewerUrl}} target="_blank" rel="noopener" class="btn btn-outline-primary">
-            <i class="bi bi-box-arrow-up-right"></i> Open Viewer
+          <a
+            href={{this.viewerUrl}}
+            target="_blank"
+            rel="noopener"
+            class="btn btn-outline-primary"
+          >
+            <i class="bi bi-box-arrow-up-right"></i>
+            Open Viewer
           </a>
         </div>
       </div>
 
     </div>
 
-    {{!-- Right Column: Live Preview --}}
+    {{! Right Column: Live Preview }}
     <div class="col-lg-7">
       <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between">
+        <div
+          class="card-header d-flex align-items-center justify-content-between"
+        >
           <div class="d-flex align-items-center gap-2">
             <i class="bi bi-display"></i>
             <strong>Live Preview</strong>
           </div>
-          <span class="badge {{if this.previewData 'bg-success' 'bg-secondary'}}">
+          <span
+            class="badge {{if this.previewData 'bg-success' 'bg-secondary'}}"
+          >
             {{if this.previewData "Connected" "Waiting…"}}
           </span>
         </div>
         <div class="card-body p-0">
           <div class="overlay-preview-container">
-            {{!-- Mini YouTube preview --}}
+            {{! Mini YouTube preview }}
             <div class="overlay-preview-video">
               {{#if this.videoUrl}}
                 <div class="overlay-preview-placeholder">
-                  <i class="bi bi-play-btn-fill" style="font-size:2rem;opacity:0.5"></i>
+                  <i
+                    class="bi bi-play-btn-fill"
+                    style="font-size:2rem;opacity:0.5"
+                  ></i>
                   <small class="d-block text-muted mt-1">YouTube Video Active</small>
                 </div>
               {{else}}
                 <div class="overlay-preview-placeholder">
-                  <i class="bi bi-camera-video-off" style="font-size:2rem;opacity:0.3"></i>
+                  <i
+                    class="bi bi-camera-video-off"
+                    style="font-size:2rem;opacity:0.3"
+                  ></i>
                   <small class="d-block text-muted mt-1">No video set</small>
                 </div>
               {{/if}}
             </div>
 
-            {{!-- Preview overlay bar --}}
+            {{! Preview overlay bar }}
             {{#if this.previewData.visible}}
-              <div class="overlay-preview-bar overlay-preview-bar--{{this.previewData.layout}}">
+              <div
+                class="overlay-preview-bar overlay-preview-bar--{{this.previewData.layout}}"
+              >
                 <div class="d-flex align-items-center gap-2">
                   {{#if (eq this.previewData.type "player")}}
                     <i class="bi bi-person-fill"></i>
-                    <strong>{{or this.previewData.entity.player_name "Player"}}</strong>
+                    <strong>{{or
+                        this.previewData.entity.player_name
+                        "Player"
+                      }}</strong>
                     <span class="ms-2 small">
-                      Matches: {{or this.previewData.entity.matches_played "0"}} |
-                      Wins: {{or this.previewData.entity.total_wins "0"}} |
-                      Avg Hold: {{or this.previewData.entity.avg_hold_time "0"}}s
+                      Matches:
+                      {{or this.previewData.entity.matches_played "0"}}
+                      | Wins:
+                      {{or this.previewData.entity.total_wins "0"}}
+                      | Avg Hold:
+                      {{or this.previewData.entity.avg_hold_time "0"}}s
                     </span>
                   {{else if (eq this.previewData.type "bull")}}
                     <i class="bi bi-shield-fill"></i>
-                    <strong>{{or this.previewData.entity.bull_name "Bull"}}</strong>
+                    <strong>{{or
+                        this.previewData.entity.bull_name
+                        "Bull"
+                      }}</strong>
                     <span class="ms-2 small">
-                      Matches: {{or this.previewData.entity.matches_played "0"}} |
-                      Aggression: {{or this.previewData.entity.avg_aggression "0"}} |
-                      Difficulty: {{or this.previewData.entity.avg_difficulty "0"}}
+                      Matches:
+                      {{or this.previewData.entity.matches_played "0"}}
+                      | Aggression:
+                      {{or this.previewData.entity.avg_aggression "0"}}
+                      | Difficulty:
+                      {{or this.previewData.entity.avg_difficulty "0"}}
                     </span>
                   {{else if (eq this.previewData.type "match")}}
                     <i class="bi bi-calendar-event"></i>
-                    <strong>{{or this.previewData.entity.match_name "Match"}}</strong>
+                    <strong>{{or
+                        this.previewData.entity.match_name
+                        "Match"
+                      }}</strong>
                     <span class="ms-2 small">
-                      Status: {{or this.previewData.entity.status "—"}} |
-                      Rounds: {{or this.previewData.entity.total_rounds "0"}} |
-                      Players: {{or this.previewData.entity.player_count "0"}}
+                      Status:
+                      {{or this.previewData.entity.status "—"}}
+                      | Rounds:
+                      {{or this.previewData.entity.total_rounds "0"}}
+                      | Players:
+                      {{or this.previewData.entity.player_count "0"}}
                     </span>
                   {{else}}
                     <span class="text-muted">No overlay type selected</span>
                   {{/if}}
                 </div>
-                {{!-- Secondary entity preview --}}
+                {{! Secondary entity preview }}
                 {{#if this.previewData.secondaryEntity}}
-                  <div class="d-flex align-items-center gap-2 mt-1 pt-1" style="border-top:1px solid rgba(255,255,255,0.2)">
+                  <div
+                    class="d-flex align-items-center gap-2 mt-1 pt-1"
+                    style="border-top:1px solid rgba(255,255,255,0.2)"
+                  >
                     {{#if (eq this.previewData.secondaryType "player")}}
                       <i class="bi bi-person-fill" style="opacity:0.7"></i>
-                      <strong>{{or this.previewData.secondaryEntity.player_name "Player"}}</strong>
+                      <strong>{{or
+                          this.previewData.secondaryEntity.player_name
+                          "Player"
+                        }}</strong>
                       <span class="ms-2 small">
-                        Matches: {{or this.previewData.secondaryEntity.matches_played "0"}} |
-                        Wins: {{or this.previewData.secondaryEntity.total_wins "0"}}
+                        Matches:
+                        {{or
+                          this.previewData.secondaryEntity.matches_played
+                          "0"
+                        }}
+                        | Wins:
+                        {{or this.previewData.secondaryEntity.total_wins "0"}}
                       </span>
                     {{else if (eq this.previewData.secondaryType "bull")}}
                       <i class="bi bi-shield-fill" style="opacity:0.7"></i>
-                      <strong>{{or this.previewData.secondaryEntity.bull_name "Bull"}}</strong>
+                      <strong>{{or
+                          this.previewData.secondaryEntity.bull_name
+                          "Bull"
+                        }}</strong>
                       <span class="ms-2 small">
-                        Aggression: {{or this.previewData.secondaryEntity.avg_aggression "0"}} |
-                        Difficulty: {{or this.previewData.secondaryEntity.avg_difficulty "0"}}
+                        Aggression:
+                        {{or
+                          this.previewData.secondaryEntity.avg_aggression
+                          "0"
+                        }}
+                        | Difficulty:
+                        {{or
+                          this.previewData.secondaryEntity.avg_difficulty
+                          "0"
+                        }}
                       </span>
                     {{else if (eq this.previewData.secondaryType "match")}}
                       <i class="bi bi-calendar-event" style="opacity:0.7"></i>
-                      <strong>{{or this.previewData.secondaryEntity.match_name "Match"}}</strong>
+                      <strong>{{or
+                          this.previewData.secondaryEntity.match_name
+                          "Match"
+                        }}</strong>
                       <span class="ms-2 small">
-                        Status: {{or this.previewData.secondaryEntity.status "—"}}
+                        Status:
+                        {{or this.previewData.secondaryEntity.status "—"}}
                       </span>
                     {{/if}}
                   </div>
@@ -482,19 +876,26 @@
         </div>
       </div>
 
-      {{!-- Current State Info --}}
+      {{! Current State Info }}
       {{#if this.previewData}}
         <div class="card mt-3">
           <div class="card-body py-2 px-3">
             <div class="d-flex flex-wrap gap-3 small text-muted">
-              <span><strong>Type:</strong> {{or this.previewData.type "none"}}</span>
-              <span><strong>Entity ID:</strong> {{or this.previewData.entityId "—"}}</span>
-              <span><strong>Layout:</strong> {{or this.previewData.layout "—"}}</span>
-              <span><strong>Visible:</strong> {{if this.previewData.visible "Yes" "No"}}</span>
+              <span><strong>Type:</strong>
+                {{or this.previewData.type "none"}}</span>
+              <span><strong>Entity ID:</strong>
+                {{or this.previewData.entityId "—"}}</span>
+              <span><strong>Layout:</strong>
+                {{or this.previewData.layout "—"}}</span>
+              <span><strong>Visible:</strong>
+                {{if this.previewData.visible "Yes" "No"}}</span>
               {{#unless (eq this.previewData.secondaryType "none")}}
-                <span><strong>Secondary:</strong> {{this.previewData.secondaryType}} #{{or this.previewData.secondaryId "—"}}</span>
+                <span><strong>Secondary:</strong>
+                  {{this.previewData.secondaryType}}
+                  #{{or this.previewData.secondaryId "—"}}</span>
               {{/unless}}
-              <span><strong>Updated:</strong> {{or this.previewData.updatedAt "—"}}</span>
+              <span><strong>Updated:</strong>
+                {{or this.previewData.updatedAt "—"}}</span>
             </div>
           </div>
         </div>

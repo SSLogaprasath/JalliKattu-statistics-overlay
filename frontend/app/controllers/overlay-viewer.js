@@ -179,20 +179,26 @@ export default class OverlayViewerController extends Controller {
 
   get tickerPlayerItems() {
     if (!this.ticker) return [];
-    return (this.ticker.topPlayers || []).slice(0, 5).map((p, i) => ({
-      rank: i + 1,
-      name: p.player_name,
-      stat: `${p.net_score} pts`,
-    }));
+    return (this.ticker.topPlayers || [])
+      .filter((p) => Number(p.net_score) > 0)
+      .slice(0, 5)
+      .map((p, i) => ({
+        rank: i + 1,
+        name: p.player_name,
+        stat: `${p.net_score} pts`,
+      }));
   }
 
   get tickerBullItems() {
     if (!this.ticker) return [];
-    return (this.ticker.topBulls || []).slice(0, 5).map((b, i) => ({
-      rank: i + 1,
-      name: b.bull_name,
-      stat: `diff ${Number(b.avg_difficulty).toFixed(1)}`,
-    }));
+    return (this.ticker.topBulls || [])
+      .filter((b) => Number(b.avg_difficulty) > 0)
+      .slice(0, 5)
+      .map((b, i) => ({
+        rank: i + 1,
+        name: b.bull_name,
+        stat: `diff ${Number(b.avg_difficulty).toFixed(1)}`,
+      }));
   }
 
   // ─── Branding bar ───
@@ -238,17 +244,17 @@ export default class OverlayViewerController extends Controller {
     // Detect which VS combo: player-vs-bull, player-vs-player, bull-vs-bull
     const t1 = this.overlayType;
     const t2 = this.secondaryType;
-    if (t1 === 'player' && t2 === 'bull') return 'player-vs-bull';
-    if (t1 === 'bull' && t2 === 'player') return 'bull-vs-player';
-    if (t1 === 'player' && t2 === 'player') return 'player-vs-player';
-    if (t1 === 'bull' && t2 === 'bull') return 'bull-vs-bull';
-    return 'player-vs-bull'; // fallback
+    if (t1 === "player" && t2 === "bull") return "player-vs-bull";
+    if (t1 === "bull" && t2 === "player") return "bull-vs-player";
+    if (t1 === "player" && t2 === "player") return "player-vs-player";
+    if (t1 === "bull" && t2 === "bull") return "bull-vs-bull";
+    return "player-vs-bull"; // fallback
   }
   get vsLeftIsPlayer() {
-    return this.overlayType === 'player';
+    return this.overlayType === "player";
   }
   get vsRightIsPlayer() {
-    return this.secondaryType === 'player';
+    return this.secondaryType === "player";
   }
   get vsLeftEntity() {
     return this.entity || {};

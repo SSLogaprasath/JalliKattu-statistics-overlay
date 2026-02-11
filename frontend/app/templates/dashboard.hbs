@@ -1171,7 +1171,7 @@
 
   <div class="row g-4 mb-4">
     {{! User Breakdown }}
-    <div class="col-lg-5">
+    <div class="col-lg-6">
       <div class="card p-4 h-100">
         <h6 class="fw-bold mb-3"><i
             class="bi bi-person-fill-gear text-primary me-1"
@@ -1198,7 +1198,7 @@
     </div>
 
     {{! Match Status }}
-    <div class="col-lg-3">
+    <div class="col-lg-6">
       <div class="card p-4 h-100">
         <h6 class="fw-bold mb-3"><i
             class="bi bi-pie-chart-fill text-success me-1"
@@ -1221,32 +1221,6 @@
             <span style="font-size:0.8rem;color:#856404"> pending</span>
           </div>
         {{/if}}
-      </div>
-    </div>
-
-    {{! DB Tables }}
-    <div class="col-lg-4">
-      <div class="card p-4 h-100">
-        <h6 class="fw-bold mb-3"><i
-            class="bi bi-database-fill text-info me-1"
-          ></i>
-          Database Tables</h6>
-        <div class="table-responsive" style="max-height:220px;overflow-y:auto">
-          <table class="table table-sm mb-0">
-            <thead><tr><th>Table</th><th class="text-end">Rows</th></tr></thead>
-            <tbody>
-              {{#each this.tableList as |t|}}
-                <tr>
-                  <td style="font-size:0.8rem"><code>{{t.name}}</code></td>
-                  <td
-                    class="text-end fw-bold"
-                    style="font-size:0.8rem"
-                  >{{t.count}}</td>
-                </tr>
-              {{/each}}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   </div>
@@ -1328,7 +1302,7 @@
           <h6>User Management</h6><p>Manage all accounts</p></div>
       </LinkTo>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
+    <div class="col-6 col-md-4 col-lg-4">
       <LinkTo @route="scoring" class="text-decoration-none">
         <div class="card action-card"><div class="action-icon bg-success"><i
               class="bi bi-broadcast"
@@ -1336,15 +1310,7 @@
           <h6>Scoring</h6><p>Score live matches</p></div>
       </LinkTo>
     </div>
-    <div class="col-6 col-md-4 col-lg-3">
-      <LinkTo @route="tables" class="text-decoration-none">
-        <div class="card action-card"><div class="action-icon bg-primary"><i
-              class="bi bi-database-fill"
-            ></i></div>
-          <h6>Data Tables</h6><p>Master data management</p></div>
-      </LinkTo>
-    </div>
-    <div class="col-6 col-md-4 col-lg-3">
+    <div class="col-6 col-md-4 col-lg-4">
       <LinkTo @route="registration" class="text-decoration-none">
         <div class="card action-card"><div class="action-icon bg-info"><i
               class="bi bi-person-plus-fill"
