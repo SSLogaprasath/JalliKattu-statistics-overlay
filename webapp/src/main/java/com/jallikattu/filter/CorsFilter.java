@@ -26,7 +26,7 @@ public class CorsFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
 
         String origin = request.getHeader("Origin");
-        if (origin != null) {
+        if (origin != null && isAllowedOrigin(origin)) {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -42,13 +42,17 @@ public class CorsFilter implements Filter {
 
         chain.doFilter(req, res);
 
-        // Add SameSite=None to session cookie for cross-domain requests
+        // Set cookie domain to .jallikattu.co.in so cookies work across subdomains
         Collection<String> setCookieHeaders = response.getHeaders("Set-Cookie");
         if (setCookieHeaders != null && !setCookieHeaders.isEmpty()) {
+            String cookieDomain = System.getenv("COOKIE_DOMAIN");
             boolean first = true;
             for (String header : setCookieHeaders) {
                 if (!header.contains("SameSite")) {
-                    header = header + "; SameSite=None";
+                    header = header + "; SameSite=Lax";
+                }
+                if (cookieDomain != null && !header.contains("Domain=")) {
+                    header = header + "; Domain=" + cookieDomain;
                 }
                 if (first) {
                     response.setHeader("Set-Cookie", header);
@@ -58,5 +62,21 @@ public class CorsFilter implements Filter {
                 }
             }
         }
+    }
+
+    private boolean isAllowedOrigin(String origin) {
+        // Allow jallikattu.co.in and subdomains
+        if (origin.endsWith(".jallikattu.co.in") || origin.equals("https://jallikattu.co.in")) {
+            return true;
+        }
+        // Allow localhost for development
+        if (origin.contains("localhost") || origin.contains("127.0.0.1")) {
+            return true;
+        }
+        // Allow Render domain as fallback
+        if (origin.contains("onrender.com") || origin.contains("workers.dev")) {
+            return true;
+        }
+        return false;
     }
 }

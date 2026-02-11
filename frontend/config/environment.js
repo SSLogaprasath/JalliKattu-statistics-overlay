@@ -29,9 +29,8 @@ module.exports = function (environment) {
   }
 
   if (environment === "production") {
-    // In production, the API is on a separate domain (Render)
-    ENV.APP.API_HOST =
-      process.env.API_HOST || "https://jallikattu-backend-lpsd.onrender.com";
+    // In production, API is on api.jallikattu.co.in (same root domain for cookies)
+    ENV.APP.API_HOST = process.env.API_HOST || "https://api.jallikattu.co.in";
   }
 
   return ENV;

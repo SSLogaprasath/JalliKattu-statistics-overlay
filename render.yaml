@@ -24,3 +24,6 @@ services:
         value: cpu
       - key: API_KEY
         generateValue: true # auto-generate a secure random API key
+      # ── Cookie domain for cross-subdomain auth ──
+      - key: COOKIE_DOMAIN
+        value: .jallikattu.co.in
