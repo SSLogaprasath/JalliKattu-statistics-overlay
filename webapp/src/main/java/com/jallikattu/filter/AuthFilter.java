@@ -11,7 +11,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -19,8 +18,8 @@ import jakarta.servlet.http.HttpSession;
 /**
  * Authentication filter - protects all /api/* routes.
  * Returns 401/403 JSON for unauthenticated/unauthorized API requests.
+ * Registered in web.xml to ensure ordering after CorsFilter.
  */
-@WebFilter(urlPatterns = {"/api/*"})
 public class AuthFilter implements Filter {
 
     // API paths scorers can access
