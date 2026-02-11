@@ -37,6 +37,7 @@ WORKDIR /app/ai-service
 COPY ai-service/requirements.txt ./
 RUN python3 -m venv /app/venv && \
     /app/venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /app/venv/bin/pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     /app/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 COPY ai-service/ ./
