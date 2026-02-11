@@ -8,15 +8,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * CORS filter for API endpoints.
- * Allows Ember dev server (localhost:4200) to call Tomcat (localhost:8080).
+ * Allows cross-origin requests from jallikattu.co.in and dev servers.
+ * Registered in web.xml to ensure it runs BEFORE AuthFilter.
  */
-@WebFilter("/api/*")
 public class CorsFilter implements Filter {
 
     @Override

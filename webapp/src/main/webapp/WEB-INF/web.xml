@@ -17,6 +17,16 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!-- CORS filter must run BEFORE AuthFilter so preflight gets headers -->
+    <filter>
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>com.jallikattu.filter.CorsFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
+
     <!-- Session timeout: 30 minutes -->
     <session-config>
         <session-timeout>30</session-timeout>

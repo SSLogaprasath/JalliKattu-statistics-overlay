@@ -53,6 +53,12 @@ public class AuthFilter implements Filter {
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
+        // Allow CORS preflight through (OPTIONS requests carry no credentials)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String path = request.getServletPath();
 
         // Allow /api/auth (login/logout) without session
