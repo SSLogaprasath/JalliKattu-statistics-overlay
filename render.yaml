@@ -1,0 +1,26 @@
+# ============================================================
+# Render Blueprint – auto-deploys from GitHub
+# https://render.com/docs/blueprint-spec
+# ============================================================
+services:
+  - type: web
+    name: jallikattu-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    repo: https://github.com/SSLogaprasath/JalliKattu-statistics-overlay.git
+    branch: main
+    plan: free
+    envVars:
+      # ── TiDB Cloud MySQL connection ──
+      # Fill these in Render dashboard after creating TiDB cluster
+      - key: DB_URL
+        sync: false  # set manually in Render dashboard
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # ── AI Service config ──
+      - key: DEVICE
+        value: cpu
+      - key: API_KEY
+        generateValue: true  # auto-generate a secure random API key

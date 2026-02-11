@@ -29,7 +29,10 @@ module.exports = function (environment) {
   }
 
   if (environment === 'production') {
-    // Production-specific settings
+    // In production, the API is on a separate domain (Render)
+    // Set this to your Render service URL, e.g.:
+    // 'https://jallikattu-backend.onrender.com'
+    ENV.APP.API_HOST = process.env.API_HOST || '';
   }
 
   return ENV;
