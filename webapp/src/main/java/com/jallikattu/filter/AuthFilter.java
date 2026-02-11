@@ -60,10 +60,18 @@ public class AuthFilter implements Filter {
 
         String path = request.getServletPath();
 
-        // Allow /api/auth (login/logout) without session
+        // Allow public auth endpoints (login/logout/session) without session.
+        // /api/auth/users requires authentication so it falls through.
         if (path.startsWith("/api/auth")) {
-            chain.doFilter(req, res);
-            return;
+            String authAction = request.getPathInfo(); // e.g. /login, /logout, /session, /users
+            if (authAction == null
+                    || "/login".equals(authAction)
+                    || "/logout".equals(authAction)
+                    || "/session".equals(authAction)) {
+                chain.doFilter(req, res);
+                return;
+            }
+            // /api/auth/users (and any future admin auth endpoints) fall through to auth check
         }
 
         // Allow /api/public (stats, leaderboard, self-registration) without session
