@@ -63,7 +63,7 @@ public class StatsDAO {
             FROM player p
             LEFT JOIN player_match_history pmh ON p.player_id = pmh.player_id AND pmh.status = 'approved'
             WHERE p.player_id = ?
-            GROUP BY p.player_id
+            GROUP BY p.player_id, p.player_name, p.DOB, p.Phone_number
             """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -117,7 +117,7 @@ public class StatsDAO {
             LEFT JOIN owner o ON bt.owner_id = o.owner_id
             LEFT JOIN bull_match_history bmh ON bt.bull_id = bmh.bull_id AND bmh.status = 'approved'
             WHERE bt.bull_id = ?
-            GROUP BY bt.bull_id
+            GROUP BY bt.bull_id, bt.bull_name, bt.age, bt.fitness_certificate, bb.bull_breed_name, o.name, o.owner_id
             """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -162,7 +162,7 @@ public class StatsDAO {
                    COALESCE(SUM(pmh.bull_caught), 0) - COALESCE(SUM(pmh.penalties), 0) AS net_score
             FROM player p
             JOIN player_match_history pmh ON p.player_id = pmh.player_id AND pmh.status = 'approved'
-            GROUP BY p.player_id
+            GROUP BY p.player_id, p.player_name
             ORDER BY net_score DESC, total_caught DESC
             LIMIT ?
             """;
@@ -186,7 +186,7 @@ public class StatsDAO {
             JOIN bull_match_history bmh ON bt.bull_id = bmh.bull_id AND bmh.status = 'approved'
             LEFT JOIN owner o ON bt.owner_id = o.owner_id
             LEFT JOIN bull_breed bb ON bt.breed_id = bb.bull_breed_id
-            GROUP BY bt.bull_id
+            GROUP BY bt.bull_id, bt.bull_name, o.name, bb.bull_breed_name
             ORDER BY avg_difficulty DESC, avg_aggression DESC
             LIMIT ?
             """;
@@ -589,7 +589,7 @@ public class StatsDAO {
             FROM player_match_history pmh
             JOIN `match` m ON pmh.match_id = m.match_id
             WHERE pmh.player_id = ? AND pmh.status = 'approved'
-            GROUP BY m.match_id
+            GROUP BY m.match_id, m.match_name, m.match_date
             ORDER BY m.match_date
             """;
         try (Connection conn = DBConnection.getConnection();
@@ -639,7 +639,7 @@ public class StatsDAO {
                 FROM bull_match_history bmh
                 JOIN bull_table bt ON bmh.bull_id = bt.bull_id
                 WHERE bt.owner_id = ? AND bmh.status = 'approved'
-                GROUP BY bt.bull_id
+                GROUP BY bt.bull_id, bt.bull_name
                 ORDER BY avg_diff DESC
                 LIMIT 1
                 """;

@@ -3,6 +3,7 @@ package com.jallikattu.util;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -207,6 +208,67 @@ public class AuthDAO {
                 ps.setInt(1, userId);
                 return ps.executeUpdate() > 0;
             }
+        }
+    }
+
+    // ───────────── TOKEN-BASED AUTH ─────────────
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** Generate a cryptographically random 64-char hex token. */
+    public static String generateToken() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        StringBuilder hex = new StringBuilder(64);
+        for (byte b : bytes) {
+            String h = Integer.toHexString(0xff & b);
+            if (h.length() == 1) hex.append('0');
+            hex.append(h);
+        }
+        return hex.toString();
+    }
+
+    /** Store auth token for a user. Returns the token. */
+    public static String createAuthToken(String userId) throws SQLException {
+        String token = generateToken();
+        String sql = "UPDATE app_user SET auth_token = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, token);
+            ps.setInt(2, Integer.parseInt(userId));
+            ps.executeUpdate();
+        }
+        return token;
+    }
+
+    /** Validate auth token and return user info, or null if invalid. */
+    public static Map<String, String> validateToken(String token) throws SQLException {
+        if (token == null || token.isEmpty()) return null;
+        String sql = "SELECT user_id, username, full_name, role FROM app_user WHERE auth_token = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, token);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, String> user = new LinkedHashMap<>();
+                    user.put("user_id", rs.getString("user_id"));
+                    user.put("username", rs.getString("username"));
+                    user.put("full_name", rs.getString("full_name"));
+                    user.put("role", rs.getString("role"));
+                    return user;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Clear auth token on logout. */
+    public static void clearAuthToken(String userId) throws SQLException {
+        String sql = "UPDATE app_user SET auth_token = NULL WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Integer.parseInt(userId));
+            ps.executeUpdate();
         }
     }
 }

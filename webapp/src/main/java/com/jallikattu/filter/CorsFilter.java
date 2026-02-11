@@ -49,7 +49,7 @@ public class CorsFilter implements Filter {
             boolean first = true;
             for (String header : setCookieHeaders) {
                 if (!header.contains("SameSite")) {
-                    header = header + "; SameSite=Lax";
+                    header = header + "; SameSite=None; Secure";
                 }
                 if (cookieDomain != null && !header.contains("Domain=")) {
                     header = header + "; Domain=" + cookieDomain;

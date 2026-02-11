@@ -2,6 +2,7 @@ package com.jallikattu.servlet;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jallikattu.util.AuthDAO;
@@ -36,9 +37,28 @@ public class AuthApiServlet extends BaseRestServlet {
                     "full_name", session.getAttribute("full_name"),
                     "role", session.getAttribute("role")
                 ));
-            } else {
-                sendError(resp, "Not authenticated", 401);
+                return;
             }
+            // Fallback: check Authorization header token (survives container restarts)
+            String authHeader = req.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                try {
+                    Map<String, String> user = AuthDAO.validateToken(token);
+                    if (user != null) {
+                        // Re-establish server session from token
+                        HttpSession newSession = req.getSession(true);
+                        newSession.setAttribute("user_id", user.get("user_id"));
+                        newSession.setAttribute("username", user.get("username"));
+                        newSession.setAttribute("full_name", user.get("full_name"));
+                        newSession.setAttribute("role", user.get("role"));
+                        newSession.setMaxInactiveInterval(30 * 60);
+                        sendJson(resp, user);
+                        return;
+                    }
+                } catch (Exception e) { /* fall through to 401 */ }
+            }
+            sendError(resp, "Not authenticated", 401);
             return;
         }
 
@@ -82,7 +102,11 @@ public class AuthApiServlet extends BaseRestServlet {
                     session.setAttribute("full_name", user.get("full_name"));
                     session.setAttribute("role", user.get("role"));
                     session.setMaxInactiveInterval(30 * 60);
-                    sendJson(resp, user);
+                    // Generate auth token for cross-origin / container restart persistence
+                    String token = AuthDAO.createAuthToken(user.get("user_id"));
+                    Map<String, String> response = new LinkedHashMap<>(user);
+                    response.put("token", token);
+                    sendJson(resp, response);
                 } else {
                     sendError(resp, "Invalid username or password", 401);
                 }
@@ -94,7 +118,22 @@ public class AuthApiServlet extends BaseRestServlet {
 
         if ("logout".equals(seg)) {
             HttpSession session = req.getSession(false);
-            if (session != null) session.invalidate();
+            if (session != null) {
+                String userId = (String) session.getAttribute("user_id");
+                if (userId != null) {
+                    try { AuthDAO.clearAuthToken(userId); } catch (Exception ignored) {}
+                }
+                session.invalidate();
+            }
+            // Also check token header for stateless logout
+            String authHeader = req.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                try {
+                    Map<String, String> user = AuthDAO.validateToken(token);
+                    if (user != null) AuthDAO.clearAuthToken(user.get("user_id"));
+                } catch (Exception ignored) {}
+            }
             sendSuccess(resp, "Logged out");
             return;
         }

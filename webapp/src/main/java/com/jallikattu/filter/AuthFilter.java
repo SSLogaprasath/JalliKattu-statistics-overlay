@@ -1,7 +1,10 @@
 package com.jallikattu.filter;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
+
+import com.jallikattu.util.AuthDAO;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -80,6 +83,26 @@ public class AuthFilter implements Filter {
         }
 
         HttpSession session = request.getSession(false);
+
+        if (session == null || session.getAttribute("user_id") == null) {
+            // Fallback: check Authorization Bearer token (survives container restarts)
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                try {
+                    Map<String, String> user = AuthDAO.validateToken(token);
+                    if (user != null) {
+                        // Re-establish server session from token
+                        session = request.getSession(true);
+                        session.setAttribute("user_id", user.get("user_id"));
+                        session.setAttribute("username", user.get("username"));
+                        session.setAttribute("full_name", user.get("full_name"));
+                        session.setAttribute("role", user.get("role"));
+                        session.setMaxInactiveInterval(30 * 60);
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
 
         if (session == null || session.getAttribute("user_id") == null) {
             response.setStatus(401);

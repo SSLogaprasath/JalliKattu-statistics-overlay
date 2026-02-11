@@ -50,14 +50,23 @@ export default class AuthService extends Service {
       .slice(0, 2);
   }
 
+  get authHeaders() {
+    const token = localStorage.getItem("auth_token");
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return headers;
+  }
+
   async checkSession() {
     try {
       const resp = await fetch(`${this.apiBase}${AUTH.SESSION}`, {
         credentials: "include",
+        headers: this.authHeaders,
       });
       if (!resp.ok) {
         this.user = null;
         this.isAuthenticated = false;
+        localStorage.removeItem("auth_token");
         return;
       }
       const data = await resp.json();
@@ -67,6 +76,7 @@ export default class AuthService extends Service {
       } else {
         this.user = null;
         this.isAuthenticated = false;
+        localStorage.removeItem("auth_token");
       }
     } catch {
       this.user = null;
@@ -85,6 +95,9 @@ export default class AuthService extends Service {
     if (resp.ok) {
       this.user = data;
       this.isAuthenticated = true;
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+      }
       return { success: true };
     } else {
       return { success: false, error: data.error || "Login failed" };
@@ -95,9 +108,11 @@ export default class AuthService extends Service {
     await fetch(`${this.apiBase}${AUTH.LOGOUT}`, {
       method: "POST",
       credentials: "include",
+      headers: this.authHeaders,
     });
     this.user = null;
     this.isAuthenticated = false;
+    localStorage.removeItem("auth_token");
   }
 
   async apiFetch(path, options = {}) {
@@ -107,6 +122,7 @@ export default class AuthService extends Service {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...this.authHeaders,
         ...(options.headers || {}),
       },
     });
