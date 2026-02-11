@@ -233,6 +233,30 @@ export default class OverlayViewerController extends Controller {
     return c && c.state !== "stopped";
   }
 
+  // ─── VS mode helpers ───
+  get vsMode() {
+    // Detect which VS combo: player-vs-bull, player-vs-player, bull-vs-bull
+    const t1 = this.overlayType;
+    const t2 = this.secondaryType;
+    if (t1 === 'player' && t2 === 'bull') return 'player-vs-bull';
+    if (t1 === 'bull' && t2 === 'player') return 'bull-vs-player';
+    if (t1 === 'player' && t2 === 'player') return 'player-vs-player';
+    if (t1 === 'bull' && t2 === 'bull') return 'bull-vs-bull';
+    return 'player-vs-bull'; // fallback
+  }
+  get vsLeftIsPlayer() {
+    return this.overlayType === 'player';
+  }
+  get vsRightIsPlayer() {
+    return this.secondaryType === 'player';
+  }
+  get vsLeftEntity() {
+    return this.entity || {};
+  }
+  get vsRightEntity() {
+    return this.secondaryEntity || {};
+  }
+
   // ─── VS mode extra stats ───
   get playerBullsCaught() {
     return this.entity?.total_bulls_caught || this.entity?.bull_caught || 0;
@@ -245,6 +269,26 @@ export default class OverlayViewerController extends Controller {
     const agg = Number(e.avg_aggression) || 0;
     const diff = Number(e.avg_difficulty) || 0;
     return ((agg + diff) / 2).toFixed(1);
+  }
+
+  // Generic VS stat helpers for any entity
+  _playerStats(e) {
+    return {
+      bullsCaught: e?.total_bulls_caught || e?.bull_caught || 0,
+      netScore: e?.career_net_score || e?.net_score || 0,
+      matches: e?.matches_played || 0,
+      penalties: e?.total_penalties || 0,
+    };
+  }
+  _bullStats(e) {
+    const agg = Number(e?.avg_aggression) || 0;
+    const diff = Number(e?.avg_difficulty) || 0;
+    return {
+      avgScore: ((agg + diff) / 2).toFixed(1),
+      aggression: e?.avg_aggression || 0,
+      difficulty: e?.avg_difficulty || 0,
+      releases: e?.total_releases || 0,
+    };
   }
 
   // ─── Internals ───

@@ -101,12 +101,12 @@
               <option value="bottom-bar" selected={{eq this.layout "bottom-bar"}}>Bottom Bar (like cricket)</option>
               <option value="side-panel" selected={{eq this.layout "side-panel"}}>Side Panel</option>
               <option value="top-bar" selected={{eq this.layout "top-bar"}}>Top Bar</option>
-              <option value="vs" selected={{eq this.layout "vs"}}>VS Matchup (Player vs Bull)</option>
+              <option value="vs" selected={{eq this.layout "vs"}}>VS Matchup</option>
               <option value="ticker" selected={{eq this.layout "ticker"}}>Leaderboard Ticker</option>
             </select>
             {{#if (eq this.layout "vs")}}
               <small class="text-muted d-block mt-1">
-                <i class="bi bi-info-circle"></i> VS layout works best with Player (primary) + Bull (secondary)
+                <i class="bi bi-info-circle"></i> VS layout supports Player vs Bull, Player vs Player, and Bull vs Bull
               </small>
             {{/if}}
             {{#if (eq this.layout "ticker")}}

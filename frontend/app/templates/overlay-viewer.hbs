@@ -222,83 +222,128 @@
   {{! ======== VS MATCHUP LAYOUT ======== }}
   {{#if this.isVsLayout}}
     <div class="ov-vs-container animate-slide-up">
-      {{! Player side }}
-      <div class="ov-vs-side ov-vs-side--player">
-        <div class="ov-vs-side-bg"></div>
-        <div class="ov-vs-content">
-          <div class="ov-vs-icon-wrap"><i class="bi bi-person-fill"></i></div>
-          <div class="ov-vs-name">{{this.entity.player_name}}</div>
-          {{#if this.entity.village}}<div
-              class="ov-vs-sub"
-            >{{this.entity.village}}</div>{{/if}}
-          <div class="ov-vs-stats">
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{this.playerBullsCaught}}</span>
-              <span class="ov-vs-stat-lbl">Bulls Caught</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{this.playerNetScore}}</span>
-              <span class="ov-vs-stat-lbl">Net Score</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{or
-                  this.entity.matches_played
-                  "0"
-                }}</span>
-              <span class="ov-vs-stat-lbl">Matches</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{or
-                  this.entity.total_penalties
-                  "0"
-                }}</span>
-              <span class="ov-vs-stat-lbl">Penalties</span>
+
+      {{! ── LEFT SIDE ── }}
+      {{#if this.vsLeftIsPlayer}}
+        {{! Player on left }}
+        <div class="ov-vs-side ov-vs-side--player">
+          <div class="ov-vs-side-bg"></div>
+          <div class="ov-vs-content">
+            <div class="ov-vs-icon-wrap"><i class="bi bi-person-fill"></i></div>
+            <div class="ov-vs-name">{{this.entity.player_name}}</div>
+            {{#if this.entity.village}}<div class="ov-vs-sub">{{this.entity.village}}</div>{{/if}}
+            <div class="ov-vs-stats">
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{this.playerBullsCaught}}</span>
+                <span class="ov-vs-stat-lbl">Bulls Caught</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{this.playerNetScore}}</span>
+                <span class="ov-vs-stat-lbl">Net Score</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.matches_played "0"}}</span>
+                <span class="ov-vs-stat-lbl">Matches</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.total_penalties "0"}}</span>
+                <span class="ov-vs-stat-lbl">Penalties</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      {{else}}
+        {{! Bull on left }}
+        <div class="ov-vs-side ov-vs-side--bull">
+          <div class="ov-vs-side-bg"></div>
+          <div class="ov-vs-content">
+            <div class="ov-vs-icon-wrap"><i class="bi bi-shield-fill"></i></div>
+            <div class="ov-vs-name">{{this.entity.bull_name}}</div>
+            {{#if this.entity.breed}}<div class="ov-vs-sub">{{this.entity.breed}}</div>{{/if}}
+            <div class="ov-vs-stats">
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.avg_aggression "0"}}</span>
+                <span class="ov-vs-stat-lbl">Aggression</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.avg_difficulty "0"}}</span>
+                <span class="ov-vs-stat-lbl">Difficulty</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.total_releases "0"}}</span>
+                <span class="ov-vs-stat-lbl">Releases</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.entity.owner_name "—"}}</span>
+                <span class="ov-vs-stat-lbl">Owner</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {{/if}}
 
       {{! VS badge }}
       <div class="ov-vs-badge"><span>VS</span></div>
 
-      {{! Bull side }}
-      <div class="ov-vs-side ov-vs-side--bull">
-        <div class="ov-vs-side-bg"></div>
-        <div class="ov-vs-content">
-          <div class="ov-vs-icon-wrap"><i class="bi bi-shield-fill"></i></div>
-          <div class="ov-vs-name">{{this.secondaryEntity.bull_name}}</div>
-          {{#if this.secondaryEntity.breed}}<div
-              class="ov-vs-sub"
-            >{{this.secondaryEntity.breed}}</div>{{/if}}
-          <div class="ov-vs-stats">
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{this.bullAvgScore}}</span>
-              <span class="ov-vs-stat-lbl">Avg Score</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{or
-                  this.secondaryEntity.avg_aggression
-                  "0"
-                }}</span>
-              <span class="ov-vs-stat-lbl">Aggression</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{or
-                  this.secondaryEntity.avg_difficulty
-                  "0"
-                }}</span>
-              <span class="ov-vs-stat-lbl">Difficulty</span>
-            </div>
-            <div class="ov-vs-stat">
-              <span class="ov-vs-stat-val">{{or
-                  this.secondaryEntity.total_releases
-                  "0"
-                }}</span>
-              <span class="ov-vs-stat-lbl">Releases</span>
+      {{! ── RIGHT SIDE ── }}
+      {{#if this.vsRightIsPlayer}}
+        {{! Player on right }}
+        <div class="ov-vs-side ov-vs-side--player">
+          <div class="ov-vs-side-bg"></div>
+          <div class="ov-vs-content">
+            <div class="ov-vs-icon-wrap"><i class="bi bi-person-fill"></i></div>
+            <div class="ov-vs-name">{{this.secondaryEntity.player_name}}</div>
+            {{#if this.secondaryEntity.village}}<div class="ov-vs-sub">{{this.secondaryEntity.village}}</div>{{/if}}
+            <div class="ov-vs-stats">
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.total_bulls_caught (or this.secondaryEntity.bull_caught "0")}}</span>
+                <span class="ov-vs-stat-lbl">Bulls Caught</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.career_net_score (or this.secondaryEntity.net_score "0")}}</span>
+                <span class="ov-vs-stat-lbl">Net Score</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.matches_played "0"}}</span>
+                <span class="ov-vs-stat-lbl">Matches</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.total_penalties "0"}}</span>
+                <span class="ov-vs-stat-lbl">Penalties</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      {{else}}
+        {{! Bull on right }}
+        <div class="ov-vs-side ov-vs-side--bull">
+          <div class="ov-vs-side-bg"></div>
+          <div class="ov-vs-content">
+            <div class="ov-vs-icon-wrap"><i class="bi bi-shield-fill"></i></div>
+            <div class="ov-vs-name">{{this.secondaryEntity.bull_name}}</div>
+            {{#if this.secondaryEntity.breed}}<div class="ov-vs-sub">{{this.secondaryEntity.breed}}</div>{{/if}}
+            <div class="ov-vs-stats">
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{this.bullAvgScore}}</span>
+                <span class="ov-vs-stat-lbl">Avg Score</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.avg_aggression "0"}}</span>
+                <span class="ov-vs-stat-lbl">Aggression</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.avg_difficulty "0"}}</span>
+                <span class="ov-vs-stat-lbl">Difficulty</span>
+              </div>
+              <div class="ov-vs-stat">
+                <span class="ov-vs-stat-val">{{or this.secondaryEntity.total_releases "0"}}</span>
+                <span class="ov-vs-stat-lbl">Releases</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      {{/if}}
+
     </div>
   {{/if}}
 
