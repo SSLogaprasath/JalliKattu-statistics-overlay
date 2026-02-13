@@ -42,7 +42,8 @@ export default class OverlayViewerController extends Controller {
   _currentHtml5Src = null;
 
   get apiBase() {
-    return `/${config.APP.API_NAMESPACE}`;
+    const host = config.APP.API_HOST || "";
+    return `${host}/${config.APP.API_NAMESPACE}`;
   }
 
   /**
@@ -365,6 +366,9 @@ export default class OverlayViewerController extends Controller {
         const data = await res.json();
         this.overlayData = data;
         this.isConnected = true;
+
+        // Re-init video player when video URL changes or first data arrives
+        this._initVideoPlayer();
 
         // Sync clock from server
         if (data.clock) {
